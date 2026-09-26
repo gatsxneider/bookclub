@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;1,400&amp;family=Plus+Jakarta+Sans:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "error": "#ba1a1a", "on-tertiary-fixed": "#390c00", "on-primary-container": "#c5eacc", "on-background": "#1c1c19", "surface-tint": "#45664e", "on-primary-fixed-variant": "#2e4e37", "primary-container": "#4a6b53", "on-tertiary": "#ffffff", "on-secondary-fixed": "#390b00", "secondary": "#99462a", "inverse-on-surface": "#f3f0eb", "on-secondary-fixed-variant": "#7a2f15", "surface-dim": "#dcdad5", "primary-fixed": "#c7ecce", "secondary-fixed-dim": "#ffb59e", "on-error": "#ffffff", "surface-container-low": "#f6f3ee", "tertiary-fixed-dim": "#ffb59c", "inverse-primary": "#abcfb2", "on-secondary-container": "#762c12", "background": "#fcf9f4", "secondary-container": "#fe9572", "on-surface": "#1c1c19", "outline": "#727972", "primary": "#32533c", "surface": "#fcf9f4", "surface-variant": "#e5e2dd", "on-error-container": "#93000a", "secondary-fixed": "#ffdbd0", "surface-container-high": "#ebe8e3", "on-surface-variant": "#424842", "on-secondary": "#ffffff", "surface-container-lowest": "#ffffff", "error-container": "#ffdad6", "on-tertiary-container": "#ffd9cc", "surface-container": "#f0ede9", "tertiary-container": "#975037", "tertiary-fixed": "#ffdbcf", "surface-container-highest": "#e5e2dd", "inverse-surface": "#31302d", "surface-bright": "#fcf9f4", "tertiary": "#793921", "on-primary-fixed": "#01210f", "on-primary": "#ffffff", "on-tertiary-fixed-variant": "#73341d", "outline-variant": "c2c8c0", "primary-fixed-dim": "#abcfb2" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "space-sm": "0.5rem", "gutter": "1.5rem", "margin": "2rem", "space-lg": "1.5rem", "space-xl": "2.5rem", "gutter-sm": "1rem", "margin-mobile": "1rem", "space-xs": "0.25rem" }, "fontFamily": { "body-reading": [ "Noto Serif" ], "display-hero": [ "Noto Serif" ], "body-quote": [ "Noto Serif" ], "label-sm": [ "Plus Jakarta Sans" ], "label-md": [ "Plus Jakarta Sans" ], "headline-md": [ "Noto Serif" ], "headline-lg-mobile": [ "Noto Serif" ], "body-lg": [ "Plus Jakarta Sans" ], "body-quote-mobile": [ "Noto Serif" ], "title-md": [ "Plus Jakarta Sans" ], "headline-sm": [ "Noto Serif" ], "body-md": [ "Plus Jakarta Sans" ], "title-sm": [ "Plus Jakarta Sans" ], "headline-lg": [ "Noto Serif" ] }, "fontSize": { "body-reading": [ "17px", { "lineHeight": "30px", "fontWeight": "400" } ], "display-hero": [ "44px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" } ], "body-quote": [ "18px", { "lineHeight": "32px", "fontWeight": "400" } ], "label-sm": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" } ], "label-md": [ "13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" } ], "headline-md": [ "24px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "headline-lg-mobile": [ "26px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "body-lg": [ "16px", { "lineHeight": "26px", "fontWeight": "400" } ], "body-quote-mobile": [ "16px", { "lineHeight": "28px", "fontWeight": "400" } ], "title-md": [ "17px", { "lineHeight": "24px", "fontWeight": "600" } ], "headline-sm": [ "20px", { "lineHeight": "28px", "fontWeight": "600" } ], "body-md": [ "14px", { "lineHeight": "22px", "fontWeight": "400" } ], "title-sm": [ "15px", { "lineHeight": "22px", "fontWeight": "600" } ], "headline-lg": [ "32px", { "lineHeight": "42px", "letterSpacing": "-0.015em", "fontWeight": "600" } ] } } } };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-secondary-fixed selection:text-on-secondary-fixed"><header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(45,40,37,0.05)]"><div class="h-20 max-w-7xl mx-auto px-gutter flex items-center justify-between gap-gutter"><div class="flex items-center gap-space-md shrink-0"><a class="flex items-center gap-space-sm group" data-path="home" href="#"><img alt="Cozy Book Club Logo" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtUVsGMNKaf5L23ooD65lho3EVBLogs5Ac9ulyarPy0SsmbEze-mdfG18lbgt8u4nvw5nYGdju9YlbPBrkISu-P0L2Qxyi39ymUDRaJq2CTNz2jzgj9E8RzFSXrNjedlHaX0d9OI7jrXpPioMrtL3U5aN0EcgPzGNECvkAQQpJQ_LOqC3YwigrWJgH-vCGBlqbL_c1GmqUehAYfao3BzOhSd1sYx-DPRFu3ecwnS9bC-bgfz-88nvcWA"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">코지 북클럽</span><span class="font-label-sm text-label-sm text-on-surface-variant font-normal tracking-normal -mt-space-xs">다정한 사람들의 온기 있는 서재</span></div></a></div><nav class="hidden xl:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_-2px_rgba(45,40,37,0.08)]"><a class="px-space-md py-space-sm rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-title-sm text-title-sm transition-all" data-path="home" href="#">홈</a><a aria-current="page" class="px-space-md py-space-sm rounded-full transition-all bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_-2px_rgba(45,40,37,0.08)]" data-path="my-clubs" href="#">내 서재 &amp; 클럽</a><a class="px-space-md py-space-sm rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-title-sm text-title-sm transition-all" data-path="explore" href="#">도서 탐색</a><a class="px-space-md py-space-sm rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-title-sm text-title-sm transition-all" data-path="book-reviews" href="#">독후감 피드</a></nav><div class="hidden md:flex items-center flex-1 max-w-sm lg:max-w-md mx-space-sm"><div class="relative w-full"><span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">search</span><input class="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md pl-10 pr-space-md py-2.5 rounded-full focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all shadow-[0_1px_3px_rgba(45,40,37,0.03)]" placeholder="도서명, 작가, 독서클럽 또는 단원 키워드 검색..." type="text"/></div></div><div class="flex items-center gap-space-sm shrink-0"><button aria-label="테마 변경" class="w-9 h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">light_mode</span></button><button aria-label="알림" class="relative w-9 h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface"></span></button><a class="hidden lg:flex items-center gap-space-xs bg-primary text-on-primary font-title-sm text-title-sm px-space-md py-2 rounded-full shadow-[0_2px_8px_-2px_rgba(45,40,37,0.08)] hover:bg-primary-container transition-all" data-path="new-club" href="#"><span class="material-symbols-outlined text-[18px]">add</span><span>새 독서클럽</span></a><div class="flex items-center gap-space-sm pl-space-xs"><div class="relative"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_1px_3px_rgba(45,40,37,0.08)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACTiQg8eZQ07nbi1fmXAK1hcgOzcKyg7Q7vPhjKA057WSLYQ8q_V58kbUSdUyOJUHc8HB9l7iggqkIi4L5CzjQfMgAUSp0-xiyLgZuyttUBAngVf_oAJanRmYr7h06FeWcxyNjkDC9CLgyVObvMpNvUEHJ-KnMJgx00LL20QSjzc7HZRxUlqXjH26aeu-rzeX63Z6mQDpHQfuo8wmB9c8eFYINJtYgJdANnEwR_oIqGVrJ85OXqOTz3A"/><span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full border-2 border-surface flex items-center justify-center"><span class="material-symbols-outlined text-[8px] text-on-primary">eco</span></span></div><div class="hidden sm:flex flex-col text-left"><span class="font-title-sm text-title-sm text-on-surface leading-tight">지우 님</span><span class="font-label-sm text-label-sm text-secondary font-medium tracking-tight">책나무 레벨 3</span></div></div></div></div></header><main class="w-full pt-20 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<div class="max-w-7xl mx-auto px-gutter py-space-lg w-full flex flex-col gap-space-xl">
+<!-- 1. Breadcrumb & Top Utility Area -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<nav aria-label="Breadcrumb" class="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">cottage</span>
+<span>홈</span>
+</a>
+<span class="text-outline-variant font-normal">/</span>
+<a class="hover:text-primary transition-colors" href="#">나의 독서클럽</a>
+<span class="text-outline-variant font-normal">/</span>
+<a class="hover:text-primary transition-colors" href="#">고요한 숲속 심야 독서회</a>
+<span class="text-outline-variant font-normal">/</span>
+<span class="text-on-surface font-semibold">도서 단원 설정 및 진척도</span>
+</nav>
+<div class="flex items-center gap-space-sm self-start sm:self-auto">
+<div class="inline-flex items-center gap-space-xs px-3 py-1.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm shadow-sm">
+<span class="material-symbols-outlined text-[16px]">shield_person</span>
+<span>단원 관리 모드 (방장 전용)</span>
+</div>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">share</span>
+<span>클럽 공유</span>
+</button>
+</div>
+</div>
+<!-- 2. Book & Club Hero Card -->
+<section class="bg-surface-container-lowest rounded-2xl p-space-lg md:p-space-xl shadow-md relative overflow-hidden">
+<!-- Decorative Organic Glow Backgrounds -->
+<div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-primary-fixed/25 blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-24 -left-20 w-72 h-72 rounded-full bg-secondary-fixed/20 blur-3xl pointer-events-none"></div>
+<div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center">
+<!-- Book Cover Preview -->
+<div class="lg:col-span-3 flex justify-center lg:justify-start">
+<div class="relative group cursor-pointer">
+<div class="w-40 sm:w-44 md:w-48 aspect-[3/4.2] rounded-xl overflow-hidden shadow-xl bg-surface-container-high relative transition-transform duration-300 group-hover:-translate-y-1">
+<img class="w-full h-full object-cover" data-alt="Soft photographic cover mock of the Korean bestseller 'Uncanny Convenience Store' (불편한 편의점) by Kim Ho-yeon. Cozy warm amber glowing shop window at night, botanical green hues, deckled paper texture, calming evening tone with tea steam motif." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMmldtUTX47mbTjqJuqHkHzdiG7XqI45Df-SPMgFBkRXYlwfxvaYY_Y3QppnLOZpcxPZFYI937HfkmU-OBnmP6PzWQyjcpl4fFzZguXo27a5jE1aAB_ClsO6TCck3HDoaEvQ8Sw3vB0CipAQxPOIODcu2ig3Hhk9DQ5JmfIql3tQtLigyP_XNwzAocJ14x1KdAuKqKX24EvZ1sDIsfhoEmxL1HWBDgMFlBhHEWvsOFK-m3YFVXq2vd3w"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent flex flex-col justify-end p-space-sm text-inverse-on-surface">
+<span class="font-label-sm text-label-sm opacity-80 uppercase tracking-widest">나무옆의자</span>
+<span class="font-headline-sm text-headline-sm leading-tight font-semibold">불편한 편의점</span>
+<span class="font-label-sm text-label-sm opacity-90 mt-0.5">김호연 장편소설</span>
+</div>
+</div>
+<span class="absolute -top-2 -left-2 px-2.5 py-1 rounded-full bg-primary text-on-primary font-label-sm text-label-sm shadow-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">auto_stories</span>
+<span>4월 정기 도서</span>
+</span>
+</div>
+</div>
+<!-- Book & Club Metadata -->
+<div class="lg:col-span-5 flex flex-col gap-space-sm">
+<div class="inline-flex items-center gap-space-xs self-start px-2.5 py-1 rounded-full bg-primary-fixed-dim/40 text-on-primary-fixed font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span>심야 북토크 진행중</span>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary font-semibold tracking-tight">고요한 숲속 심야 독서회</h1>
+<p class="font-body-reading text-body-reading text-on-surface-variant mt-space-xs">
+              매일 밤 따뜻한 차 한 잔을 곁들이며, 삶의 모퉁이에서 만난 따스한 온기를 문장으로 기록합니다.
+            </p>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm pt-space-xs text-on-surface">
+<div class="p-space-sm rounded-xl bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">local_cafe</span> 모임 방장
+              </span>
+<span class="font-title-sm text-title-sm font-semibold mt-0.5 text-primary">달빛책방지기</span>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">group</span> 참여 인원
+              </span>
+<span class="font-title-sm text-title-sm font-semibold mt-0.5">정원 6명 <span class="text-secondary font-normal text-xs">(전원 활동)</span></span>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-container-low flex flex-col col-span-2 sm:col-span-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">event_available</span> 완독 D-Day
+              </span>
+<span class="font-title-sm text-title-sm font-semibold mt-0.5 text-secondary">D-12 <span class="text-on-surface-variant font-normal text-xs">(04.15)</span></span>
+</div>
+</div>
+</div>
+<!-- Completion Meter & Radial Visualizer -->
+<div class="lg:col-span-4 flex flex-col items-center lg:items-end justify-center">
+<div class="p-space-md sm:p-space-lg rounded-2xl bg-surface-container-low w-full max-w-sm flex items-center justify-between gap-space-md shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">북클럽 완독 진척률</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-display-hero text-display-hero font-bold text-primary">68</span>
+<span class="font-headline-sm text-headline-sm text-primary">%</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-medium mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>총 30개 과제 중 20건 발행</span>
+</span>
+</div>
+<!-- Inline SVG Gauge Visualizer -->
+<div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle class="text-surface-variant" cx="50" cy="50" fill="none" r="40" stroke="currentColor" stroke-width="9"></circle>
+<circle class="text-primary transition-all duration-1000 ease-out" cx="50" cy="50" fill="none" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="80.3" stroke-linecap="round" stroke-width="9"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-primary text-[24px]">energy_savings_leaf</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">4/5 챕터</span>
+</div>
+</div>
+</div>
+<div class="mt-space-sm flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-primary text-[16px]">history_edu</span>
+<span>최근 제출: 도윤 님 (오늘 14:28, 제4장)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Chapter Splitter Toolbar (Leader Controls & Chapter Navigation) -->
+<section class="flex flex-col gap-space-md">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">bookmarks</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">도서 단원 나누기</h2>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">총 5개 챕터</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+            방장이 지정한 독서 릴레이 구간입니다. 단원을 클릭하여 구성원들의 글을 바로 감상하세요.
+          </p>
+</div>
+<div class="flex items-center gap-space-xs flex-wrap">
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-title-sm text-title-sm transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>단원 추가</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-title-sm text-title-sm transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+<span>일괄 일정 분배</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary-container transition-all font-title-sm text-title-sm shadow-md" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>수정 완료 저장</span>
+</button>
+</div>
+</div>
+<!-- Chapter Cards Horizontal Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-space-sm">
+<!-- Chapter 1 (Completed) -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between hover:shadow-md transition-all cursor-pointer group">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">제1장</span>
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">check</span>완료 6/6
+              </span>
+</div>
+<h3 class="font-title-sm text-title-sm text-on-surface group-hover:text-primary transition-colors font-bold mt-1 line-clamp-1">
+              산해진미 도시락
+            </h3>
+<p class="font-body-md text-body-md text-on-surface-variant">p.9 ~ p.68</p>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low p-2 rounded-lg">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">alarm_on</span>3월 10일 마감</span>
+<span class="material-symbols-outlined text-primary text-[18px]">task_alt</span>
+</div>
+</article>
+<!-- Chapter 2 (Completed) -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between hover:shadow-md transition-all cursor-pointer group">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">제2장</span>
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">check</span>완료 6/6
+              </span>
+</div>
+<h3 class="font-title-sm text-title-sm text-on-surface group-hover:text-primary transition-colors font-bold mt-1 line-clamp-1">
+              제임스 본드와 옥수수수염차
+            </h3>
+<p class="font-body-md text-body-md text-on-surface-variant">p.69 ~ p.134</p>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low p-2 rounded-lg">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">alarm_on</span>3월 17일 마감</span>
+<span class="material-symbols-outlined text-primary text-[18px]">task_alt</span>
+</div>
+</article>
+<!-- Chapter 3 (Completed with late) -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between hover:shadow-md transition-all cursor-pointer group">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">제3장</span>
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">check</span>제출 5/6
+              </span>
+</div>
+<h3 class="font-title-sm text-title-sm text-on-surface group-hover:text-primary transition-colors font-bold mt-1 line-clamp-1">
+              참참참의 밤
+            </h3>
+<p class="font-body-md text-body-md text-on-surface-variant">p.135 ~ p.198</p>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low p-2 rounded-lg">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">alarm_on</span>3월 24일 마감</span>
+<span class="material-symbols-outlined text-primary text-[18px]">task_alt</span>
+</div>
+</article>
+<!-- Chapter 4 (Active Chapter with Sage Highlight) -->
+<article class="bg-primary-container text-on-primary-container rounded-xl p-space-md shadow-xl flex flex-col justify-between relative transform -translate-y-1">
+<div class="absolute -top-2 right-3 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm shadow-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span> 현재 단원
+          </div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-fixed font-semibold">제4장</span>
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-surface-container-lowest/20 font-label-sm text-label-sm">
+                작성중 3/6
+              </span>
+</div>
+<h3 class="font-title-sm text-title-sm text-on-primary font-bold mt-1 line-clamp-1">
+              네 잎 클로버의 기적
+            </h3>
+<p class="font-body-md text-body-md text-on-primary-container">p.199 ~ p.262</p>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between text-on-primary-container font-label-sm text-label-sm bg-inverse-surface/20 p-2 rounded-lg">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">hourglass_top</span>3월 31일 (D-3)</span>
+<span class="material-symbols-outlined text-secondary-container text-[18px]">edit_document</span>
+</div>
+</article>
+<!-- Chapter 5 (Upcoming) -->
+<article class="bg-surface-container-low rounded-xl p-space-md shadow-sm flex flex-col justify-between opacity-80 hover:opacity-100 transition-all cursor-pointer group">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">제5장</span>
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
+                대기 0/6
+              </span>
+</div>
+<h3 class="font-title-sm text-title-sm text-on-surface group-hover:text-primary transition-colors font-bold mt-1 line-clamp-1">
+              다시 만난 봄날
+            </h3>
+<p class="font-body-md text-body-md text-on-surface-variant">p.263 ~ 완결</p>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm bg-surface-container p-2 rounded-lg">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">event</span>4월 7일 예정</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">lock</span>
+</div>
+</article>
+</div>
+</section>
+<!-- 4. Member Chapter Submission Matrix Section -->
+<section class="flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[22px]">format_list_bulleted</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">멤버별 단원 독후감 제출 현황표</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+            각 단원별 감상문 작성 현황과 동료들의 문장을 한눈에 살펴보고 응원을 나눠보세요.
+          </p>
+</div>
+<!-- Legend Badges -->
+<div class="flex items-center gap-space-xs flex-wrap font-label-sm text-label-sm">
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed">
+<span class="material-symbols-outlined text-[14px]">spa</span>
+<span>발행 완료</span>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+<span>임시 저장중</span>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">hourglass_empty</span>
+<span>미제출 / 대기</span>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-error-container text-on-error-container">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span>마감 초과</span>
+</div>
+</div>
+</div>
+<!-- Matrix Table Card -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-md overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-space-md px-space-md w-56 font-semibold" scope="col">멤버 정보</th>
+<th class="py-space-md px-space-sm text-center" scope="col">1단원 (산해진미)</th>
+<th class="py-space-md px-space-sm text-center" scope="col">2단원 (옥수수차)</th>
+<th class="py-space-md px-space-sm text-center" scope="col">3단원 (참참참)</th>
+<th class="py-space-md px-space-sm text-center bg-primary-container/10 text-primary font-bold" scope="col">
+                  4단원 (네 잎 클로버) ★
+                </th>
+<th class="py-space-md px-space-sm text-center text-on-surface-variant/70" scope="col">5단원 (완결)</th>
+<th class="py-space-md px-space-md text-right w-44" scope="col">전체 달성도</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md divide-y-0 text-on-surface">
+<!-- Row 1: Club Leader Kim Min-seo -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative w-10 h-10 shrink-0">
+<img class="w-full h-full rounded-full object-cover shadow-sm" data-alt="Profile portrait of a calm Korean female book club leader smiling warmly, wearing linen tea clothes and delicate spectacles, warm quiet afternoon library lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-homQNvA95O1fsIXv5JiU32SegjnXdGXBCgRbBg1gRjrHhuFKVf1zPdtpT6rbHm_g--9SG-dE2y3uDVLaO_2t6bN5cyA7YrGQnWkli4GxUYZOvrOYw6eCgGAg1OaLlAOoEWK7wbUnanTLvLownJdFZx-fsd2hOD0TcIo2S708zxjb0KM-7u5dX7enenuYsZ9athH2Z3juj3WZc0_kGQKT8p9oSqQ12yksjo7MIudWFU88ItUdkynL8A"/>
+<span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-secondary text-on-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px]">stars</span>
+</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-title-sm text-title-sm font-semibold truncate">김민서</span>
+<span class="px-1.5 py-0.2 rounded bg-secondary-fixed text-on-secondary-fixed text-[10px] font-semibold">방장</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">@달빛책방지기</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center bg-primary-container/5">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm opacity-70">
+                    미작성
+                  </span>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center gap-1.5">
+<span class="font-title-sm text-title-sm font-bold text-primary">80%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(4/5)</span>
+</div>
+<div class="w-24 h-1.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 80%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 2: Jiwoo (Me) - Active highlighted row -->
+<tr class="bg-secondary-fixed/15 hover:bg-secondary-fixed/25 transition-colors">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative w-10 h-10 shrink-0">
+<img alt="Jiwoo Profile" class="w-full h-full rounded-full object-cover shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACTiQg8eZQ07nbi1fmXAK1hcgOzcKyg7Q7vPhjKA057WSLYQ8q_V58kbUSdUyOJUHc8HB9l7iggqkIi4L5CzjQfMgAUSp0-xiyLgZuyttUBAngVf_oAJanRmYr7h06FeWcxyNjkDC9CLgyVObvMpNvUEHJ-KnMJgx00LL20QSjzc7HZRxUlqXjH26aeu-rzeX63Z6mQDpHQfuo8wmB9c8eFYINJtYgJdANnEwR_oIqGVrJ85OXqOTz3A"/>
+<span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px]">person</span>
+</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-title-sm text-title-sm font-bold text-on-surface truncate">지우</span>
+<span class="px-1.5 py-0.2 rounded bg-primary text-on-primary text-[10px] font-semibold">나</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-medium truncate">책나무 레벨 3</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center bg-secondary-fixed/20">
+<div class="flex flex-col items-center gap-1">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm shadow-sm hover:bg-secondary hover:text-on-secondary transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">edit_note</span>작성중 📝
+                    </button>
+<a class="font-label-sm text-label-sm text-secondary hover:underline flex items-center gap-0.5" href="#quick-write">
+<span>이어서 쓰기</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+</a>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm opacity-70">
+                    미작성
+                  </span>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center gap-1.5">
+<span class="font-title-sm text-title-sm font-bold text-secondary">60%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(3/5)</span>
+</div>
+<div class="w-24 h-1.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 60%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 3: Ha-eun -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 shrink-0">
+<img class="w-full h-full rounded-full object-cover shadow-sm" data-alt="Warm aesthetic candid photo portrait of a young Korean woman reading with headphones in a sunny plant-filled cafe nook." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACRMfOzL1kYY7ps8vNEDAL57Q4X4pWnX9S_lk016_m0rS5HASrqGsuXx6HCLxKugKPgVkjTodDLCy4PHbupojm1Nm7OaX8JKQCFkM-LpEkSmac6w1ZOKKxrBxcJ4hk1-VXhJOxi1y3aPhagWkDzWJTwnp9IzdhE-dePBeGR25dV-EJNX-XbYusneWXyUrO_lmHrapRDnQJQpxJbGQ26hMmeIYTcJuNlE2hF5aSp5KqPfFpa0ydvR0CcA"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm font-semibold truncate">하은</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">@초록정원</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center bg-primary-container/5">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm opacity-70">
+                    미작성
+                  </span>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center gap-1.5">
+<span class="font-title-sm text-title-sm font-bold text-primary">80%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(4/5)</span>
+</div>
+<div class="w-24 h-1.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 80%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 4: Jun-ho -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 shrink-0">
+<img class="w-full h-full rounded-full object-cover shadow-sm" data-alt="Editorial close portrait of a Korean college student holding an open book near an autumn window, warm sweater, contemplative look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgqVq2LwtA363UaR9Pdym8DqJqftdUxE73sVYTODjmj9NTpGWx23BiDqiU8ALLsueE8xn-FTXaWwfU4xCeucLLcboVKbVV8sD0ZvWJTvzzc6BCuVH0RC-sDGHrdMw3XlAbM2ehF2txt7Qh84iOakljnPS4e5W_DCuRaIT8aJc5lfY49NoH0lwA-JpHflNIecFcUbqnnaYe3cLVPEbgp9Qlt76B7CnJOgawGZaRQ5-k4t7ATwqegyGQtg"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm font-semibold truncate">준호</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">@북적북적</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center bg-primary-container/5">
+<span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">hourglass_top</span>미제출 ⏳
+                  </span>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm opacity-70">
+                    미작성
+                  </span>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center gap-1.5">
+<span class="font-title-sm text-title-sm font-bold text-primary">60%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(3/5)</span>
+</div>
+<div class="w-24 h-1.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 60%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 5: Seo-yeon (Late) -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 shrink-0">
+<img class="w-full h-full rounded-full object-cover shadow-sm" data-alt="Portrait photo of a young Korean woman wearing a dark olive jacket, relaxing by an open bookstore shelf holding a notebook." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_kI46eAJMRMrjnzD4fCHKtOSFNUHVlPr9p8wkyuQC3AxKO5nv2sjUFIIgQD8f8CrW-1PIQaaNaT7ItpKT7DVWHucYRued0ZiSofUBOLT2mixUFA-Bp4dppqxPaXHSJ_rGS8AugCClHHwBAvTk4sUjL9C7xaHUDBSFGtgtM-skWJ3fvh4Ge3YfJ9L8RwfUYRaBB-eWC9-wWc-PW5A5n-Ba9hFAvz_OErclTnq9Q54aeY_bXtlVmU8HZw"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm font-semibold truncate">서연</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">@책갈피</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">report</span>지각 ⚠️
+                  </span>
+</td>
+<td class="py-space-md px-space-sm text-center bg-primary-container/5">
+<span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">hourglass_top</span>미제출 ⏳
+                  </span>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm opacity-70">
+                    미작성
+                  </span>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center gap-1.5">
+<span class="font-title-sm text-title-sm font-bold text-on-surface-variant">40%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(2/5)</span>
+</div>
+<div class="w-24 h-1.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 40%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 6: Do-yoon -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 shrink-0">
+<img class="w-full h-full rounded-full object-cover shadow-sm" data-alt="Warm studio photo portrait of a Korean male reader in cozy beige knit sweater holding a ceramic coffee mug, natural sun flare." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQx0bbD_FDU2IpAdolMsYSJymnEOD7y4DVDjEWc03GAMAQBEy4Z6nFjERwzOTJoiUm2mcAFXif2IhduHIqRuGW4hmIvPqfehAT9wbzZ-XYza0DclHfbzdDkK5JT5Iyakt8KAYTosc8Z8-s4YWj9yMF3cPtERFd3cShDkTG4HGOp9OPm1Q6Y67yP49fHw4t_UtKiwAgYN3oOvQxEXfLrPXgeZaG3d6mISGnfIEVYX9dDkIqb_0PkU2QCg"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm font-semibold truncate">도윤</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">@밤하늘</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center bg-primary-container/5">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:opacity-90 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>발행완료
+                  </button>
+</td>
+<td class="py-space-md px-space-sm text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm opacity-70">
+                    미작성
+                  </span>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center gap-1.5">
+<span class="font-title-sm text-title-sm font-bold text-primary">80%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(4/5)</span>
+</div>
+<div class="w-24 h-1.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 80%"></div>
+</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- 5. Bottom Callout & Direct Writing CTA Banner -->
+<section class="bg-gradient-to-r from-secondary/90 via-tertiary-container to-secondary text-on-secondary rounded-2xl p-space-lg md:p-space-xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-space-lg relative overflow-hidden" id="quick-write">
+<!-- Decorative background motifs -->
+<div class="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-surface-bright/10 pointer-events-none"></div>
+<div class="absolute left-1/3 -top-12 w-32 h-32 rounded-full bg-surface-bright/5 pointer-events-none"></div>
+<div class="flex items-center gap-space-md relative z-10">
+<div class="w-14 h-14 rounded-2xl bg-surface/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-inner">
+<span class="material-symbols-outlined text-[32px] text-white">edit_note</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-0.5 rounded-full bg-surface-bright/20 font-label-sm text-label-sm uppercase tracking-wider text-secondary-fixed">
+              마감 임박 안내
+            </span>
+<span class="font-label-sm text-label-sm text-on-secondary/80">3월 31일 (일) 23:59까지</span>
+</div>
+<h3 class="font-headline-md text-headline-md font-semibold mt-1">
+            지우 님, 4단원 ‘네 잎 클로버의 기적’ 독후감 마감이 3일 남았습니다!
+          </h3>
+<p class="font-body-md text-body-md text-on-secondary/90 mt-0.5">
+            어제 임시 저장된 240자의 감상 노트가 대기 중입니다. 지금 완독의 감동을 이어 써보세요.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm relative z-10 shrink-0 w-full md:w-auto">
+<button class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-surface text-secondary hover:bg-surface-bright font-title-sm text-title-sm font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all" type="button">
+<span>4단원 독후감 작성하러 가기</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</section>
+</div>
+</div>
+<script>
+  // Simple interactive feedback for Chapter Cards
+  document.querySelectorAll('article[class*="cursor-pointer"]').forEach(card => {
+    card.addEventListener('click', () => {
+      const title = card.querySelector('h3')?.innerText || '단원';
+      console.log(`${title} 클릭됨`);
+    });
+  });
+</script></main><footer class="w-full bg-surface-container-low mt-space-xl shadow-[0_-1px_6px_rgba(45,40,37,0.03)]"><div class="max-w-7xl mx-auto px-gutter py-space-xl"><div class="p-space-lg rounded-xl bg-surface-container mb-space-xl text-center"><p class="font-body-quote text-body-quote text-primary italic mb-space-xs">“천천히 읽고, 다정하게 나누는 시간”</p><span class="font-label-sm text-label-sm text-on-surface-variant tracking-wide">코지 북클럽 독서 공동체 사명</span></div><div class="flex flex-col md:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-md text-body-md"><div class="flex items-center gap-space-sm"><span class="font-title-sm text-title-sm text-primary font-semibold">코지 북클럽 (Cozy Book Club)</span><span class="text-outline-variant">•</span><span>따뜻한 차 한 잔과 문장들의 쉼터</span></div><div class="flex items-center gap-space-lg font-label-md text-label-md"><a class="hover:text-on-surface transition-colors" data-path="terms" href="#">이용약관</a><a class="hover:text-on-surface transition-colors" data-path="privacy" href="#">개인정보처리방침</a><a class="hover:text-on-surface transition-colors" data-path="support" href="#">문의하기</a></div></div><div class="mt-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-sm pt-space-md border-t border-surface-container-high/60 font-label-sm text-label-sm text-on-surface-variant"><p>© 2025 Cozy Book Club. All rights reserved.</p><p class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px]">dark_mode</span><span>야간 독서를 위한 다크 모드 지원 준비 중</span></p></div></div></footer></body></html>

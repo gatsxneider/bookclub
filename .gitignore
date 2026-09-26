@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment and secret files (보안: 민감 키/설정 제외)
+.env
+.env*.local
+.env.development
+.env.test
+.env.production
+.env.*
+!.env.example
+
+# Testing
+coverage/
+
+# Assets / Downloaded files
+downloaded_covers/
+images/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

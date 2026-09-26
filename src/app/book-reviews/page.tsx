@@ -1,0 +1,182 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Navbar from '@/components/Navbar';
+import BookSearchModal from '@/components/BookSearchModal';
+import CreateClubModal from '@/components/CreateClubModal';
+import AuthModal from '@/components/AuthModal';
+import { Review } from '@/types/database';
+
+export default function BookReviewsFeedPage() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch('/api/reviews');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reviews && data.reviews.length > 0) {
+            setReviews(data.reviews);
+            return;
+          }
+        }
+      } catch {}
+
+      // 기본 피드 데이터
+      setReviews([
+        {
+          id: 'rev-1',
+          user_id: '1',
+          title: '불편함 속에서 길어 올린 가장 다정한 온기 — 4단원을 읽고',
+          content:
+            '혼자 늦은 밤 편의점 파라솔 테이블에 앉아 캔맥주와 참치김밥을 먹는 사람들의 고단함. 독고 씨가 그들에게 무심한 듯 건네는 따뜻한 배려가 가슴을 뭉클하게 했습니다. 우리 사회에 필요한 것은 어쩌면 대단한 정답이 아니라 서로의 어깨를 토닥이는 작은 관심일 것입니다.',
+          quote: '“결국 삶은 관계였고 관계는 소통이었다. 행복은 혼자 누릴 수 있는 것이 아니었다.”',
+          rating: 5,
+          is_public: true,
+          created_at: '2026-09-24',
+          author: { id: '1', nickname: '지우 (jiwoo_reads)' },
+        },
+        {
+          id: 'rev-2',
+          user_id: '2',
+          title: '산만함의 시대, 나를 되찾는 몰입의 연습 — 도둑맞은 집중력 1단원',
+          content:
+            '끝없이 알림을 울려대는 스마트폰과 알고리즘 속에서 우리의 깊은 생각의 힘이 어떻게 잠식당하는지 깊이 깨달았습니다. 함께 책을 읽는 이 시간만큼은 온전히 화면을 끄고 종이책의 질감에 집중해봅니다.',
+          quote: '“집중력 위기는 개인의 실패가 아니라 현대 사회 시스템이 설계한 결과다.”',
+          rating: 5,
+          is_public: true,
+          created_at: '2026-09-20',
+          author: { id: '2', nickname: '도윤' },
+        },
+        {
+          id: 'rev-3',
+          user_id: '3',
+          title: '참참참 세트와 편의점 야간의 공기',
+          content:
+            '산해진미 도시락을 먹으며 밤을 버티던 이들의 마음이 풀려가는 과정이 소설이라기보다 실제 우리 동네 이야기처럼 다가왔습니다. 작가의 따뜻한 시선이 활자 너머로 전해집니다.',
+          quote: '“밥 딜런의 외할머니가 그랬어. 행복은 이미 누리고 있는 것을 좋아하는 것이라고.”',
+          rating: 4,
+          is_public: true,
+          created_at: '2026-09-17',
+          author: { id: '3', nickname: '민서' },
+        },
+      ]);
+    };
+
+    fetchReviews();
+  }, []);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-surface">
+      <Navbar
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenNewClub={() => setIsCreateOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
+      />
+
+      <main className="w-full pt-24 pb-16 flex-1">
+        <div className="max-w-4xl mx-auto px-gutter flex flex-col gap-6">
+          <div>
+            <div className="flex items-center gap-2 text-primary text-xs font-semibold">
+              <span className="material-symbols-outlined text-[18px]">spa</span>
+              <span>온기 있는 문장의 나눔</span>
+            </div>
+            <h1 className="font-headline-md text-2xl font-bold text-on-surface mt-1">
+              독후감 피드
+            </h1>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              클럽 멤버들이 단원별 독서 일정을 함께하며 기록한 따뜻한 감상과 발제문들을 나눕니다.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {reviews.map((rev) => (
+              <article
+                key={rev.id}
+                className="bg-surface-container-lowest rounded-2xl p-6 sm:p-7 shadow-sm border border-surface-container flex flex-col gap-3.5 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-primary text-xs shadow-sm">
+                      {rev.author?.nickname?.[0] || '지'}
+                    </div>
+                    <span className="text-xs font-bold text-on-surface">
+                      {rev.author?.nickname || '멤버'}
+                    </span>
+                    <span className="text-[11px] text-on-surface-variant">
+                      {rev.created_at?.split('T')[0]}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-secondary text-xs">
+                    <span>★</span>
+                    <span className="font-bold">{rev.rating || 5}.0</span>
+                  </div>
+                </div>
+
+                <h2 className="font-headline-sm text-lg font-bold text-on-surface">
+                  {rev.title}
+                </h2>
+
+                {rev.quote && (
+                  <blockquote className="bg-surface-container-low p-3.5 rounded-xl border-l-4 border-primary text-xs italic text-on-surface leading-relaxed">
+                    {rev.quote}
+                  </blockquote>
+                )}
+
+                <p className="font-body-reading text-sm text-on-surface-variant leading-relaxed">
+                  {rev.content}
+                </p>
+
+                <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[15px] text-primary">eco</span>
+                    <span>고요한 숲속 심야 독서회</span>
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 hover:text-secondary transition-colors"
+                      onClick={() => alert('공감했습니다 ❤️')}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">favorite_border</span>
+                      <span>공감 12</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 hover:text-primary transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">chat_bubble_outline</span>
+                      <span>댓글 3</span>
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </main>
+
+      <BookSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onSelectBook={() => {}}
+      />
+      <CreateClubModal
+        isOpen={isCreateOpen}
+        book={null}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={() => {}}
+      />
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={() => setIsAuthOpen(false)}
+      />
+    </div>
+  );
+}

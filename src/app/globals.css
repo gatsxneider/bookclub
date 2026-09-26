@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #fcf9f4;
+    color: #1c1c19;
+  }
+}
+
+/* Material Symbols Icon Font Support */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hide scrollbar for category horizontal scroll */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Cozy Logo Animations */
+@keyframes cozy-draw {
+  0% {
+    stroke-dashoffset: 1000;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes cozy-steam {
+  0% {
+    transform: translateY(0) scaleX(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(-4px) scaleX(1.06) rotate(1deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scaleX(1);
+    opacity: 0.85;
+  }
+}
+
+@keyframes cozy-sprout {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(-3deg) scale(1.02);
+  }
+  70% {
+    transform: rotate(3deg) scale(0.98);
+  }
+}
+
+@keyframes cozy-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes cozy-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-cozy-draw {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: cozy-draw 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-cozy-steam {
+  animation: cozy-steam 3.6s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.animate-cozy-sprout {
+  animation: cozy-sprout 4.2s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.animate-cozy-float {
+  animation: cozy-float 4s ease-in-out infinite;
+}
+
+.animate-cozy-fade-up {
+  animation: cozy-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
