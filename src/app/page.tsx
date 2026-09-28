@@ -238,7 +238,7 @@ export default function HomePage() {
                       : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
-                  진행중 <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">{activeClubs.length}</span>
+                  진행중 클럽 <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">{activeClubs.length}</span>
                 </button>
                 <button
                   type="button"
@@ -421,10 +421,10 @@ export default function HomePage() {
                   <span className="material-symbols-outlined text-secondary text-[24px]">recommend</span>
                   <div>
                     <h2 className="font-headline-sm text-lg font-bold text-on-surface tracking-tight">
-                      서정적인 도서 탐색 & 카테고리별 추천 Top 10
+                      카테고리별 추천도서 Top 10
                     </h2>
                     <p className="text-xs text-on-surface-variant">
-                      취향이 머무는 12개 분야에서 가장 많이 언급된 도서를 둘러보세요
+                      취향이 머무는 12개 분야에서 가장 주목받고 있는 도서를 둘러보세요
                     </p>
                   </div>
                 </div>
