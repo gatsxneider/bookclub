@@ -126,6 +126,12 @@ export default function HomePage() {
                       src={user?.avatar_url || '/images/avatar.png'}
                       alt={user ? `${user.nickname} 님의 프로필` : '코지 북클럽 서재'}
                       className="w-full h-full object-cover object-center"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src !== `${window.location.origin}/images/avatar.png`) {
+                          target.src = '/images/avatar.png';
+                        }
+                      }}
                     />
                   </div>
                   <div className="absolute -bottom-1.5 -right-1.5 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg border-2 border-surface">

@@ -100,6 +100,12 @@ export default function Navbar({
                     src={user.avatar_url || '/images/avatar.png'}
                     alt={user.nickname}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (target.src !== `${window.location.origin}/images/avatar.png`) {
+                        target.src = '/images/avatar.png';
+                      }
+                    }}
                   />
                 </div>
                 <div className="flex flex-col text-left">
