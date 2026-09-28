@@ -31,6 +31,64 @@ export function calculateClubTotalProgress(
   };
 }
 
+/**
+ * 사용자가 해당 독서 클럽의 방장 또는 승인된 멤버인지 확인
+ */
+export function isUserClubMember(
+  club: {
+    leader_id?: string;
+    leader?: { id?: string };
+    members?: Array<{ user_id: string; status?: string }>;
+  },
+  userId?: string | null
+): boolean {
+  if (!userId) return false;
+  if (club.leader_id === userId || club.leader?.id === userId) return true;
+  return (club.members || []).some(
+    (m) => m.user_id === userId && m.status !== 'rejected'
+  );
+}
+
+/**
+ * 독서 클럽의 모든 멤버가 완독하였는지 여부 판별
+ * - 모든 참여 멤버(방장 및 승인된 멤버)가 클럽의 모든 단원에 대해 독후감을 작성 완료했거나
+ *   club.status가 'completed'인 경우에만 완료(true)
+ * - 단원이 등록되지 않았거나(0개), 멤버 중 한 명이라도 미작성 단원이 있으면 진행중(false)
+ */
+export function isClubCompleted(club: {
+  status?: string;
+  members?: Array<{ user_id: string; status?: string }>;
+  schedules?: Array<{ id?: string; reviews?: Array<{ user_id: string }>; reviews_count?: number }>;
+}): boolean {
+  if (club.status === 'completed') return true;
+
+  const schedules = club.schedules || [];
+  if (schedules.length === 0) return false;
+
+  const approvedMembers = (club.members || []).filter(
+    (m) => !m.status || m.status === 'approved'
+  );
+
+  const memberIds = approvedMembers.map((m) => m.user_id).filter(Boolean);
+
+  if (memberIds.length > 0) {
+    // 모든 멤버가 모든 단원에 리뷰를 작성했는지 확인
+    return memberIds.every((userId) =>
+      schedules.every((sched) =>
+        (sched.reviews || []).some((rev) => rev.user_id === userId)
+      )
+    );
+  }
+
+  // 상세 리뷰 정보가 없을 경우 reviews_count로 fallback 계산
+  const totalReviews = schedules.reduce(
+    (sum, s) => sum + (s.reviews?.length ?? s.reviews_count ?? 0),
+    0
+  );
+  const targetReviews = Math.max(1, approvedMembers.length || 1) * schedules.length;
+  return totalReviews >= targetReviews;
+}
+
 export function calculateDday(targetDateStr?: string, baseDate: Date = new Date()): string {
   if (!targetDateStr) return '-';
   const target = new Date(targetDateStr);

@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
         *,
         book:books (*),
         leader:profiles!clubs_leader_id_fkey (*),
-        members:club_members (*),
-        schedules:club_schedules (*)
+        members:club_members (*, profile:profiles (*)),
+        schedules:club_schedules (*, reviews (*))
       `)
       .order('created_at', { ascending: false });
 
@@ -23,7 +23,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ clubs: [] });
     }
 
-    return NextResponse.json({ clubs: clubs || [] });
+    const formattedClubs = (clubs || []).map((club: any) => {
+      const schedules = (club.schedules || []).map((s: any) => ({
+        ...s,
+        reviews_count: (s.reviews || []).length,
+        reviews: s.reviews || [],
+      }));
+      return {
+        ...club,
+        schedules,
+      };
+    });
+
+    return NextResponse.json({ clubs: formattedClubs });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -15,6 +15,7 @@ import CozyLogo from '@/components/CozyLogo';
 import { Book, Club } from '@/types/database';
 import { filterCuratedBooks } from '@/lib/core/bookSearch';
 import curatedBooksData from '@/lib/constants/curatedBooks.json';
+import { isUserClubMember, isClubCompleted, calculateClubTotalProgress } from '@/lib/core/scheduleCalculator';
 import { useAuth } from '@/context/AuthContext';
 
 export default function HomePage() {
@@ -97,10 +98,13 @@ export default function HomePage() {
     }
   };
 
-  // 필터된 클럽
-  const filteredClubs = clubs.filter((c) =>
-    activeClubTab === 'active' ? c.status !== 'completed' : c.status === 'completed'
-  );
+  // 내가 방장이거나 참여 중인 클럽만 필터링
+  const myClubs = user ? clubs.filter((c) => isUserClubMember(c, user.id)) : [];
+  const activeClubs = myClubs.filter((c) => !isClubCompleted(c));
+  const completedClubs = myClubs.filter((c) => isClubCompleted(c));
+
+  // 현재 활성화된 탭에 따른 클럽 목록
+  const displayedClubs = activeClubTab === 'active' ? activeClubs : completedClubs;
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
@@ -175,7 +179,7 @@ export default function HomePage() {
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     <span className="text-xs font-medium text-on-surface-variant">참여 중인 모임</span>
                   </div>
-                  <span className="text-sm font-bold text-primary">{filteredClubs.length}개</span>
+                  <span className="text-sm font-bold text-primary">{myClubs.length}개</span>
                 </div>
 
                 {/* 2. 매너 온도 */}
@@ -234,7 +238,7 @@ export default function HomePage() {
                       : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
-                  진행중 <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">{filteredClubs.length}</span>
+                  진행중 <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">{activeClubs.length}</span>
                 </button>
                 <button
                   type="button"
@@ -245,18 +249,33 @@ export default function HomePage() {
                       : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
-                  완료된 클럽 <span className="ml-1 px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[10px]">0</span>
+                  완료된 클럽 <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                    activeClubTab === 'completed'
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-surface-container-high text-on-surface-variant'
+                  }`}>{completedClubs.length}</span>
                 </button>
               </div>
 
               {/* Active / Dynamic Clubs List */}
               <div className="flex flex-col gap-4">
-                {filteredClubs.length > 0 ? (
-                  filteredClubs.map((club) => {
+                {displayedClubs.length > 0 ? (
+                  displayedClubs.map((club) => {
                     const approvedCount = (club.members || []).filter((m) => m.status === 'approved').length || 1;
                     const schedCount = (club.schedules || []).length || 0;
                     const bookThumb = club.book?.thumbnail || 'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5871383%3Ftimestamp%3D20240904121510';
                     const authorStr = Array.isArray(club.book?.authors) ? club.book.authors.join(', ') : club.book?.authors || '';
+                    const isCompleted = isClubCompleted(club);
+
+                    const totalReviews = (club.schedules || []).reduce(
+                      (sum, s) => sum + (s.reviews_count || (s.reviews?.length ?? 0)),
+                      0
+                    );
+                    const { percentage: clubProgress } = calculateClubTotalProgress(
+                      totalReviews,
+                      approvedCount,
+                      schedCount
+                    );
 
                     return (
                       <article
@@ -264,9 +283,15 @@ export default function HomePage() {
                         className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 border border-surface-container"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary-fixed-dim/40 text-on-primary-fixed-variant text-[11px] font-semibold">
-                            <span className="material-symbols-outlined text-[13px]">eco</span>
-                            <span>{club.status === 'completed' ? '완료' : '진행중'} · 정원 {club.max_members}명</span>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                            isCompleted 
+                              ? 'bg-secondary-fixed/50 text-on-secondary-fixed' 
+                              : 'bg-primary-fixed-dim/40 text-on-primary-fixed-variant'
+                          }`}>
+                            <span className="material-symbols-outlined text-[13px]">
+                              {isCompleted ? 'check_circle' : 'eco'}
+                            </span>
+                            <span>{isCompleted ? '완료' : '진행중'} · 정원 {club.max_members}명</span>
                           </span>
                           <span className="text-[11px] text-secondary font-medium">
                             {club.end_date ? `완독 목표: ${club.end_date}` : '상시 모임'}
@@ -304,10 +329,13 @@ export default function HomePage() {
                             <div className="flex flex-col gap-1 mt-2">
                               <div className="flex justify-between items-center text-[11px]">
                                 <span className="text-primary font-medium">{schedCount > 0 ? `총 ${schedCount}개 단원` : '단원 등록 준비중'}</span>
-                                <span className="text-secondary font-bold">{approvedCount}명 참여</span>
+                                <span className="text-secondary font-bold">{approvedCount}명 참여 ({schedCount > 0 ? `${clubProgress}%` : '0%'})</span>
                               </div>
                               <div className="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (approvedCount / club.max_members) * 100)}%` }} />
+                                <div
+                                  className="h-full bg-primary rounded-full transition-all duration-500"
+                                  style={{ width: `${schedCount > 0 ? clubProgress : 0}%` }}
+                                />
                               </div>
                             </div>
                           </div>
@@ -340,18 +368,47 @@ export default function HomePage() {
                   <article className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center text-center gap-3 border border-surface-container py-10">
                     <span className="material-symbols-outlined text-[36px] text-primary">auto_stories</span>
                     <div>
-                      <h3 className="font-bold text-sm text-on-surface">아직 참여 중인 독서클럽이 없습니다</h3>
+                      <h3 className="font-bold text-sm text-on-surface">
+                        {!user 
+                          ? '로그인이 필요한 서비스입니다'
+                          : activeClubTab === 'active' 
+                            ? '현재 진행 중인 독서클럽이 없습니다' 
+                            : '아직 완료된 독서클럽이 없습니다'}
+                      </h3>
                       <p className="text-xs text-on-surface-variant mt-1">
-                        우측 추천 도서를 둘러보고 마음에 드는 책으로 첫 모임을 열어보세요!
+                        {!user 
+                          ? '로그인 후 내가 참여 중인 독서모임을 확인하고 새 모임을 시작해보세요!' 
+                          : activeClubTab === 'active' 
+                            ? '우측 추천 도서를 둘러보고 마음에 드는 책으로 첫 모임을 열거나 클럽을 찾아보세요!' 
+                            : '모든 멤버와 함께 단원별 독후감을 완료하여 완독 클럽을 달성해보세요! 🌿'}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenCreateClub(displayedBooks[0] || null)}
-                      className="px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-semibold shadow-sm hover:bg-primary-container"
-                    >
-                      첫 독서클럽 만들기
-                    </button>
+                    {!user ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsAuthOpen(true)}
+                        className="px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-semibold shadow-sm hover:bg-primary-container"
+                      >
+                        로그인하기
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCreateClub(displayedBooks[0] || null)}
+                          className="px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-semibold shadow-sm hover:bg-primary-container"
+                        >
+                          첫 독서클럽 만들기
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsClubSearchOpen(true)}
+                          className="px-4 py-2 rounded-full bg-surface-container-high text-on-surface text-xs font-semibold shadow-sm hover:bg-surface-container"
+                        >
+                          독서 클럽 찾기
+                        </button>
+                      </div>
+                    )}
                   </article>
                 )}
               </div>

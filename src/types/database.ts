@@ -50,6 +50,7 @@ export interface ClubSchedule {
   created_at?: string;
   reviews_count?: number;
   my_review_submitted?: boolean;
+  reviews?: Review[];
 }
 
 export interface Club {

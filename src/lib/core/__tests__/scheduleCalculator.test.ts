@@ -4,6 +4,8 @@ import {
   calculateClubTotalProgress,
   calculateDday,
   formatPageRange,
+  isUserClubMember,
+  isClubCompleted,
 } from '../scheduleCalculator';
 
 describe('scheduleCalculator', () => {
@@ -35,6 +37,68 @@ describe('scheduleCalculator', () => {
     // 0건 작성 시 0%
     const res4 = calculateClubTotalProgress(0, 2, 3);
     expect(res4.percentage).toBe(0);
+  });
+
+  it('사용자가 방장 또는 승인된 멤버인지 정확히 판정해야 한다', () => {
+    const club = {
+      leader_id: 'user-1',
+      members: [
+        { user_id: 'user-1', status: 'approved' },
+        { user_id: 'user-2', status: 'approved' },
+        { user_id: 'user-3', status: 'rejected' },
+      ],
+    };
+
+    expect(isUserClubMember(club, 'user-1')).toBe(true); // 방장
+    expect(isUserClubMember(club, 'user-2')).toBe(true); // 승인된 멤버
+    expect(isUserClubMember(club, 'user-3')).toBe(false); // 거절된 멤버
+    expect(isUserClubMember(club, 'user-999')).toBe(false); // 미참여 유저
+    expect(isUserClubMember(club, null)).toBe(false); // 미로그인 유저
+  });
+
+  it('독서 클럽 멤버 모두 완독 시 완료로 판정하고, 한 명이라도 미완료 시 진행 중으로 판정해야 한다', () => {
+    // 1) 2명 멤버 중 1명만 3단원 완료, 1명은 0단원 완료 -> 진행중 (false)
+    const inProgressClub = {
+      members: [
+        { user_id: 'user-1', status: 'approved' },
+        { user_id: 'user-2', status: 'approved' },
+      ],
+      schedules: [
+        { id: 's1', reviews: [{ user_id: 'user-1' }] },
+        { id: 's2', reviews: [{ user_id: 'user-1' }] },
+        { id: 's3', reviews: [{ user_id: 'user-1' }] },
+      ],
+    };
+    expect(isClubCompleted(inProgressClub)).toBe(false);
+
+    // 2) 2명 멤버 모두 3개 단원에 독후감 작성 완료 -> 완료 (true)
+    const completedClub = {
+      members: [
+        { user_id: 'user-1', status: 'approved' },
+        { user_id: 'user-2', status: 'approved' },
+      ],
+      schedules: [
+        { id: 's1', reviews: [{ user_id: 'user-1' }, { user_id: 'user-2' }] },
+        { id: 's2', reviews: [{ user_id: 'user-1' }, { user_id: 'user-2' }] },
+        { id: 's3', reviews: [{ user_id: 'user-1' }, { user_id: 'user-2' }] },
+      ],
+    };
+    expect(isClubCompleted(completedClub)).toBe(true);
+
+    // 3) 단원이 아직 0개인 경우 -> 진행중 (false)
+    const noScheduleClub = {
+      members: [{ user_id: 'user-1', status: 'approved' }],
+      schedules: [],
+    };
+    expect(isClubCompleted(noScheduleClub)).toBe(false);
+
+    // 4) status가 이미 'completed'인 경우 -> 완료 (true)
+    const explicitlyCompletedClub = {
+      status: 'completed',
+      members: [{ user_id: 'user-1', status: 'approved' }],
+      schedules: [],
+    };
+    expect(isClubCompleted(explicitlyCompletedClub)).toBe(true);
   });
 
   it('목표 날짜를 기준으로 D-Day 문자열을 반환해야 한다', () => {
