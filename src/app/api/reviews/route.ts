@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     if (!profile) {
       await supabase.from('profiles').insert({
         id: userId,
-        nickname: body.nickname || '린건맘',
+        nickname: body.nickname || '독서가',
         manner_temperature: INITIAL_MANNER_TEMPERATURE,
       });
     }

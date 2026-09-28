@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth, calculateUserLevel } from '@/context/AuthContext';
 
 interface UserProfileModalProps {
@@ -68,10 +68,20 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
   const { user, updateProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [nickname, setNickname] = useState(user?.nickname || '린건맘');
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar_url || '/avatars/avatar_preset_1.png');
+  const [nickname, setNickname] = useState(user?.nickname || '모래고래');
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar_url || '/avatars/avatar_female.png');
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // user 정보나 모달 열림 상태 변경 시 폼 상태 최신 동기화
+  useEffect(() => {
+    if (user?.nickname) {
+      setNickname(user.nickname);
+    }
+    if (user?.avatar_url) {
+      setSelectedAvatar(user.avatar_url);
+    }
+  }, [user, isOpen]);
 
   if (!isOpen) return null;
 

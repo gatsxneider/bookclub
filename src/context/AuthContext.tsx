@@ -19,6 +19,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, password: string, nickname: string) => Promise<{ success: boolean; error?: string }>;
+  quickLogin: (nickname: string, avatarUrl?: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
   refreshProfile: () => Promise<void>;
@@ -44,37 +45,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .maybeSingle();
 
-      const completedCount = profile?.completed_count ?? 3; // 기본 예시 완독 3회 (레벨 3)
+      const completedCount = profile?.completed_count ?? 3; // 기본 완독 3회 (레벨 3)
       const level = calculateUserLevel(completedCount);
 
-      if (profile && profile.nickname) {
-        setUser({
-          id: userId,
-          email,
-          nickname: profile.nickname,
-          avatar_url: profile.avatar_url || '/images/avatar.png',
-          manner_temperature: profile.manner_temperature ?? INITIAL_MANNER_TEMPERATURE,
-          completed_count: completedCount,
-          level,
-        });
-      } else {
-        const defaultNick = fallbackNickname || email.split('@')[0] || '린건맘';
-        // 프로필이 없으면 생성
+      let finalNickname = profile?.nickname;
+
+      // 만약 메타데이터나 인자로 전달된 새로운 닉네임이 있고 기존과 다르다면 업데이트
+      if (fallbackNickname && fallbackNickname.trim() && fallbackNickname !== profile?.nickname) {
+        finalNickname = fallbackNickname.trim();
         await supabase.from('profiles').upsert({
           id: userId,
-          nickname: defaultNick,
-          manner_temperature: INITIAL_MANNER_TEMPERATURE,
+          nickname: finalNickname,
+          avatar_url: profile?.avatar_url || '/avatars/avatar_female.png',
+          manner_temperature: profile?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE,
+          completed_count: completedCount,
         });
+      }
 
-        setUser({
+      if (!finalNickname) {
+        finalNickname = fallbackNickname || (email ? email.split('@')[0] : '독서가');
+        await supabase.from('profiles').upsert({
           id: userId,
-          email,
-          nickname: defaultNick,
-          avatar_url: '/images/avatar.png',
+          nickname: finalNickname,
+          avatar_url: '/avatars/avatar_female.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
           completed_count: completedCount,
-          level,
         });
+      }
+
+      const updatedUser: UserProfile = {
+        id: userId,
+        email: email || profile?.email || '',
+        nickname: finalNickname,
+        avatar_url: profile?.avatar_url || '/avatars/avatar_female.png',
+        manner_temperature: profile?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE,
+        completed_count: completedCount,
+        level,
+      };
+
+      setUser(updatedUser);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cozy_user', JSON.stringify(updatedUser));
       }
     } catch (err) {
       console.warn('Profile fetch error:', err);
@@ -92,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userMetaNick = session.user.user_metadata?.nickname;
           await fetchProfile(session.user.id, session.user.email || '', userMetaNick);
         } else if (mounted) {
-          // 로컬 스토리지에 남아있던 레거시 게스트 세션 확인
+          // 로컬 스토리지에 저장된 사용자 세션 복원
           const savedLocal = typeof window !== 'undefined' ? localStorage.getItem('cozy_user') : null;
           if (savedLocal) {
             try {
@@ -117,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         const userMetaNick = session.user.user_metadata?.nickname;
         await fetchProfile(session.user.id, session.user.email || '', userMetaNick);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
         if (typeof window !== 'undefined') {
           localStorage.removeItem('cozy_user');
@@ -178,23 +189,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.from('profiles').upsert({
           id: data.user.id,
           nickname: trimmedNick,
+          avatar_url: '/avatars/avatar_female.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
+          completed_count: 1,
         });
 
-        setUser({
+        const newUser: UserProfile = {
           id: data.user.id,
           email: data.user.email || email,
           nickname: trimmedNick,
-          avatar_url: '/images/avatar.png',
+          avatar_url: '/avatars/avatar_female.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
           completed_count: 1,
           level: 1,
-        });
+        };
+
+        setUser(newUser);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cozy_user', JSON.stringify(newUser));
+        }
       }
 
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err.message || '회원가입 중 오류가 발생했습니다.' };
+    }
+  };
+
+  // 닉네임으로 즉시 로그인/전환
+  const quickLogin = async (nickname: string, avatarUrl?: string) => {
+    try {
+      const trimmed = nickname.trim();
+      if (!trimmed) return { success: false, error: '닉네임을 입력해주세요.' };
+
+      // 고유 또는 게스트 유저 ID
+      const userId = user?.id || '00000000-0000-0000-0000-000000000001';
+      const userAvatar = avatarUrl || user?.avatar_url || '/avatars/avatar_female.png';
+      const completedCount = user?.completed_count ?? 3;
+      const mannerTemp = user?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE;
+
+      await supabase.from('profiles').upsert({
+        id: userId,
+        nickname: trimmed,
+        avatar_url: userAvatar,
+        manner_temperature: mannerTemp,
+        completed_count: completedCount,
+      });
+
+      const updatedUser: UserProfile = {
+        id: userId,
+        email: user?.email || `${trimmed}@bookclub.com`,
+        nickname: trimmed,
+        avatar_url: userAvatar,
+        manner_temperature: mannerTemp,
+        completed_count: completedCount,
+        level: calculateUserLevel(completedCount),
+      };
+
+      setUser(updatedUser);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cozy_user', JSON.stringify(updatedUser));
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || '간편 로그인 중 오류가 발생했습니다.' };
     }
   };
 
@@ -237,11 +296,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 로컬 유저 상태 즉시 동기화
       setUser((prev) => {
-        if (!prev) return null;
-        const newCompletedCount = updates.completed_count ?? prev.completed_count ?? 3;
+        const base = prev || {
+          id: currentUserId,
+          email: `${updates.nickname || '독서가'}@bookclub.com`,
+          nickname: updates.nickname || '독서가',
+          avatar_url: updates.avatar_url || '/avatars/avatar_female.png',
+          manner_temperature: INITIAL_MANNER_TEMPERATURE,
+          completed_count: 3,
+          level: 3,
+        };
+        const newCompletedCount = updates.completed_count ?? base.completed_count ?? 3;
         const newLevel = calculateUserLevel(newCompletedCount);
         const updated = {
-          ...prev,
+          ...base,
           ...updates,
           completed_count: newCompletedCount,
           level: newLevel,
@@ -265,7 +332,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, updateProfile, refreshProfile }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, quickLogin, signOut, updateProfile, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
