@@ -9,6 +9,7 @@ import BookCard from '@/components/BookCard';
 import BookSearchModal from '@/components/BookSearchModal';
 import CreateClubModal from '@/components/CreateClubModal';
 import BookDetailModal from '@/components/BookDetailModal';
+import ClubSearchModal from '@/components/ClubSearchModal';
 import AuthModal from '@/components/AuthModal';
 import CozyLogo from '@/components/CozyLogo';
 import { Book, Club } from '@/types/database';
@@ -28,6 +29,7 @@ export default function HomePage() {
 
   // 모달 상태 & 로그인 후 이어서 실행할 액션
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isClubSearchOpen, setIsClubSearchOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -212,11 +214,12 @@ export default function HomePage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleOpenCreateClub(null)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant hover:bg-primary hover:text-on-primary text-xs font-semibold transition-all shadow-sm"
+                  onClick={() => setIsClubSearchOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant hover:bg-primary hover:text-on-primary text-xs font-semibold transition-all shadow-sm"
+                  aria-label="독서 클럽 찾기"
                 >
-                  <span className="material-symbols-outlined text-[15px]">add_circle</span>
-                  <span>+ 클럽 만들기</span>
+                  <span className="material-symbols-outlined text-[16px]">explore</span>
+                  <span>독서 클럽 찾기</span>
                 </button>
               </div>
 
@@ -416,6 +419,15 @@ export default function HomePage() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectBook={handleSelectBook}
+      />
+
+      <ClubSearchModal
+        isOpen={isClubSearchOpen}
+        onClose={() => setIsClubSearchOpen(false)}
+        onSelectClub={(club) => {
+          setIsClubSearchOpen(false);
+          router.push(`/clubs/${club.id}`);
+        }}
       />
 
       <CreateClubModal
