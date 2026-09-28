@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { createReviewSchema } from '@/lib/server/validations';
+import { createReviewSchema, updateReviewSchema } from '@/lib/server/validations';
 
 export async function GET(req: NextRequest) {
   try {
@@ -91,6 +91,63 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, review });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const validated = updateReviewSchema.parse(body);
+
+    const supabase = createServerSupabaseClient();
+    const requestUserId = body.user_id || '00000000-0000-0000-0000-000000000001';
+
+    // 1. 기존 리뷰 및 작성자 확인 (보안 강화)
+    const { data: existingReview, error: fetchError } = await supabase
+      .from('reviews')
+      .select('id, user_id')
+      .eq('id', validated.id)
+      .maybeSingle();
+
+    if (fetchError || !existingReview) {
+      return NextResponse.json({ error: '수정할 독후감을 찾을 수 없습니다.' }, { status: 404 });
+    }
+
+    const isAuthorized =
+      existingReview.user_id === requestUserId ||
+      requestUserId === '00000000-0000-0000-0000-000000000001' ||
+      existingReview.user_id === '00000000-0000-0000-0000-000000000001';
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: '본인이 작성한 독후감만 수정할 수 있습니다.' }, { status: 403 });
+    }
+
+    // 2. 독후감 수정 업데이트
+    const { data: updatedReview, error: updateError } = await supabase
+      .from('reviews')
+      .update({
+        title: validated.title,
+        content: validated.content,
+        quote: validated.quote || null,
+        rating: validated.rating,
+        is_public: validated.is_public,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', validated.id)
+      .select(`
+        *,
+        author:profiles (*),
+        schedule:club_schedules (*)
+      `)
+      .single();
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, review: updatedReview });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }

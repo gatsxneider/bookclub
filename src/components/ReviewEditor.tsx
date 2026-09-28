@@ -13,6 +13,8 @@ interface ReviewEditorProps {
   initialContent?: string;
   initialQuote?: string;
   initialRating?: number;
+  initialIsPublic?: boolean;
+  isEditMode?: boolean;
   onSubmit: (reviewData: {
     schedule_id?: string;
     title: string;
@@ -33,6 +35,8 @@ export default function ReviewEditor({
   initialContent = '',
   initialQuote = '',
   initialRating = 5,
+  initialIsPublic = true,
+  isEditMode = false,
   onSubmit,
 }: ReviewEditorProps) {
   const [scheduleId, setScheduleId] = useState<string>(
@@ -42,9 +46,36 @@ export default function ReviewEditor({
   const [content, setContent] = useState(initialContent);
   const [quote, setQuote] = useState(initialQuote);
   const [rating, setRating] = useState(initialRating);
-  const [isPublic, setIsPublic] = useState(true);
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [loading, setLoading] = useState(false);
   const [savedTime, setSavedTime] = useState<string | null>(null);
+
+  // 초기값이 외부(API 등)에서 변경되었을 때 상태 동기화
+  React.useEffect(() => {
+    setTitle(initialTitle);
+  }, [initialTitle]);
+
+  React.useEffect(() => {
+    setContent(initialContent);
+  }, [initialContent]);
+
+  React.useEffect(() => {
+    setQuote(initialQuote);
+  }, [initialQuote]);
+
+  React.useEffect(() => {
+    setRating(initialRating);
+  }, [initialRating]);
+
+  React.useEffect(() => {
+    setIsPublic(initialIsPublic);
+  }, [initialIsPublic]);
+
+  React.useEffect(() => {
+    if (selectedScheduleId) {
+      setScheduleId(selectedScheduleId);
+    }
+  }, [selectedScheduleId]);
 
   // 글자 수 및 예상 읽기 시간 계산
   const charCount = content.length;
@@ -80,7 +111,7 @@ export default function ReviewEditor({
         is_public: isPublic,
       });
     } catch (err: any) {
-      alert(err.message || '독후감 발행 중 오류가 발생했습니다.');
+      alert(err.message || (isEditMode ? '독후감 수정 중 오류가 발생했습니다.' : '독후감 발행 중 오류가 발생했습니다.'));
     } finally {
       setLoading(false);
     }
@@ -122,6 +153,13 @@ export default function ReviewEditor({
             </div>
           )}
 
+          {isEditMode && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold shadow-sm">
+              <span className="material-symbols-outlined text-[14px]">edit</span>
+              <span>수정 중</span>
+            </span>
+          )}
+
           <div className="flex items-center gap-2 text-xs text-on-surface-variant">
             <span className="inline-flex items-center gap-1 text-primary font-medium">
               <span className="material-symbols-outlined text-[15px]">cloud_done</span>
@@ -150,10 +188,10 @@ export default function ReviewEditor({
             onClick={handlePublish}
             disabled={loading}
             className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-semibold shadow-md transition-all disabled:opacity-50"
-            aria-label="독서클럽에 발행하기"
+            aria-label={isEditMode ? '독후감 수정 완료' : '독서클럽에 발행하기'}
           >
-            <span className="material-symbols-outlined text-[16px]">spa</span>
-            <span>{loading ? '발행 중...' : '독서클럽에 발행하기'}</span>
+            <span className="material-symbols-outlined text-[16px]">{isEditMode ? 'check_circle' : 'spa'}</span>
+            <span>{loading ? (isEditMode ? '수정 중...' : '발행 중...') : (isEditMode ? '독후감 수정 완료' : '독서클럽에 발행하기')}</span>
           </button>
         </div>
       </section>

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import ReviewEditor from '@/components/ReviewEditor';
 import AuthModal from '@/components/AuthModal';
-import { ClubSchedule, Club } from '@/types/database';
+import { ClubSchedule, Club, Review } from '@/types/database';
 import { useAuth } from '@/context/AuthContext';
 
 function NewReviewContent({ clubId }: { clubId: string }) {
@@ -17,6 +17,8 @@ function NewReviewContent({ clubId }: { clubId: string }) {
   const [club, setClub] = useState<Club | null>(null);
   const [schedules, setSchedules] = useState<ClubSchedule[]>([]);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [existingReview, setExistingReview] = useState<Review | null>(null);
+  const [fetchingReview, setFetchingReview] = useState(false);
 
   useEffect(() => {
     const fetchClubAndSchedules = async () => {
@@ -48,6 +50,40 @@ function NewReviewContent({ clubId }: { clubId: string }) {
     fetchClubAndSchedules();
   }, [clubId]);
 
+  // 기존에 작성한 독후감이 있는지 확인 (작성 완료 상태에서 수정 진입 시)
+  useEffect(() => {
+    const checkExistingReview = async () => {
+      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
+      setFetchingReview(true);
+      try {
+        let url = `/api/reviews?club_id=${clubId}&user_id=${currentUserId}`;
+        if (initialScheduleId) {
+          url += `&schedule_id=${initialScheduleId}`;
+        }
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reviews && data.reviews.length > 0) {
+            // 해당 스케줄의 가장 최근 리뷰
+            const myReview = initialScheduleId
+              ? data.reviews.find((r: Review) => r.schedule_id === initialScheduleId) || data.reviews[0]
+              : data.reviews[0];
+            setExistingReview(myReview);
+            return;
+          }
+        }
+        setExistingReview(null);
+      } catch (err) {
+        console.warn('Error checking existing review:', err);
+        setExistingReview(null);
+      } finally {
+        setFetchingReview(false);
+      }
+    };
+
+    checkExistingReview();
+  }, [clubId, initialScheduleId, user?.id]);
+
   const handleSubmit = async (reviewData: {
     schedule_id?: string;
     title: string;
@@ -63,26 +99,48 @@ function NewReviewContent({ clubId }: { clubId: string }) {
     }
 
     try {
-      const res = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...reviewData,
-          club_id: clubId,
-          user_id: user.id,
-          nickname: user.nickname,
-        }),
-      });
+      if (existingReview?.id) {
+        // 기존 독후감 수정 (PATCH)
+        const res = await fetch('/api/reviews', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: existingReview.id,
+            ...reviewData,
+            user_id: user.id,
+          }),
+        });
 
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || '독후감 저장 실패');
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || '독후감 수정 실패');
+        }
+
+        alert('독후감이 성공적으로 수정되었습니다! 🌿');
+      } else {
+        // 신규 독후감 등록 (POST)
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...reviewData,
+            club_id: clubId,
+            user_id: user.id,
+            nickname: user.nickname,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || '독후감 저장 실패');
+        }
+
+        alert('독후감이 성공적으로 발행되었습니다! 🌿');
       }
 
-      alert('독후감이 성공적으로 발행되었습니다! 🌿');
       router.push(`/clubs/${clubId}`);
     } catch (err: any) {
-      alert(err.message || '독후감 발행 중 오류가 발생했습니다.');
+      alert(err.message || '독후감 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -96,21 +154,27 @@ function NewReviewContent({ clubId }: { clubId: string }) {
 
       <main className="w-full pt-24 pb-16 flex-1">
         <div className="max-w-4xl mx-auto px-gutter">
-          <ReviewEditor
-            schedules={schedules}
-            selectedScheduleId={initialScheduleId}
-            bookTitle={club?.book?.title || '선정 도서'}
-            clubName={club?.name || '코지 북클럽'}
-            authorNickname={user?.nickname || '회원'}
-            initialTitle="불편함 속에서 길어 올린 가장 다정한 온기 — 4단원을 읽고"
-            initialContent={`밤 11시, 편의점의 노란 불빛 아래 서 있는 독고 씨를 보며 문득 나의 일상을 돌아보게 되었습니다.
-그는 기억을 잃었지만 사람을 향한 다정함과 예의는 결코 잃지 않았습니다.
-
-따뜻한 옥수수수염차 한 병을 건네는 그 손길에서, 거창한 말이 아니라 조용한 배려가 한 사람의 얼어붙은 겨울을 녹일 수 있음을 배웁니다.`}
-            initialQuote="“결국 삶은 관계였고 관계는 소통이었다. 행복은 혼자 누릴 수 있는 것이 아니었다.”"
-            initialRating={5}
-            onSubmit={handleSubmit}
-          />
+          {fetchingReview ? (
+            <div className="py-20 text-center text-primary flex items-center justify-center gap-2">
+              <span className="material-symbols-outlined animate-spin text-[24px]">progress_activity</span>
+              <span className="text-sm font-medium">독후감 정보를 불러오는 중...</span>
+            </div>
+          ) : (
+            <ReviewEditor
+              schedules={schedules}
+              selectedScheduleId={initialScheduleId || (existingReview?.schedule_id || undefined)}
+              bookTitle={club?.book?.title || '선정 도서'}
+              clubName={club?.name || '코지 북클럽'}
+              authorNickname={user?.nickname || '회원'}
+              initialTitle={existingReview?.title || ''}
+              initialContent={existingReview?.content || ''}
+              initialQuote={existingReview?.quote || ''}
+              initialRating={existingReview?.rating || 5}
+              initialIsPublic={existingReview?.is_public ?? true}
+              isEditMode={Boolean(existingReview?.id)}
+              onSubmit={handleSubmit}
+            />
+          )}
         </div>
       </main>
 

@@ -253,6 +253,7 @@ export default function ScheduleManager({
                         ? 'bg-secondary-fixed text-on-secondary-fixed hover:bg-secondary hover:text-on-secondary'
                         : 'bg-primary text-on-primary hover:bg-primary-container'
                     }`}
+                    title={isSubmitted ? '클릭하여 작성한 독후감을 수정합니다' : '단원 독후감을 작성합니다'}
                     aria-label={isSubmitted ? '독후감 작성 완료' : '독후감 작성'}
                   >
                     <span className="material-symbols-outlined text-[14px]">

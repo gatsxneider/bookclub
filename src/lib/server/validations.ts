@@ -40,6 +40,15 @@ export const createReviewSchema = z.object({
   is_public: z.boolean().default(true),
 });
 
+export const updateReviewSchema = z.object({
+  id: z.string().min(1, '리뷰 ID가 필요합니다'),
+  title: z.string().min(1, '제목을 입력해주세요').max(200),
+  content: z.string().min(1, '내용을 입력해주세요').transform((val) => sanitizeHtml(val)),
+  quote: z.string().max(500).optional().nullable(),
+  rating: z.number().int().min(1).max(5).default(5),
+  is_public: z.boolean().default(true),
+});
+
 export const updateMemberStatusSchema = z.object({
   status: z.enum(['approved', 'rejected']),
 });
