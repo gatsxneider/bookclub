@@ -51,7 +51,7 @@ export async function POST(
       .from('clubs')
       .select('leader_id')
       .eq('id', clubId)
-      .single();
+      .maybeSingle();
 
     const requestUserId = body.user_id || '00000000-0000-0000-0000-000000000001';
 

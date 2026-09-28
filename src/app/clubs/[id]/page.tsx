@@ -104,10 +104,14 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
     target_date: string;
   }) => {
     try {
+      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
       const res = await fetch(`/api/clubs/${clubId}/schedules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scheduleData),
+        body: JSON.stringify({
+          ...scheduleData,
+          user_id: currentUserId,
+        }),
       });
 
       if (!res.ok) {
@@ -133,10 +137,11 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
   // 멤버 승인 처리
   const handleApproveMember = async (memberId: string) => {
     try {
+      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
       const res = await fetch(`/api/clubs/${clubId}/members`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, status: 'approved' }),
+        body: JSON.stringify({ memberId, status: 'approved', currentUserId }),
       });
 
       if (!res.ok) throw new Error('승인 실패');
@@ -154,9 +159,13 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
   const handleRemoveMember = async (memberId: string) => {
     if (!confirm('정말 이 멤버를 제외하시겠습니까?')) return;
     try {
-      const res = await fetch(`/api/clubs/${clubId}/members?memberId=${memberId}`, {
-        method: 'DELETE',
-      });
+      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
+      const res = await fetch(
+        `/api/clubs/${clubId}/members?memberId=${memberId}&userId=${currentUserId}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (!res.ok) throw new Error('제외 실패');
 
