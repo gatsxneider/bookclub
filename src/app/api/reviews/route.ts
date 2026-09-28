@@ -4,6 +4,7 @@ import { createReviewSchema, updateReviewSchema } from '@/lib/server/validations
 import {
   INITIAL_MANNER_TEMPERATURE,
   calculateNewMannerTemperature,
+  calculateUserLevel,
 } from '@/lib/core/mannerTemperature';
 
 export async function GET(req: NextRequest) {
@@ -58,17 +59,20 @@ export async function POST(req: NextRequest) {
     // 1. 프로필 없으면 기본 생성 (기본 20.0℃ 시작)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, manner_temperature')
+      .select('id, manner_temperature, completed_count')
       .eq('id', userId)
       .maybeSingle();
 
-    let currentTemp = profile?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE;
+    let currentTemp = profile?.manner_temperature != null
+      ? Number(profile.manner_temperature)
+      : INITIAL_MANNER_TEMPERATURE;
 
     if (!profile) {
       await supabase.from('profiles').insert({
         id: userId,
         nickname: body.nickname || '독서가',
         manner_temperature: INITIAL_MANNER_TEMPERATURE,
+        completed_count: 1,
       });
     }
 
@@ -122,11 +126,57 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // 4. 완독 여부 판별 및 독서 레벨(completed_count) 승급 처리
+    let isClubCompleted = false;
+    let newCompletedCount = profile?.completed_count != null ? Number(profile.completed_count) : 1;
+    let newLevel = calculateUserLevel(newCompletedCount);
+
+    if (validated.club_id) {
+      const { data: allSchedules } = await supabase
+        .from('club_schedules')
+        .select('id')
+        .eq('club_id', validated.club_id);
+
+      if (allSchedules && allSchedules.length > 0) {
+        const { data: userReviews } = await supabase
+          .from('reviews')
+          .select('schedule_id')
+          .eq('club_id', validated.club_id)
+          .eq('user_id', userId);
+
+        const reviewedScheduleIds = new Set(
+          (userReviews || []).map((r) => r.schedule_id).filter(Boolean)
+        );
+        if (validated.schedule_id) {
+          reviewedScheduleIds.add(validated.schedule_id);
+        }
+
+        const allFinished = allSchedules.every((s) => reviewedScheduleIds.has(s.id));
+        if (allFinished) {
+          isClubCompleted = true;
+          // 완독 달성 시 완독 횟수 1 증가 및 레벨 승급
+          newCompletedCount = Math.max(newCompletedCount + 1, 2);
+          newLevel = calculateUserLevel(newCompletedCount);
+
+          await supabase
+            .from('profiles')
+            .update({
+              completed_count: newCompletedCount,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       review,
       manner_temperature: newTemperature,
       temp_change: change,
+      is_club_completed: isClubCompleted,
+      completed_count: newCompletedCount,
+      level: newLevel,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });

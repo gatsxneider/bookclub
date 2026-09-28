@@ -12,7 +12,7 @@ function NewReviewContent({ clubId }: { clubId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialScheduleId = searchParams.get('scheduleId') || '';
-  const { user } = useAuth();
+  const { user, updateProfile, refreshProfile } = useAuth();
 
   const [club, setClub] = useState<Club | null>(null);
   const [schedules, setSchedules] = useState<ClubSchedule[]>([]);
@@ -135,7 +135,28 @@ function NewReviewContent({ clubId }: { clubId: string }) {
           throw new Error(data.error || '독후감 저장 실패');
         }
 
-        alert('독후감이 성공적으로 발행되었습니다! 🌿');
+        // 매너 온도 및 완독 레벨 상태 즉시 동기화
+        const profileUpdates: any = {};
+        if (data.manner_temperature != null) {
+          profileUpdates.manner_temperature = Number(data.manner_temperature);
+        }
+        if (data.completed_count != null) {
+          profileUpdates.completed_count = Number(data.completed_count);
+        }
+        if (Object.keys(profileUpdates).length > 0) {
+          await updateProfile(profileUpdates);
+        }
+        await refreshProfile();
+
+        const tempNotice = data.temp_change
+          ? `\n🌡️ 매너 온도가 +${data.temp_change}℃ 상승하여 ${data.manner_temperature}℃가 되었습니다!`
+          : '';
+
+        const completionNotice = data.is_club_completed
+          ? `\n\n🎉 [완독 달성] 이 독서클럽의 모든 단원을 완독하셨습니다!\n독서 레벨이 Lv.${data.level || 2}로 상승했습니다! 👑`
+          : '';
+
+        alert(`독후감이 성공적으로 발행되었습니다! 🌿${tempNotice}${completionNotice}`);
       }
 
       router.push(`/clubs/${clubId}`);

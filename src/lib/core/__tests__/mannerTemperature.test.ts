@@ -7,6 +7,7 @@ import {
   isWithinDeadline,
   calculateNewMannerTemperature,
   applyMissedDeadlinePenalty,
+  calculateUserLevel,
 } from '../mannerTemperature';
 
 describe('mannerTemperature Core Module', () => {
@@ -44,5 +45,14 @@ describe('mannerTemperature Core Module', () => {
     expect(clampMannerTemperature(105)).toBe(100);
     expect(clampMannerTemperature(-5)).toBe(0);
     expect(clampMannerTemperature(36.5)).toBe(36.5);
+  });
+
+  it('calculateUserLevel 함수는 완독 횟수에 따라 1~5 레벨을 정확히 계산해야 한다', () => {
+    expect(calculateUserLevel(1)).toBe(1);
+    expect(calculateUserLevel(2)).toBe(2);
+    expect(calculateUserLevel(3)).toBe(3);
+    expect(calculateUserLevel(4)).toBe(4);
+    expect(calculateUserLevel(5)).toBe(5);
+    expect(calculateUserLevel(10)).toBe(5);
   });
 });

@@ -45,7 +45,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .maybeSingle();
 
-      const completedCount = profile?.completed_count ?? 3; // 기본 완독 3회 (레벨 3)
+      const completedCount = profile?.completed_count != null ? Number(profile.completed_count) : 1;
+      const mannerTemp = profile?.manner_temperature != null ? Number(profile.manner_temperature) : INITIAL_MANNER_TEMPERATURE;
       const level = calculateUserLevel(completedCount);
 
       let finalNickname = profile?.nickname;
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: userId,
           nickname: finalNickname,
           avatar_url: profile?.avatar_url || '/avatars/avatar_cat.png',
-          manner_temperature: profile?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE,
+          manner_temperature: mannerTemp,
           completed_count: completedCount,
         });
       }
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           nickname: finalNickname,
           avatar_url: '/avatars/avatar_cat.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
-          completed_count: completedCount,
+          completed_count: 1,
         });
       }
 
@@ -78,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: email || profile?.email || '',
         nickname: finalNickname,
         avatar_url: profile?.avatar_url || '/avatars/avatar_cat.png',
-        manner_temperature: profile?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE,
+        manner_temperature: mannerTemp,
         completed_count: completedCount,
         level,
       };
@@ -110,6 +111,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const parsed = JSON.parse(savedLocal);
               if (parsed?.id && parsed?.nickname) {
                 setUser(parsed);
+                // 백그라운드에서 최신 DB 프로필과 동기화
+                fetchProfile(parsed.id, parsed.email || '', parsed.nickname);
               }
             } catch {}
           }
@@ -225,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 고유 또는 게스트 유저 ID
       const userId = user?.id || '00000000-0000-0000-0000-000000000001';
       const userAvatar = avatarUrl || user?.avatar_url || '/avatars/avatar_cat.png';
-      const completedCount = user?.completed_count ?? 3;
+      const completedCount = user?.completed_count ?? 1;
       const mannerTemp = user?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE;
 
       await supabase.from('profiles').upsert({
@@ -270,7 +273,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 프로필 업데이트 (아바타, 닉네임 등)
+  // 프로필 업데이트 (아바타, 닉네임, 매너온도, 완독 횟수 등)
   const updateProfile = async (updates: Partial<UserProfile>) => {
     try {
       const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
@@ -302,14 +305,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           nickname: updates.nickname || '독서가',
           avatar_url: updates.avatar_url || '/avatars/avatar_cat.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
-          completed_count: 3,
-          level: 3,
+          completed_count: 1,
+          level: 1,
         };
-        const newCompletedCount = updates.completed_count ?? base.completed_count ?? 3;
+        const newCompletedCount = updates.completed_count ?? base.completed_count ?? 1;
         const newLevel = calculateUserLevel(newCompletedCount);
-        const updated = {
+        const newMannerTemp = updates.manner_temperature ?? base.manner_temperature ?? INITIAL_MANNER_TEMPERATURE;
+        
+        const updated: UserProfile = {
           ...base,
           ...updates,
+          manner_temperature: newMannerTemp,
           completed_count: newCompletedCount,
           level: newLevel,
         };

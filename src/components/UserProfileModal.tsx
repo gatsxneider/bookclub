@@ -87,7 +87,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
   if (!isOpen) return null;
 
   // 완독 횟수 및 레벨 계산 (1~5)
-  const completedCount = user?.completed_count ?? 3;
+  const completedCount = user?.completed_count ?? 1;
   const currentLevel = calculateUserLevel(completedCount);
   const levelInfo = LEVEL_CONFIG[currentLevel] || LEVEL_CONFIG[1];
 
