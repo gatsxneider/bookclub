@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth, calculateUserLevel } from '@/context/AuthContext';
+import { validateImageFile } from '@/lib/core/fileValidation';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -90,18 +91,17 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
   const currentLevel = calculateUserLevel(completedCount);
   const levelInfo = LEVEL_CONFIG[currentLevel] || LEVEL_CONFIG[1];
 
-  // 로컬 파일 업로드 처리
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 로컬 파일 업로드 처리 (JPG, PNG, GIF 엄격 검증 & Magic Bytes 바이너리 시그니처 체크)
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      alert('이미지 파일(JPG, PNG, GIF, WebP 등)만 업로드할 수 있습니다.');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('이미지 크기는 최대 5MB까지 가능합니다.');
+    const validation = await validateImageFile(file);
+    if (!validation.valid) {
+      alert(validation.error || '유효하지 않은 이미지 파일입니다.');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
@@ -373,7 +373,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               type="file"
               ref={fileInputRef}
               onChange={handleFileChange}
-              accept="image/*"
+              accept="image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif"
               className="hidden"
             />
 
@@ -387,7 +387,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                 </div>
                 <div>
                   <p className="text-xs font-bold text-on-surface">내 사진 파일 선택하기</p>
-                  <p className="text-[11px] text-on-surface-variant">JPG, PNG, GIF, WebP (최대 5MB)</p>
+                  <p className="text-[11px] text-on-surface-variant">JPG, PNG, GIF (최대 5MB)</p>
                 </div>
               </div>
 

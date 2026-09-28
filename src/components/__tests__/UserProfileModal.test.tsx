@@ -53,4 +53,26 @@ describe('UserProfileModal Component', () => {
 
     alertMock.mockRestore();
   });
+
+  it('비허용 확장자 파일 업로드 시 경고창이 뜨고 차단되어야 한다', async () => {
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+    render(
+      <AuthProvider>
+        <UserProfileModal isOpen={true} onClose={vi.fn()} />
+      </AuthProvider>
+    );
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
+
+    const invalidFile = new File(['dummy'], 'test.webp', { type: 'image/webp' });
+    fireEvent.change(input, { target: { files: [invalidFile] } });
+
+    await waitFor(() => {
+      expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('JPG, PNG, GIF'));
+    });
+
+    alertMock.mockRestore();
+  });
 });
