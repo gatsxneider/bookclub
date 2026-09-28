@@ -167,10 +167,11 @@ function BookReviewsFeedContent() {
                       <>
                         <span className="text-on-surface-variant/40">•</span>
                         <span className="inline-flex items-center gap-1 text-[11px] text-secondary font-medium bg-secondary-fixed/30 px-2.5 py-0.5 rounded-full">
-                          <span className="material-symbols-outlined text-[13px]">event</span>
+                          <span className="material-symbols-outlined text-[13px]">auto_stories</span>
                           <span>
-                            {rev.schedule.target_date ? `단원 독서 일정: ${rev.schedule.target_date}` : '상시 모임'}
+                            {rev.schedule.chapter_title || (rev.schedule.target_date ? `단원 일정: ${rev.schedule.target_date}` : '단원 일정')}
                             {rev.schedule.page_range ? ` (${rev.schedule.page_range})` : ''}
+                            {rev.schedule.target_date ? ` · ${rev.schedule.target_date}` : ''}
                           </span>
                         </span>
                       </>
