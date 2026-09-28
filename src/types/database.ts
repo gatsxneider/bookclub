@@ -20,6 +20,7 @@ export interface Profile {
   avatar_url?: string;
   bio?: string;
   manner_temperature?: number;
+  completed_count?: number;
   role?: string;
   activity_area?: string;
   created_at?: string;

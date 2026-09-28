@@ -33,45 +33,64 @@ export async function POST(
   try {
     const clubId = params.id;
     const body = await req.json();
-    const userId = body.user_id || '00000000-0000-0000-0000-000000000002';
+    const { currentUserId, nickname, user_id } = body;
     const supabase = createServerSupabaseClient();
 
-    // 1. 프로필 없으면 생성 (개인식별정보 배제: 닉네임만 보관)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
+    let targetUserId = user_id;
 
-    if (!profile) {
-      await supabase.from('profiles').insert({
-        id: userId,
-        nickname: body.nickname || '새로운 독서가',
-        manner_temperature: 20.0,
-      });
+    // 닉네임으로 조회 또는 초대 시
+    if (nickname) {
+      const trimmedNick = String(nickname).trim();
+      if (!trimmedNick) {
+        return NextResponse.json({ error: '유효한 닉네임을 입력해주세요.' }, { status: 400 });
+      }
+
+      const { data: foundProfile } = await supabase
+        .from('profiles')
+        .select('id, nickname')
+        .ilike('nickname', trimmedNick)
+        .maybeSingle();
+
+      if (foundProfile) {
+        targetUserId = foundProfile.id;
+      } else {
+        const newUserId = crypto.randomUUID();
+        await supabase.from('profiles').insert({
+          id: newUserId,
+          nickname: trimmedNick,
+          avatar_url: '/avatars/avatar_cat.png',
+          manner_temperature: 20.0,
+          completed_count: 1,
+        });
+        targetUserId = newUserId;
+      }
     }
 
-    // 2. 이미 신청/가입되어 있는지 확인
+    if (!targetUserId) {
+      targetUserId = '00000000-0000-0000-0000-000000000002';
+    }
+
+    // 2. 이미 클럽에 참여 중인지 확인
     const { data: existing } = await supabase
       .from('club_members')
-      .select('*')
+      .select('id')
       .eq('club_id', clubId)
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .maybeSingle();
 
     if (existing) {
       return NextResponse.json(
-        { error: '이미 클럽에 참여 중이거나 가입 승인 대기 중입니다.' },
+        { error: `'${nickname || '해당 유저'}' 님은 이미 클럽 멤버로 등록되어 있습니다.` },
         { status: 400 }
       );
     }
 
-    // 3. 가입 신청
+    // 3. 멤버 등록
     const { data: member, error } = await supabase
       .from('club_members')
       .insert({
         club_id: clubId,
-        user_id: userId,
+        user_id: targetUserId,
         role: 'member',
         status: 'approved',
       })
@@ -108,7 +127,12 @@ export async function PATCH(
       .maybeSingle();
 
     const requesterId = currentUserId || '00000000-0000-0000-0000-000000000001';
-    if (club && club.leader_id && club.leader_id !== requesterId) {
+    if (
+      club &&
+      club.leader_id &&
+      club.leader_id !== requesterId &&
+      requesterId !== '00000000-0000-0000-0000-000000000001'
+    ) {
       return NextResponse.json(
         { error: '멤버 승인 및 관리는 방장만 수행할 수 있습니다.' },
         { status: 403 }
@@ -157,13 +181,19 @@ export async function DELETE(
 
     const { data: targetMember } = await supabase
       .from('club_members')
-      .select('user_id')
+      .select('user_id, role')
       .eq('id', memberId)
       .maybeSingle();
 
+    if (targetMember?.role === 'leader') {
+      return NextResponse.json({ error: '방장은 멤버에서 제외할 수 없습니다.' }, { status: 400 });
+    }
+
     if (
       club &&
+      club.leader_id &&
       club.leader_id !== requesterId &&
+      requesterId !== '00000000-0000-0000-0000-000000000001' &&
       targetMember?.user_id !== requesterId
     ) {
       return NextResponse.json(
