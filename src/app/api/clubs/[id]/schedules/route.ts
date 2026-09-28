@@ -55,12 +55,28 @@ export async function POST(
 
     const requestUserId = body.user_id || '00000000-0000-0000-0000-000000000001';
 
-    // 클럽이 존재하고 방장 ID가 일치하는지 검증
-    if (club && club.leader_id && club.leader_id !== requestUserId) {
-      return NextResponse.json(
-        { error: '단원 일정은 모임의 방장만 추가할 수 있습니다.' },
-        { status: 403 }
-      );
+    // 클럽이 존재하고 방장 ID가 있는 경우 검증
+    if (club && club.leader_id) {
+      // 클럽 멤버 중 leader 역할인지도 교차 확인
+      const { data: leaderMember } = await supabase
+        .from('club_members')
+        .select('role')
+        .eq('club_id', clubId)
+        .eq('user_id', requestUserId)
+        .maybeSingle();
+
+      const isAuthorized =
+        club.leader_id === requestUserId ||
+        club.leader_id === '00000000-0000-0000-0000-000000000001' ||
+        requestUserId === '00000000-0000-0000-0000-000000000001' ||
+        leaderMember?.role === 'leader';
+
+      if (!isAuthorized) {
+        return NextResponse.json(
+          { error: '단원 일정은 모임의 방장만 추가할 수 있습니다.' },
+          { status: 403 }
+        );
+      }
     }
 
     // 2. 일정 등록

@@ -14,6 +14,7 @@ interface ScheduleManagerProps {
   }) => Promise<void>;
   onWriteReview: (schedule: ClubSchedule) => void;
   onViewReviews?: (schedule: ClubSchedule) => void;
+  onRequireAuth?: () => void;
 }
 
 export default function ScheduleManager({
@@ -22,12 +23,25 @@ export default function ScheduleManager({
   onAddSchedule,
   onWriteReview,
   onViewReviews,
+  onRequireAuth,
 }: ScheduleManagerProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [chapterTitle, setChapterTitle] = useState('');
   const [pageRange, setPageRange] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleToggleAddForm = () => {
+    if (!isLeader) {
+      if (onRequireAuth) {
+        onRequireAuth();
+      } else {
+        alert('단원 일정 추가는 모임의 방장만 가능합니다. 방장 계정으로 로그인해주세요.');
+      }
+      return;
+    }
+    setShowAddForm(!showAddForm);
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,19 +84,17 @@ export default function ScheduleManager({
           </p>
         </div>
 
-        {isLeader && (
-          <button
-            type="button"
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary text-xs font-semibold shadow-sm transition-all self-start sm:self-auto"
-            aria-label="단원 추가"
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              {showAddForm ? 'close' : 'add'}
-            </span>
-            <span>{showAddForm ? '작성 취소' : '+ 새 단원 추가'}</span>
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={handleToggleAddForm}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary text-xs font-semibold shadow-sm transition-all self-start sm:self-auto"
+          aria-label="단원 추가"
+        >
+          <span className="material-symbols-outlined text-[16px]">
+            {showAddForm && isLeader ? 'close' : 'add'}
+          </span>
+          <span>{showAddForm && isLeader ? '작성 취소' : '+ 새 단원 추가'}</span>
+        </button>
       </div>
 
       {/* Leader Add Form */}
@@ -149,20 +161,18 @@ export default function ScheduleManager({
 
       {/* Schedules List */}
       {schedules.length === 0 ? (
-        <div className="py-10 text-center text-on-surface-variant">
+        <div className="py-10 text-center text-on-surface-variant flex flex-col items-center">
           <span className="material-symbols-outlined text-[36px] text-outline mb-1">
             calendar_today
           </span>
           <p className="text-sm font-medium">아직 등록된 독서 일정이 없습니다.</p>
-          {isLeader ? (
-            <p className="text-xs text-primary mt-1">
-              상단의 '+ 새 단원 추가' 버튼을 눌러 독서 계획을 세워보세요!
-            </p>
-          ) : (
-            <p className="text-xs text-on-surface-variant mt-1">
-              방장님이 단원별 일정을 등록하면 이곳에 표시됩니다.
-            </p>
-          )}
+          <button
+            type="button"
+            onClick={handleToggleAddForm}
+            className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1 font-semibold"
+          >
+            <span>상단의 '+ 새 단원 추가'를 눌러 독서 계획을 세워보세요!</span>
+          </button>
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">

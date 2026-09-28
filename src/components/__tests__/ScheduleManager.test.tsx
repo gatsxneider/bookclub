@@ -40,16 +40,21 @@ describe('ScheduleManager Component', () => {
     expect(screen.getByText('p.1 ~ p.65')).toBeInTheDocument();
   });
 
-  it('방장일 경우 "단원/일정 추가" 버튼이 노출되고, 방장이 아닐 경우 노출되지 않아야 한다', () => {
+  it('방장일 경우 단원 추가 폼이 토글되고, 방장이 아닐 경우 onRequireAuth가 호출되어야 한다', () => {
+    const handleRequireAuth = vi.fn();
     const { rerender } = render(
       <ScheduleManager
         schedules={mockSchedules}
         isLeader={true}
         onAddSchedule={vi.fn()}
         onWriteReview={vi.fn()}
+        onRequireAuth={handleRequireAuth}
       />
     );
-    expect(screen.getByRole('button', { name: /단원 추가/ })).toBeInTheDocument();
+    const addBtn = screen.getByRole('button', { name: /단원 추가/ });
+    expect(addBtn).toBeInTheDocument();
+    fireEvent.click(addBtn);
+    expect(screen.getByText(/방장 전용: 3번째 단원 일정 등록/)).toBeInTheDocument();
 
     rerender(
       <ScheduleManager
@@ -57,9 +62,12 @@ describe('ScheduleManager Component', () => {
         isLeader={false}
         onAddSchedule={vi.fn()}
         onWriteReview={vi.fn()}
+        onRequireAuth={handleRequireAuth}
       />
     );
-    expect(screen.queryByRole('button', { name: /단원 추가/ })).not.toBeInTheDocument();
+    const nonLeaderAddBtn = screen.getByRole('button', { name: /단원 추가/ });
+    fireEvent.click(nonLeaderAddBtn);
+    expect(handleRequireAuth).toHaveBeenCalledTimes(1);
   });
 
   it('일정의 독후감 작성 버튼 클릭 시 onWriteReview 콜백이 호출되어야 한다', () => {

@@ -29,8 +29,12 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // 방장 여부: 로그인한 사용자가 클럽 leader_id와 일치하거나 기본 데모 모드일 때
-  const isLeader = Boolean(user && club && user.id === club.leader_id) || (!user && club?.leader_id === '00000000-0000-0000-0000-000000000001');
+  // 방장 여부 판별
+  const isLeader = Boolean(
+    (user && club && (user.id === club.leader_id || club.leader_id === '00000000-0000-0000-0000-000000000001')) ||
+    (user && members.some((m) => m.user_id === user.id && m.role === 'leader')) ||
+    (!user && (!club?.leader_id || club?.leader_id === '00000000-0000-0000-0000-000000000001'))
+  );
 
   // 기본 폴백 데이터 (데이터가 없을 때 UI 가이드용)
   const defaultClub: Club = {
@@ -409,6 +413,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
               onAddSchedule={handleAddSchedule}
               onWriteReview={handleWriteReview}
               onViewReviews={(s) => router.push(`/book-reviews?schedule_id=${s.id}`)}
+              onRequireAuth={() => setIsAuthOpen(true)}
             />
           ) : (
             /* Member Management Tab */
