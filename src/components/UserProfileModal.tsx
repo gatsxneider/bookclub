@@ -9,8 +9,14 @@ interface UserProfileModalProps {
   onClose: () => void;
 }
 
-// 기본 추천 아바타 프리셋 목록 (여성, 남성, 고양이)
+// 기본 추천 아바타 프리셋 목록 (고양이, 여성, 남성)
 const PRESET_AVATARS = [
+  {
+    id: 'cat',
+    label: '고양이 독서가',
+    tag: '고양이 🐱 (기본)',
+    src: '/avatars/avatar_cat.png',
+  },
   {
     id: 'female',
     label: '여성 독서가',
@@ -22,12 +28,6 @@ const PRESET_AVATARS = [
     label: '남성 독서가',
     tag: '남성',
     src: '/avatars/avatar_male.png',
-  },
-  {
-    id: 'cat',
-    label: '고양이 독서가',
-    tag: '고양이 🐱',
-    src: '/avatars/avatar_cat.png',
   },
 ];
 
@@ -70,7 +70,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [nickname, setNickname] = useState(user?.nickname || '모래고래');
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar_url || '/avatars/avatar_female.png');
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar_url || '/avatars/avatar_cat.png');
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

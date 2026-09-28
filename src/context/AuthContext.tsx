@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.from('profiles').upsert({
           id: userId,
           nickname: finalNickname,
-          avatar_url: profile?.avatar_url || '/avatars/avatar_female.png',
+          avatar_url: profile?.avatar_url || '/avatars/avatar_cat.png',
           manner_temperature: profile?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE,
           completed_count: completedCount,
         });
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.from('profiles').upsert({
           id: userId,
           nickname: finalNickname,
-          avatar_url: '/avatars/avatar_female.png',
+          avatar_url: '/avatars/avatar_cat.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
           completed_count: completedCount,
         });
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: userId,
         email: email || profile?.email || '',
         nickname: finalNickname,
-        avatar_url: profile?.avatar_url || '/avatars/avatar_female.png',
+        avatar_url: profile?.avatar_url || '/avatars/avatar_cat.png',
         manner_temperature: profile?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE,
         completed_count: completedCount,
         level,
@@ -185,11 +185,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.user) {
-        // profiles 테이블에 필명 생성
+        // profiles 테이블에 필명 생성 및 최초 프로필 이미지를 고양이(/avatars/avatar_cat.png)로 설정
         await supabase.from('profiles').upsert({
           id: data.user.id,
           nickname: trimmedNick,
-          avatar_url: '/avatars/avatar_female.png',
+          avatar_url: '/avatars/avatar_cat.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
           completed_count: 1,
         });
@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: data.user.id,
           email: data.user.email || email,
           nickname: trimmedNick,
-          avatar_url: '/avatars/avatar_female.png',
+          avatar_url: '/avatars/avatar_cat.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
           completed_count: 1,
           level: 1,
@@ -224,7 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 고유 또는 게스트 유저 ID
       const userId = user?.id || '00000000-0000-0000-0000-000000000001';
-      const userAvatar = avatarUrl || user?.avatar_url || '/avatars/avatar_female.png';
+      const userAvatar = avatarUrl || user?.avatar_url || '/avatars/avatar_cat.png';
       const completedCount = user?.completed_count ?? 3;
       const mannerTemp = user?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE;
 
@@ -300,7 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: currentUserId,
           email: `${updates.nickname || '독서가'}@bookclub.com`,
           nickname: updates.nickname || '독서가',
-          avatar_url: updates.avatar_url || '/avatars/avatar_female.png',
+          avatar_url: updates.avatar_url || '/avatars/avatar_cat.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
           completed_count: 3,
           level: 3,

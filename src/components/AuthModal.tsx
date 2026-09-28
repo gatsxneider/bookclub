@@ -7,57 +7,26 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (user: UserProfile) => void;
+  initialMode?: 'login' | 'signup';
 }
 
-const QUICK_NICK_PRESETS = ['모래고래', '책 읽는 다람쥐', '달빛서재', '문학소녀', '마스터리더'];
-
-export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
-  const { signIn, signUp, quickLogin, user } = useAuth();
-  const [mode, setMode] = useState<'quick' | 'login' | 'signup'>('quick');
+export default function AuthModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  initialMode = 'login',
+}: AuthModalProps) {
+  const { signIn, signUp, user } = useAuth();
+  const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
-  const [quickNick, setQuickNick] = useState('모래고래');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   if (!isOpen) return null;
-
-  // 닉네임 간편 시작 핸들러
-  const handleQuickSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    const targetNick = quickNick.trim();
-    if (!targetNick) {
-      setErrorMsg('사용하실 닉네임을 입력해주세요.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await quickLogin(targetNick);
-      if (!res.success) {
-        setErrorMsg(res.error || '로그인 처리에 실패했습니다.');
-        return;
-      }
-
-      setSuccessMsg(`'${targetNick}' 님으로 로그인되었습니다! 🌿`);
-      setTimeout(() => {
-        if (onSuccess && user) {
-          onSuccess(user);
-        }
-        onClose();
-      }, 400);
-    } catch (err: any) {
-      setErrorMsg(err.message || '인증 처리 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // 일반 이메일 로그인 / 회원가입 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,7 +57,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           setErrorMsg(res.error || '회원가입에 실패했습니다.');
           return;
         }
-        setSuccessMsg(`'${nickname.trim()}' 님으로 회원가입이 완료되었습니다! 🌿`);
+        setSuccessMsg(`'${nickname.trim()}' 님으로 회원가입이 완료되었습니다! 🐱🌿`);
       } else {
         const res = await signIn(email.trim(), password);
         if (!res.success) {
@@ -145,23 +114,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             </button>
           </div>
 
-          {/* Segmented Switcher (3-tabs) */}
+          {/* Segmented Switcher (2-tabs: 로그인 / 회원가입) */}
           <div className="flex items-center justify-center p-1 bg-surface-container rounded-full text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('quick');
-                setErrorMsg('');
-                setSuccessMsg('');
-              }}
-              className={`flex-1 py-1.5 rounded-full transition-all ${
-                mode === 'quick'
-                  ? 'bg-primary text-on-primary shadow-sm'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              닉네임 시작
-            </button>
             <button
               type="button"
               onClick={() => {
@@ -169,9 +123,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                 setErrorMsg('');
                 setSuccessMsg('');
               }}
-              className={`flex-1 py-1.5 rounded-full transition-all ${
+              className={`flex-1 py-2 rounded-full transition-all ${
                 mode === 'login'
-                  ? 'bg-surface-container-lowest text-primary shadow-sm'
+                  ? 'bg-primary text-on-primary shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
@@ -184,7 +138,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                 setErrorMsg('');
                 setSuccessMsg('');
               }}
-              className={`flex-1 py-1.5 rounded-full transition-all ${
+              className={`flex-1 py-2 rounded-full transition-all ${
                 mode === 'signup'
                   ? 'bg-primary text-on-primary shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -208,143 +162,120 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             </div>
           )}
 
-          {/* Mode 1: Quick Nickname Login */}
-          {mode === 'quick' ? (
-            <form onSubmit={handleQuickSubmit} className="flex flex-col gap-3.5">
-              <div className="flex flex-col gap-1.5">
+          {/* Standard Email Form (Login / Signup) */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+            {mode === 'signup' && (
+              <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-on-surface flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[15px] text-primary">face</span>
-                  <span>사용할 닉네임 입력 <span className="text-secondary">*</span></span>
+                  <span className="material-symbols-outlined text-[15px] text-primary">draw</span>
+                  <span>독서클럽 닉네임 (필수) <span className="text-secondary">*</span></span>
                 </label>
                 <input
                   type="text"
-                  value={quickNick}
-                  onChange={(e) => setQuickNick(e.target.value)}
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
                   placeholder="예: 모래고래, 달빛서재"
-                  required
-                  className="w-full bg-surface-container-low text-on-surface px-3.5 py-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface border border-surface-container font-medium"
-                />
-              </div>
-
-              {/* Preset Chips */}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[11px] text-on-surface-variant">추천 닉네임 선택:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {QUICK_NICK_PRESETS.map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setQuickNick(p)}
-                      className={`px-2.5 py-1 rounded-lg text-xs transition-all border ${
-                        quickNick === p
-                          ? 'bg-primary/10 border-primary text-primary font-bold'
-                          : 'bg-surface-container-low border-surface-container text-on-surface-variant hover:border-outline'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="mt-2 w-full py-3 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-bold shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-              >
-                {loading ? (
-                  <>
-                    <span className="material-symbols-outlined text-[16px] animate-spin">
-                      progress_activity
-                    </span>
-                    <span>로그인 중...</span>
-                  </>
-                ) : (
-                  `'${quickNick || '독서가'}'(으)로 바로 시작하기`
-                )}
-              </button>
-            </form>
-          ) : (
-            /* Mode 2 & 3: Standard Email Form */
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-              {mode === 'signup' && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-on-surface flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[15px] text-primary">draw</span>
-                    <span>독서클럽 닉네임 (필수) <span className="text-secondary">*</span></span>
-                  </label>
-                  <input
-                    type="text"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    placeholder="예: 모래고래, 달빛서재"
-                    required
-                    className="w-full bg-surface-container-low text-on-surface px-3.5 py-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface border border-surface-container"
-                  />
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-on-surface flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[15px] text-primary">mail</span>
-                  <span>이메일 주소 <span className="text-secondary">*</span></span>
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="cozy@bookclub.com"
                   required
                   className="w-full bg-surface-container-low text-on-surface px-3.5 py-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface border border-surface-container"
                 />
               </div>
+            )}
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-on-surface flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[15px] text-primary">lock</span>
-                  <span>비밀번호 <span className="text-secondary">*</span></span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="6자 이상 입력"
-                    required
-                    className="w-full bg-surface-container-low text-on-surface pl-3.5 pr-10 py-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface border border-surface-container"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      {showPassword ? 'visibility_off' : 'visibility'}
-                    </span>
-                  </button>
-                </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-on-surface flex items-center gap-1">
+                <span className="material-symbols-outlined text-[15px] text-primary">mail</span>
+                <span>이메일 주소 <span className="text-secondary">*</span></span>
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="cozy@bookclub.com"
+                required
+                className="w-full bg-surface-container-low text-on-surface px-3.5 py-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface border border-surface-container"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-on-surface flex items-center gap-1">
+                <span className="material-symbols-outlined text-[15px] text-primary">lock</span>
+                <span>비밀번호 <span className="text-secondary">*</span></span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="6자 이상 입력"
+                  required
+                  className="w-full bg-surface-container-low text-on-surface pl-3.5 pr-10 py-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface border border-surface-container"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
               </div>
+            </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="mt-2 w-full py-3 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-bold shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-              >
-                {loading ? (
-                  <>
-                    <span className="material-symbols-outlined text-[16px] animate-spin">
-                      progress_activity
-                    </span>
-                    <span>처리 중...</span>
-                  </>
-                ) : mode === 'login' ? (
-                  '로그인하고 서재 입장'
-                ) : (
-                  '가입 완료하고 북클럽 시작'
-                )}
-              </button>
-            </form>
-          )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-2 w-full py-3 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-bold shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              {loading ? (
+                <>
+                  <span className="material-symbols-outlined text-[16px] animate-spin">
+                    progress_activity
+                  </span>
+                  <span>처리 중...</span>
+                </>
+              ) : mode === 'login' ? (
+                '로그인하고 서재 입장'
+              ) : (
+                '가입 완료하고 북클럽 시작'
+              )}
+            </button>
+          </form>
+
+          {/* Bottom Switcher Helper */}
+          <div className="text-center pt-1 border-t border-surface-container">
+            {mode === 'login' ? (
+              <p className="text-xs text-on-surface-variant">
+                아직 회원이 아니신가요?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('signup');
+                    setErrorMsg('');
+                    setSuccessMsg('');
+                  }}
+                  className="text-primary font-bold hover:underline"
+                >
+                  회원가입하기
+                </button>
+              </p>
+            ) : (
+              <p className="text-xs text-on-surface-variant">
+                이미 계정이 있으신가요?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login');
+                    setErrorMsg('');
+                    setSuccessMsg('');
+                  }}
+                  className="text-primary font-bold hover:underline"
+                >
+                  로그인하기
+                </button>
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
