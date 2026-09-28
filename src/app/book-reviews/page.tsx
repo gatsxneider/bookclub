@@ -1,22 +1,37 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import BookSearchModal from '@/components/BookSearchModal';
 import CreateClubModal from '@/components/CreateClubModal';
 import AuthModal from '@/components/AuthModal';
 import { Review } from '@/types/database';
 
-export default function BookReviewsFeedPage() {
+function BookReviewsFeedContent() {
+  const searchParams = useSearchParams();
+  const clubId = searchParams.get('club_id') || searchParams.get('clubId');
+  const scheduleId = searchParams.get('schedule_id') || searchParams.get('scheduleId');
+
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   useEffect(() => {
     const fetchReviews = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('/api/reviews');
+        let url = '/api/reviews';
+        const params = new URLSearchParams();
+        if (clubId) params.append('club_id', clubId);
+        if (scheduleId) params.append('schedule_id', scheduleId);
+        if (params.toString()) {
+          url += `?${params.toString()}`;
+        }
+
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           if (data.reviews && data.reviews.length > 0) {
@@ -24,9 +39,13 @@ export default function BookReviewsFeedPage() {
             return;
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn('Reviews fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
 
-      // 기본 피드 데이터
+      // 기본 폴백 데이터 (데이터가 비어있을 때 피드 예시)
       setReviews([
         {
           id: 'rev-1',
@@ -38,7 +57,7 @@ export default function BookReviewsFeedPage() {
           rating: 5,
           is_public: true,
           created_at: '2026-09-24',
-          author: { id: '1', nickname: '지우 (jiwoo_reads)' },
+          author: { id: '1', nickname: '지우' },
         },
         {
           id: 'rev-2',
@@ -68,7 +87,7 @@ export default function BookReviewsFeedPage() {
     };
 
     fetchReviews();
-  }, []);
+  }, [clubId, scheduleId]);
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
@@ -135,7 +154,7 @@ export default function BookReviewsFeedPage() {
                 <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-[15px] text-primary">eco</span>
-                    <span>고요한 숲속 심야 독서회</span>
+                    <span>{rev.club?.name || '고요한 숲속 심야 독서회'}</span>
                   </span>
                   <div className="flex items-center gap-3">
                     <button
@@ -144,14 +163,15 @@ export default function BookReviewsFeedPage() {
                       onClick={() => alert('공감했습니다 ❤️')}
                     >
                       <span className="material-symbols-outlined text-[16px]">favorite_border</span>
-                      <span>공감 12</span>
+                      <span>공감하기</span>
                     </button>
                     <button
                       type="button"
                       className="flex items-center gap-1 hover:text-primary transition-colors"
+                      onClick={() => alert('댓글 기능이 준비 중입니다.')}
                     >
                       <span className="material-symbols-outlined text-[16px]">chat_bubble_outline</span>
-                      <span>댓글 3</span>
+                      <span>댓글</span>
                     </button>
                   </div>
                 </div>
@@ -178,5 +198,22 @@ export default function BookReviewsFeedPage() {
         onSuccess={() => setIsAuthOpen(false)}
       />
     </div>
+  );
+}
+
+export default function BookReviewsFeedPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-surface flex items-center justify-center">
+          <div className="flex items-center gap-2 text-primary font-medium text-sm">
+            <span className="material-symbols-outlined animate-spin">progress_activity</span>
+            <span>독후감 피드를 불러오는 중...</span>
+          </div>
+        </div>
+      }
+    >
+      <BookReviewsFeedContent />
+    </Suspense>
   );
 }

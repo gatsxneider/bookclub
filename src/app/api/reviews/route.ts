@@ -15,9 +15,9 @@ export async function GET(req: NextRequest) {
       .from('reviews')
       .select(`
         *,
-        author:profiles!reviews_user_id_fkey (*),
+        author:profiles (*),
         schedule:club_schedules (*),
-        club:clubs (*, books (*))
+        club:clubs (*, book:books (*))
       `)
       .order('created_at', { ascending: false });
 
@@ -51,19 +51,18 @@ export async function POST(req: NextRequest) {
     const supabase = createServerSupabaseClient();
     const userId = body.user_id || '00000000-0000-0000-0000-000000000001';
 
-    // 1. 프로필 없으면 기본 생성
+    // 1. 프로필 없으면 기본 생성 (개인식별정보 배제)
     const { data: profile } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (!profile) {
       await supabase.from('profiles').insert({
         id: userId,
         nickname: body.nickname || '지우',
         manner_temperature: 36.5,
-        role: 'user',
       });
     }
 
@@ -82,7 +81,7 @@ export async function POST(req: NextRequest) {
       })
       .select(`
         *,
-        author:profiles!reviews_user_id_fkey (*),
+        author:profiles (*),
         schedule:club_schedules (*)
       `)
       .single();

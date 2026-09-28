@@ -1,73 +1,51 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import ReviewEditor from '@/components/ReviewEditor';
-import { ClubSchedule } from '@/types/database';
+import AuthModal from '@/components/AuthModal';
+import { ClubSchedule, Club } from '@/types/database';
+import { useAuth } from '@/context/AuthContext';
 
-export default function NewReviewPage({ params }: { params: { id: string } }) {
+function NewReviewContent({ clubId }: { clubId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const clubId = params.id;
   const initialScheduleId = searchParams.get('scheduleId') || '';
+  const { user } = useAuth();
 
+  const [club, setClub] = useState<Club | null>(null);
   const [schedules, setSchedules] = useState<ClubSchedule[]>([]);
-
-  const defaultSchedules: ClubSchedule[] = [
-    {
-      id: 'sched-1',
-      club_id: clubId,
-      sequence: 1,
-      chapter_title: '제1장. 2020 가을, 산해진미 도시락',
-      page_range: 'p.1 ~ p.65',
-    },
-    {
-      id: 'sched-2',
-      club_id: clubId,
-      sequence: 2,
-      chapter_title: '제2장. 제이에스 오브 제이에스',
-      page_range: 'p.66 ~ p.132',
-    },
-    {
-      id: 'sched-3',
-      club_id: clubId,
-      sequence: 3,
-      chapter_title: '제3장. 삼각김밥의 용도',
-      page_range: 'p.133 ~ p.198',
-    },
-    {
-      id: 'sched-4',
-      club_id: clubId,
-      sequence: 4,
-      chapter_title: '제4장. 네 잎 클로버의 기적',
-      page_range: 'p.199 ~ p.262',
-    },
-    {
-      id: 'sched-5',
-      club_id: clubId,
-      sequence: 5,
-      chapter_title: '제5장. 불편한 편의점의 에필로그',
-      page_range: 'p.263 ~ p.310',
-    },
-  ];
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   useEffect(() => {
-    const fetchSchedules = async () => {
+    const fetchClubAndSchedules = async () => {
       try {
+        const clubRes = await fetch(`/api/clubs/${clubId}`);
+        if (clubRes.ok) {
+          const clubData = await clubRes.json();
+          if (clubData.club) {
+            setClub(clubData.club);
+            if (clubData.club.schedules) {
+              setSchedules(clubData.club.schedules);
+              return;
+            }
+          }
+        }
+
         const res = await fetch(`/api/clubs/${clubId}/schedules`);
         if (res.ok) {
           const data = await res.json();
           if (data.schedules && data.schedules.length > 0) {
             setSchedules(data.schedules);
-            return;
           }
         }
-      } catch {}
-      setSchedules(defaultSchedules);
+      } catch (err) {
+        console.warn('Fetch error:', err);
+      }
     };
 
-    fetchSchedules();
+    fetchClubAndSchedules();
   }, [clubId]);
 
   const handleSubmit = async (reviewData: {
@@ -78,6 +56,12 @@ export default function NewReviewPage({ params }: { params: { id: string } }) {
     rating: number;
     is_public: boolean;
   }) => {
+    if (!user) {
+      alert('독후감을 등록하려면 먼저 로그인해 주세요.');
+      setIsAuthOpen(true);
+      return;
+    }
+
     try {
       const res = await fetch('/api/reviews', {
         method: 'POST',
@@ -85,6 +69,8 @@ export default function NewReviewPage({ params }: { params: { id: string } }) {
         body: JSON.stringify({
           ...reviewData,
           club_id: clubId,
+          user_id: user.id,
+          nickname: user.nickname,
         }),
       });
 
@@ -105,7 +91,7 @@ export default function NewReviewPage({ params }: { params: { id: string } }) {
       <Navbar
         onOpenSearch={() => {}}
         onOpenNewClub={() => {}}
-        onOpenAuth={() => {}}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       <main className="w-full pt-24 pb-16 flex-1">
@@ -113,9 +99,9 @@ export default function NewReviewPage({ params }: { params: { id: string } }) {
           <ReviewEditor
             schedules={schedules}
             selectedScheduleId={initialScheduleId}
-            bookTitle="불편한 편의점"
-            clubName="고요한 숲속 심야 독서회"
-            authorNickname="지우"
+            bookTitle={club?.book?.title || '선정 도서'}
+            clubName={club?.name || '코지 북클럽'}
+            authorNickname={user?.nickname || '회원'}
             initialTitle="불편함 속에서 길어 올린 가장 다정한 온기 — 4단원을 읽고"
             initialContent={`밤 11시, 편의점의 노란 불빛 아래 서 있는 독고 씨를 보며 문득 나의 일상을 돌아보게 되었습니다.
 그는 기억을 잃었지만 사람을 향한 다정함과 예의는 결코 잃지 않았습니다.
@@ -127,6 +113,29 @@ export default function NewReviewPage({ params }: { params: { id: string } }) {
           />
         </div>
       </main>
+
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={() => setIsAuthOpen(false)}
+      />
     </div>
+  );
+}
+
+export default function NewReviewPage({ params }: { params: { id: string } }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-surface flex items-center justify-center">
+          <div className="flex items-center gap-2 text-primary font-medium text-sm">
+            <span className="material-symbols-outlined animate-spin">progress_activity</span>
+            <span>작성 에디터를 불러오는 중...</span>
+          </div>
+        </div>
+      }
+    >
+      <NewReviewContent clubId={params.id} />
+    </Suspense>
   );
 }

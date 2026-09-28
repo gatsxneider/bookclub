@@ -11,22 +11,28 @@ import AuthModal from '@/components/AuthModal';
 import { Club, ClubSchedule, ClubMember } from '@/types/database';
 import { calculateProgress, calculateDday } from '@/lib/core/scheduleCalculator';
 
+import { useAuth } from '@/context/AuthContext';
+
 export default function ClubDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const clubId = params.id;
+  const { user } = useAuth();
 
   const [club, setClub] = useState<Club | null>(null);
   const [schedules, setSchedules] = useState<ClubSchedule[]>([]);
   const [members, setMembers] = useState<ClubMember[]>([]);
-  const [isLeader, setIsLeader] = useState(true); // 기본적으로 방장 모드 지원 (시안 기준)
   const [activeTab, setActiveTab] = useState<'schedules' | 'members'>('schedules');
+  const [loading, setLoading] = useState(true);
 
   // 모달
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // 기본 더미 데이터 (Supabase 연결 폴백 및 시안 반영)
+  // 방장 여부: 로그인한 사용자가 클럽 leader_id와 일치하거나 기본 데모 모드일 때
+  const isLeader = Boolean(user && club && user.id === club.leader_id) || (!user && club?.leader_id === '00000000-0000-0000-0000-000000000001');
+
+  // 기본 폴백 데이터 (데이터가 없을 때 UI 가이드용)
   const defaultClub: Club = {
     id: clubId,
     leader_id: '00000000-0000-0000-0000-000000000001',
@@ -48,112 +54,45 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
     },
   };
 
-  const defaultSchedules: ClubSchedule[] = [
-    {
-      id: 'sched-1',
-      club_id: clubId,
-      sequence: 1,
-      chapter_title: '제1장. 2020 가을, 산해진미 도시락',
-      page_range: 'p.1 ~ p.65',
-      target_date: '2026-09-10',
-      reviews_count: 6,
-    },
-    {
-      id: 'sched-2',
-      club_id: clubId,
-      sequence: 2,
-      chapter_title: '제2장. 제이에스 오브 제이에스',
-      page_range: 'p.66 ~ p.132',
-      target_date: '2026-09-17',
-      reviews_count: 6,
-    },
-    {
-      id: 'sched-3',
-      club_id: clubId,
-      sequence: 3,
-      chapter_title: '제3장. 삼각김밥의 용도',
-      page_range: 'p.133 ~ p.198',
-      target_date: '2026-09-24',
-      reviews_count: 5,
-    },
-    {
-      id: 'sched-4',
-      club_id: clubId,
-      sequence: 4,
-      chapter_title: '제4장. 네 잎 클로버의 기적',
-      page_range: 'p.199 ~ p.262',
-      target_date: '2026-10-01',
-      reviews_count: 3,
-    },
-    {
-      id: 'sched-5',
-      club_id: clubId,
-      sequence: 5,
-      chapter_title: '제5장. 불편한 편의점의 에필로그',
-      page_range: 'p.263 ~ p.310',
-      target_date: '2026-10-15',
-      reviews_count: 0,
-    },
-  ];
-
-  const defaultMembers: ClubMember[] = [
-    {
-      id: 'mem-1',
-      club_id: clubId,
-      user_id: '00000000-0000-0000-0000-000000000001',
-      role: 'leader',
-      status: 'approved',
-      profile: { id: 'user-1', nickname: '달빛책방지기 (김민서)', manner_temperature: 38.2 },
-    },
-    {
-      id: 'mem-2',
-      club_id: clubId,
-      user_id: '00000000-0000-0000-0000-000000000002',
-      role: 'member',
-      status: 'approved',
-      profile: { id: 'user-2', nickname: '지우 님 (나)', manner_temperature: 36.8 },
-    },
-    {
-      id: 'mem-3',
-      club_id: clubId,
-      user_id: '00000000-0000-0000-0000-000000000003',
-      role: 'member',
-      status: 'approved',
-      profile: { id: 'user-3', nickname: '도윤 님', manner_temperature: 37.0 },
-    },
-    {
-      id: 'mem-4',
-      club_id: clubId,
-      user_id: '00000000-0000-0000-0000-000000000004',
-      role: 'member',
-      status: 'pending',
-      profile: { id: 'user-4', nickname: '서연 님 (가입 대기)', manner_temperature: 36.5 },
-    },
-  ];
-
   // API 데이터 로드
-  useEffect(() => {
-    const loadClubData = async () => {
-      try {
-        const res = await fetch(`/api/clubs/${clubId}/schedules`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.schedules && data.schedules.length > 0) {
-            setSchedules(data.schedules);
-          } else {
-            setSchedules(defaultSchedules);
-          }
+  const loadClubData = async () => {
+    setLoading(true);
+    try {
+      // 1. 클럽 상세 정보
+      const clubRes = await fetch(`/api/clubs/${clubId}`);
+      if (clubRes.ok) {
+        const clubData = await clubRes.json();
+        if (clubData.club) {
+          setClub(clubData.club);
         } else {
-          setSchedules(defaultSchedules);
+          setClub(defaultClub);
         }
-      } catch {
-        setSchedules(defaultSchedules);
+      } else {
+        setClub(defaultClub);
       }
 
-      setClub(defaultClub);
-      setMembers(defaultMembers);
-    };
+      // 2. 단원 일정
+      const schedRes = await fetch(`/api/clubs/${clubId}/schedules`);
+      if (schedRes.ok) {
+        const schedData = await schedRes.json();
+        setSchedules(schedData.schedules || []);
+      }
 
+      // 3. 멤버 목록
+      const memRes = await fetch(`/api/clubs/${clubId}/members`);
+      if (memRes.ok) {
+        const memData = await memRes.json();
+        setMembers(memData.members || []);
+      }
+    } catch (err) {
+      console.warn('데이터 로드 실패:', err);
+      setClub(defaultClub);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadClubData();
   }, [clubId]);
 
@@ -171,19 +110,18 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
         body: JSON.stringify(scheduleData),
       });
 
-      const newSched: ClubSchedule = {
-        id: `sched-${Date.now()}`,
-        club_id: clubId,
-        sequence: scheduleData.sequence,
-        chapter_title: scheduleData.chapter_title,
-        page_range: scheduleData.page_range,
-        target_date: scheduleData.target_date,
-        reviews_count: 0,
-      };
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || '단원 추가 실패');
+      }
 
-      setSchedules((prev) => [...prev, newSched]);
-    } catch {
-      alert('단원 등록 완료');
+      const data = await res.json();
+      if (data.schedule) {
+        setSchedules((prev) => [...prev, { ...data.schedule, reviews_count: 0 }]);
+      }
+      alert('단원 일정이 성공적으로 등록되었습니다.');
+    } catch (err: any) {
+      alert(err.message || '단원 등록 중 오류가 발생했습니다.');
     }
   };
 
@@ -194,20 +132,45 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
 
   // 멤버 승인 처리
   const handleApproveMember = async (memberId: string) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.id === memberId ? { ...m, status: 'approved' } : m))
-    );
-    alert('멤버 가입이 승인되었습니다.');
+    try {
+      const res = await fetch(`/api/clubs/${clubId}/members`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, status: 'approved' }),
+      });
+
+      if (!res.ok) throw new Error('승인 실패');
+
+      setMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, status: 'approved' } : m))
+      );
+      alert('멤버 가입이 승인되었습니다.');
+    } catch (err: any) {
+      alert(err.message || '멤버 승인 중 문제가 발생했습니다.');
+    }
   };
 
   // 멤버 제외 처리
   const handleRemoveMember = async (memberId: string) => {
     if (!confirm('정말 이 멤버를 제외하시겠습니까?')) return;
-    setMembers((prev) => prev.filter((m) => m.id !== memberId));
-    alert('멤버를 클럽에서 제외했습니다.');
+    try {
+      const res = await fetch(`/api/clubs/${clubId}/members?memberId=${memberId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('제외 실패');
+
+      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      alert('멤버를 클럽에서 제외했습니다.');
+    } catch (err: any) {
+      alert(err.message || '멤버 제외 중 문제가 발생했습니다.');
+    }
   };
 
-  const progress = calculateProgress(4, schedules.length || 5);
+  const progress = calculateProgress(
+    schedules.filter((s) => (s.reviews_count || 0) > 0).length,
+    schedules.length || 1
+  );
   const dDay = calculateDday(club?.end_date);
 
   return (
@@ -233,14 +196,14 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
               </Link>
               <span>/</span>
               <span className="text-on-surface font-semibold truncate max-w-xs">
-                {club?.name}
+                {club?.name || '독서클럽'}
               </span>
             </nav>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-semibold shadow-sm">
                 <span className="material-symbols-outlined text-[16px]">shield_person</span>
-                <span>단원 관리 모드 (방장 전용)</span>
+                <span>단원 관리 모드 (방장)</span>
               </div>
               <button
                 type="button"
@@ -258,13 +221,13 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          {/* 2. Book & Club Hero Card (_5/code.html 디자인) */}
+          {/* 2. Book & Club Hero Card */}
           <section className="bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-sm relative overflow-hidden border border-surface-container">
             <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-primary-fixed/25 blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-20 w-72 h-72 rounded-full bg-secondary-fixed/20 blur-3xl pointer-events-none" />
 
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-              {/* Book Cover (클릭 시 단원 일정 설정 유도) */}
+              {/* Book Cover */}
               <div className="lg:col-span-3 flex justify-center lg:justify-start">
                 <div
                   className="relative group cursor-pointer"
@@ -272,11 +235,18 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                   title="클릭하여 단원별 독서 일정을 확인하세요"
                 >
                   <div className="w-40 sm:w-44 md:w-48 aspect-[3/4.2] rounded-xl overflow-hidden shadow-xl bg-surface-container-high relative transition-transform duration-300 group-hover:-translate-y-1">
-                    <img
-                      src={club?.book?.thumbnail}
-                      alt={club?.book?.title}
-                      className="w-full h-full object-cover"
-                    />
+                    {club?.book?.thumbnail ? (
+                      <img
+                        src={club.book.thumbnail}
+                        alt={club.book.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-surface-container">
+                        <span className="material-symbols-outlined text-[32px] text-primary mb-2">menu_book</span>
+                        <span className="text-xs font-bold text-on-surface">{club?.book?.title || club?.name}</span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent flex flex-col justify-end p-3 text-inverse-on-surface">
                       <span className="text-[10px] opacity-80 uppercase tracking-widest">
                         {club?.book?.publisher}
@@ -285,7 +255,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                         {club?.book?.title}
                       </span>
                       <span className="text-[10px] opacity-90 mt-0.5">
-                        {club?.book?.authors?.join(', ')}
+                        {Array.isArray(club?.book?.authors) ? club.book.authors.join(', ') : club?.book?.authors}
                       </span>
                     </div>
                   </div>
@@ -308,7 +278,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                     {club?.name}
                   </h1>
                   <p className="font-body-reading text-sm text-on-surface-variant mt-2 leading-relaxed">
-                    {club?.description}
+                    {club?.description || '함께 모여 따뜻한 문장을 읽고 나눕니다.'}
                   </p>
                 </div>
 
@@ -317,7 +287,9 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                     <span className="text-xs text-on-surface-variant flex items-center gap-1">
                       <span className="material-symbols-outlined text-[14px]">local_cafe</span> 모임 방장
                     </span>
-                    <span className="text-xs font-bold mt-0.5 text-primary">달빛책방지기</span>
+                    <span className="text-xs font-bold mt-0.5 text-primary">
+                      {club?.leader?.nickname || '달빛책방지기'}
+                    </span>
                   </div>
 
                   <div className="p-3 rounded-xl bg-surface-container-low flex flex-col">
@@ -325,7 +297,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                       <span className="material-symbols-outlined text-[14px]">group</span> 참여 인원
                     </span>
                     <span className="text-xs font-bold mt-0.5">
-                      정원 {club?.max_members}명 <span className="text-secondary text-[11px] font-normal">({members.filter(m => m.status === 'approved').length}명 활동)</span>
+                      정원 {club?.max_members || 6}명 <span className="text-secondary text-[11px] font-normal">({members.filter(m => m.status === 'approved').length}명 활동)</span>
                     </span>
                   </div>
 
@@ -349,7 +321,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                     </div>
                     <span className="text-xs text-secondary font-medium mt-1 flex items-center gap-1">
                       <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                      <span>총 {schedules.length}개 단원 중 4개 진행</span>
+                      <span>총 {schedules.length}개 단원 등록됨</span>
                     </span>
                   </div>
 
@@ -412,7 +384,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
               멤버 관리 ({members.length})
             </button>
             <Link
-              href={`/book-reviews?clubId=${clubId}`}
+              href={`/book-reviews?club_id=${clubId}`}
               className="ml-auto px-4 py-2 rounded-full bg-secondary-fixed text-on-secondary-fixed hover:bg-secondary hover:text-on-secondary text-xs font-semibold transition-all flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-[15px]">rate_review</span>
@@ -427,7 +399,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
               isLeader={isLeader}
               onAddSchedule={handleAddSchedule}
               onWriteReview={handleWriteReview}
-              onViewReviews={(s) => router.push(`/book-reviews?scheduleId=${s.id}`)}
+              onViewReviews={(s) => router.push(`/book-reviews?schedule_id=${s.id}`)}
             />
           ) : (
             /* Member Management Tab */
@@ -439,59 +411,65 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {members.map((m) => (
-                  <div
-                    key={m.id}
-                    className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-primary text-xs shadow-sm">
-                        {m.profile?.nickname?.[0] || 'M'}
-                      </div>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-on-surface">{m.profile?.nickname}</span>
-                          {m.role === 'leader' && (
-                            <span className="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-semibold">
-                              방장
-                            </span>
-                          )}
-                          {m.status === 'pending' && (
-                            <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-secondary text-[10px] font-semibold">
-                              승인 대기
-                            </span>
-                          )}
+              {members.length === 0 ? (
+                <div className="py-8 text-center text-on-surface-variant text-xs">
+                  아직 참여 중인 멤버가 없습니다.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {members.map((m) => (
+                    <div
+                      key={m.id}
+                      className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-primary text-xs shadow-sm">
+                          {m.profile?.nickname?.[0] || 'M'}
                         </div>
-                        <span className="text-[11px] text-on-surface-variant">
-                          매너온도 {m.profile?.manner_temperature || 36.5}℃
-                        </span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-on-surface">{m.profile?.nickname}</span>
+                            {m.role === 'leader' && (
+                              <span className="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-semibold">
+                                방장
+                              </span>
+                            )}
+                            {m.status === 'pending' && (
+                              <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-secondary text-[10px] font-semibold">
+                                승인 대기
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-on-surface-variant">
+                            매너온도 {m.profile?.manner_temperature || 36.5}℃
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    {isLeader && m.role !== 'leader' && (
-                      <div className="flex items-center gap-1.5">
-                        {m.status === 'pending' ? (
+                      {isLeader && m.role !== 'leader' && (
+                        <div className="flex items-center gap-1.5">
+                          {m.status === 'pending' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleApproveMember(m.id)}
+                              className="px-3 py-1 rounded-full bg-primary text-on-primary text-[11px] font-semibold hover:bg-primary-container"
+                            >
+                              승인
+                            </button>
+                          ) : null}
                           <button
                             type="button"
-                            onClick={() => handleApproveMember(m.id)}
-                            className="px-3 py-1 rounded-full bg-primary text-on-primary text-[11px] font-semibold hover:bg-primary-container"
+                            onClick={() => handleRemoveMember(m.id)}
+                            className="px-3 py-1 rounded-full bg-surface-container-high hover:bg-error-container hover:text-on-error-container text-on-surface-variant text-[11px] font-semibold transition-colors"
                           >
-                            승인
+                            제외
                           </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMember(m.id)}
-                          className="px-3 py-1 rounded-full bg-surface-container-high hover:bg-error-container hover:text-on-error-container text-on-surface-variant text-[11px] font-semibold transition-colors"
-                        >
-                          제외
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
         </div>
@@ -506,7 +484,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
         isOpen={isCreateOpen}
         book={club?.book || null}
         onClose={() => setIsCreateOpen(false)}
-        onSuccess={() => {}}
+        onSuccess={loadClubData}
       />
       <AuthModal
         isOpen={isAuthOpen}

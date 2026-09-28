@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
       .from('clubs')
       .select(`
         *,
-        books (*),
+        book:books (*),
         leader:profiles!clubs_leader_id_fkey (*),
         members:club_members (*),
         schedules:club_schedules (*)
@@ -47,12 +47,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (bookData) {
+      const authorsArray = Array.isArray(bookData.authors)
+        ? bookData.authors
+        : typeof bookData.authors === 'string'
+        ? bookData.authors.split(',').map((a: string) => a.trim())
+        : [];
+
       await supabase.from('books').upsert({
         isbn: validated.isbn,
         title: bookData.title || validated.name,
-        authors: Array.isArray(bookData.authors) ? bookData.authors.join(', ') : bookData.authors || '',
+        authors: authorsArray,
         publisher: bookData.publisher || '',
-        thumbnail_url: bookData.thumbnail || bookData.thumbnail_url || '',
+        thumbnail: bookData.thumbnail || bookData.thumbnail_url || '',
         contents: bookData.contents || '',
         price: bookData.price || 0,
         sale_price: bookData.sale_price || 0,
@@ -69,15 +75,13 @@ export async function POST(req: NextRequest) {
       .from('profiles')
       .select('id')
       .eq('id', leaderId)
-      .single();
+      .maybeSingle();
 
     if (!profile) {
       await supabase.from('profiles').insert({
         id: leaderId,
         nickname: body.nickname || '달빛책방지기',
-        email: body.email || 'leader@cozybook.club',
         manner_temperature: 36.5,
-        role: 'user',
       });
     }
 

@@ -45,9 +45,11 @@ export default function ExplorePage() {
         <div className="max-w-7xl mx-auto px-gutter flex flex-col gap-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h1 className="font-headline-md text-2xl font-bold text-on-surface">도서 탐색 & 큐레이션</h1>
+              <h1 className="font-headline-md text-2xl font-bold text-on-surface">
+                카테고리별 베스트셀러 도서 탐색
+              </h1>
               <p className="text-xs text-on-surface-variant mt-1">
-                12개 대분류 카테고리별 가장 많이 언급된 도서 Top 10을 둘러보고 나만의 북클럽을 시작하세요.
+                12개 대분류 카테고리별 가장 많이 팔린 베스트셀러 도서 Top 10을 둘러보고 나만의 북클럽을 시작하세요.
               </p>
             </div>
 

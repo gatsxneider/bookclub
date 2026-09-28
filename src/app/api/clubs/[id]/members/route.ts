@@ -33,22 +33,21 @@ export async function POST(
   try {
     const clubId = params.id;
     const body = await req.json();
-    const userId = body.user_id || '00000000-0000-0000-0000-000000000002'; // 데모 유저 또는 로그인 유저
+    const userId = body.user_id || '00000000-0000-0000-0000-000000000002';
     const supabase = createServerSupabaseClient();
 
-    // 1. 프로필 없으면 생성
+    // 1. 프로필 없으면 생성 (개인식별정보 배제: 닉네임만 보관)
     const { data: profile } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (!profile) {
       await supabase.from('profiles').insert({
         id: userId,
         nickname: body.nickname || '새로운 독서가',
         manner_temperature: 36.5,
-        role: 'user',
       });
     }
 
@@ -58,7 +57,7 @@ export async function POST(
       .select('*')
       .eq('club_id', clubId)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       return NextResponse.json(
@@ -67,16 +66,16 @@ export async function POST(
       );
     }
 
-    // 3. 가입 신청 (기본 pending 상태)
+    // 3. 가입 신청
     const { data: member, error } = await supabase
       .from('club_members')
       .insert({
         club_id: clubId,
         user_id: userId,
         role: 'member',
-        status: 'approved', // 편리한 사용을 위해 기본 승인(또는 방장 설정에 따라 pending)
+        status: 'approved',
       })
-      .select()
+      .select('*, profile:profiles (*)')
       .single();
 
     if (error) {
@@ -106,7 +105,7 @@ export async function PATCH(
       .from('clubs')
       .select('leader_id')
       .eq('id', clubId)
-      .single();
+      .maybeSingle();
 
     const requesterId = currentUserId || '00000000-0000-0000-0000-000000000001';
     if (club && club.leader_id && club.leader_id !== requesterId) {
@@ -120,7 +119,7 @@ export async function PATCH(
       .from('club_members')
       .update({ status: validated.status })
       .eq('id', memberId)
-      .select()
+      .select('*, profile:profiles (*)')
       .single();
 
     if (error) {
@@ -149,19 +148,18 @@ export async function DELETE(
 
     const supabase = createServerSupabaseClient();
 
-    // 방장 확인
+    // 방장 또는 본인 확인 (보안)
     const { data: club } = await supabase
       .from('clubs')
       .select('leader_id')
       .eq('id', clubId)
-      .single();
+      .maybeSingle();
 
-    // 방장이거나 탈퇴 본인인지 확인
     const { data: targetMember } = await supabase
       .from('club_members')
       .select('user_id')
       .eq('id', memberId)
-      .single();
+      .maybeSingle();
 
     if (
       club &&

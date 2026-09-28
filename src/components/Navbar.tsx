@@ -4,24 +4,21 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import CozyLogo from './CozyLogo';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavbarProps {
   onOpenSearch: () => void;
   onOpenNewClub: () => void;
   onOpenAuth: () => void;
-  currentUser?: {
-    nickname: string;
-    avatar_url?: string;
-  } | null;
 }
 
 export default function Navbar({
   onOpenSearch,
   onOpenNewClub,
   onOpenAuth,
-  currentUser = { nickname: '지우 님' },
 }: NavbarProps) {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
 
   const navLinks = [
     { label: '홈', href: '/' },
@@ -60,7 +57,7 @@ export default function Navbar({
           })}
         </nav>
 
-        {/* Search Trigger Bar (컴팩트 조정) */}
+        {/* Search Trigger Bar */}
         <div className="hidden md:flex items-center flex-1 max-w-[240px] lg:max-w-[280px] xl:max-w-xs mx-space-xs">
           <button
             type="button"
@@ -93,30 +90,47 @@ export default function Navbar({
             <span>새 독서클럽</span>
           </button>
 
-          {/* Profile pill */}
-          <div
-            onClick={onOpenAuth}
-            className="flex items-center gap-2 pl-1 cursor-pointer group"
-          >
-            <div className="relative">
-              <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-primary/20 shadow-sm group-hover:scale-105 transition-transform bg-surface-container">
-                <img
-                  src={currentUser?.avatar_url || '/images/avatar.png'}
-                  alt={currentUser?.nickname || '사용자 프로필'}
-                  className="w-full h-full object-cover"
-                />
+          {/* 로그인 상태에 따른 버튼 전환 영역 */}
+          {user ? (
+            /* 로그인 후: 닉네임과 로그아웃 버튼 표시 */
+            <div className="flex items-center gap-2 pl-1">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-primary/20 shadow-sm bg-surface-container shrink-0">
+                  <img
+                    src={user.avatar_url || '/images/avatar.png'}
+                    alt={user.nickname}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="font-title-sm text-xs text-on-surface leading-tight font-bold">
+                    {user.nickname} 님
+                  </span>
+                  <span className="font-label-sm text-[10px] text-primary font-medium tracking-tight">
+                    온도 {user.manner_temperature || 36.5}℃
+                  </span>
+                </div>
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-surface flex items-center justify-center"></span>
+
+              <button
+                type="button"
+                onClick={signOut}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold text-on-surface-variant bg-surface-container-low hover:bg-surface-container-high hover:text-on-surface transition-all border border-surface-container ml-1"
+              >
+                로그아웃
+              </button>
             </div>
-            <div className="hidden sm:flex flex-col text-left">
-              <span className="font-title-sm text-xs text-on-surface leading-tight font-semibold">
-                {currentUser ? currentUser.nickname : '로그인'}
-              </span>
-              <span className="font-label-sm text-[10px] text-secondary font-medium tracking-tight">
-                책나무 레벨 3
-              </span>
-            </div>
-          </div>
+          ) : (
+            /* 로그인 전: 로그인 버튼만 표시 */
+            <button
+              type="button"
+              onClick={onOpenAuth}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-secondary-fixed text-on-secondary-fixed hover:bg-secondary hover:text-on-secondary text-xs font-bold transition-all shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[16px]">login</span>
+              <span>로그인</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

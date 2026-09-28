@@ -27,7 +27,9 @@ coverage/
 
 # Assets / Downloaded files
 downloaded_covers/
-images/
+
+# Scratch / Temp
+scratch/
 
 # OS / Editor files
 .DS_Store

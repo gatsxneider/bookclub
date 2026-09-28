@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Book } from '@/types/database';
+import { useAuth } from '@/context/AuthContext';
 
 interface CreateClubModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export default function CreateClubModal({
   onClose,
   onSuccess,
 }: CreateClubModalProps) {
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [maxMembers, setMaxMembers] = useState(6);
@@ -46,6 +48,9 @@ export default function CreateClubModal({
           max_members: Number(maxMembers),
           end_date: endDate || undefined,
           book,
+          user_id: user?.id,
+          nickname: user?.nickname,
+          email: user?.email,
         }),
       });
 
@@ -76,7 +81,9 @@ export default function CreateClubModal({
             <span className="material-symbols-outlined text-primary text-[24px]">local_cafe</span>
             <div>
               <h2 className="font-headline-sm text-lg font-semibold text-on-surface">새 독서클럽 만들기</h2>
-              <p className="text-xs text-on-surface-variant">선택한 책을 함께 읽을 멤버들을 모아보세요</p>
+              <p className="text-xs text-on-surface-variant">
+                방장: <span className="font-bold text-primary">{user?.nickname || '회원'}</span> 님
+              </p>
             </div>
           </div>
           <button
@@ -106,7 +113,7 @@ export default function CreateClubModal({
             </span>
             <h3 className="text-sm font-bold text-on-surface truncate mt-1">{book.title}</h3>
             <p className="text-xs text-on-surface-variant truncate">
-              {book.authors?.join(', ')} · {book.publisher}
+              {Array.isArray(book.authors) ? book.authors.join(', ') : book.authors} · {book.publisher}
             </p>
           </div>
         </div>
