@@ -184,7 +184,7 @@ export default function HomePage() {
                     <span className="w-2 h-2 rounded-full bg-secondary" />
                     <span className="text-xs font-medium text-on-surface-variant">나의 매너온도</span>
                   </div>
-                  <span className="text-sm font-bold text-secondary">{user?.manner_temperature || 36.5}℃</span>
+                  <span className="text-sm font-bold text-secondary">{user?.manner_temperature ?? 20.0}℃</span>
                 </div>
 
                 {/* 3. 모임 일정 */}

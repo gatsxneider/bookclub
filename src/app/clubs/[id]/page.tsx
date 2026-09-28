@@ -458,7 +458,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                             )}
                           </div>
                           <span className="text-[11px] text-on-surface-variant">
-                            매너온도 {m.profile?.manner_temperature || 36.5}℃
+                            매너온도 {m.profile?.manner_temperature ?? 20.0}℃
                           </span>
                         </div>
                       </div>

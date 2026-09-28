@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { INITIAL_MANNER_TEMPERATURE } from '@/lib/core/mannerTemperature';
 
 export interface UserProfile {
   id: string;
@@ -52,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email,
           nickname: profile.nickname,
           avatar_url: profile.avatar_url || '/images/avatar.png',
-          manner_temperature: profile.manner_temperature || 36.5,
+          manner_temperature: profile.manner_temperature ?? INITIAL_MANNER_TEMPERATURE,
           completed_count: completedCount,
           level,
         });
@@ -62,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.from('profiles').upsert({
           id: userId,
           nickname: defaultNick,
-          manner_temperature: 36.5,
+          manner_temperature: INITIAL_MANNER_TEMPERATURE,
         });
 
         setUser({
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email,
           nickname: defaultNick,
           avatar_url: '/images/avatar.png',
-          manner_temperature: 36.5,
+          manner_temperature: INITIAL_MANNER_TEMPERATURE,
           completed_count: completedCount,
           level,
         });
@@ -177,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.from('profiles').upsert({
           id: data.user.id,
           nickname: trimmedNick,
-          manner_temperature: 36.5,
+          manner_temperature: INITIAL_MANNER_TEMPERATURE,
         });
 
         setUser({
@@ -185,7 +186,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: data.user.email || email,
           nickname: trimmedNick,
           avatar_url: '/images/avatar.png',
-          manner_temperature: 36.5,
+          manner_temperature: INITIAL_MANNER_TEMPERATURE,
+          completed_count: 1,
+          level: 1,
         });
       }
 

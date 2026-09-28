@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createReviewSchema, updateReviewSchema } from '@/lib/server/validations';
+import {
+  INITIAL_MANNER_TEMPERATURE,
+  calculateNewMannerTemperature,
+} from '@/lib/core/mannerTemperature';
 
 export async function GET(req: NextRequest) {
   try {
@@ -51,22 +55,50 @@ export async function POST(req: NextRequest) {
     const supabase = createServerSupabaseClient();
     const userId = body.user_id || '00000000-0000-0000-0000-000000000001';
 
-    // 1. 프로필 없으면 기본 생성 (개인식별정보 배제)
+    // 1. 프로필 없으면 기본 생성 (기본 20.0℃ 시작)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, manner_temperature')
       .eq('id', userId)
       .maybeSingle();
+
+    let currentTemp = profile?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE;
 
     if (!profile) {
       await supabase.from('profiles').insert({
         id: userId,
-        nickname: body.nickname || '지우',
-        manner_temperature: 36.5,
+        nickname: body.nickname || '린건맘',
+        manner_temperature: INITIAL_MANNER_TEMPERATURE,
       });
     }
 
-    // 2. 독후감 등록
+    // 2. 단원 일정 목표일 확인하여 매너온도 계산 (기한 내 작성 시 +2.0℃, 최대 100℃)
+    let targetDate: string | null = null;
+    if (validated.schedule_id) {
+      const { data: schedule } = await supabase
+        .from('club_schedules')
+        .select('target_date')
+        .eq('id', validated.schedule_id)
+        .maybeSingle();
+      if (schedule) {
+        targetDate = schedule.target_date;
+      }
+    }
+
+    const { newTemperature, change } = calculateNewMannerTemperature(currentTemp, targetDate);
+
+    // 매너온도 업데이트
+    if (change > 0) {
+      await supabase
+        .from('profiles')
+        .update({
+          manner_temperature: newTemperature,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+    }
+
+    // 3. 독후감 등록
     const { data: review, error } = await supabase
       .from('reviews')
       .insert({
@@ -90,7 +122,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, review });
+    return NextResponse.json({
+      success: true,
+      review,
+      manner_temperature: newTemperature,
+      temp_change: change,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }

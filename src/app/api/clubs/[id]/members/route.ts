@@ -47,7 +47,7 @@ export async function POST(
       await supabase.from('profiles').insert({
         id: userId,
         nickname: body.nickname || '새로운 독서가',
-        manner_temperature: 36.5,
+        manner_temperature: 20.0,
       });
     }
 

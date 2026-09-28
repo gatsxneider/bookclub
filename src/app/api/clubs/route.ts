@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       await supabase.from('profiles').insert({
         id: leaderId,
         nickname: body.nickname || '달빛책방지기',
-        manner_temperature: 36.5,
+        manner_temperature: 20.0,
       });
     }
 

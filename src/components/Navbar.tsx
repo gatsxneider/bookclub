@@ -127,7 +127,7 @@ export default function Navbar({
                       </span>
                     </div>
                     <span className="font-label-sm text-[10px] text-primary font-medium tracking-tight">
-                      온도 {user.manner_temperature || 36.5}℃
+                      온도 {user.manner_temperature ?? 20.0}℃
                     </span>
                   </div>
                 </button>

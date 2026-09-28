@@ -8,22 +8,25 @@ interface UserProfileModalProps {
   onClose: () => void;
 }
 
-// 기본 추천 아바타 프리셋 목록 (design/stitch_ui/friendly_profile_portrait_avatar 기반)
+// 기본 추천 아바타 프리셋 목록 (여성, 남성, 고양이)
 const PRESET_AVATARS = [
   {
-    id: 'preset-1',
-    label: '따뜻한 미소의 독서가 1',
-    src: '/avatars/avatar_preset_1.png',
+    id: 'female',
+    label: '여성 독서가',
+    tag: '여성',
+    src: '/avatars/avatar_female.png',
   },
   {
-    id: 'preset-2',
-    label: '카페에서 책을 읽는 독서가 2',
-    src: '/avatars/avatar_preset_2.png',
+    id: 'male',
+    label: '남성 독서가',
+    tag: '남성',
+    src: '/avatars/avatar_male.png',
   },
   {
-    id: 'preset-3',
-    label: '기본 다정한 책방지기',
-    src: '/images/avatar.png',
+    id: 'cat',
+    label: '고양이 독서가',
+    tag: '고양이 🐱',
+    src: '/avatars/avatar_cat.png',
   },
 ];
 
@@ -207,8 +210,10 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               {/* Manner Temperature */}
               <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs text-secondary font-semibold">
                 <span className="material-symbols-outlined text-[16px]">thermostat</span>
-                <span>매너온도 {user?.manner_temperature || 36.5}℃</span>
-                <span className="text-[10px] text-on-surface-variant font-normal">(따뜻한 온기 가득)</span>
+                <span>매너온도 {user?.manner_temperature ?? 20.0}℃</span>
+                <span className="text-[10px] text-on-surface-variant font-normal">
+                  ({(user?.manner_temperature ?? 20.0) >= 80 ? '열정 가득' : (user?.manner_temperature ?? 20.0) >= 40 ? '따뜻한 온기' : '시작하는 온기'})
+                </span>
               </div>
 
               {/* Level Badge */}
@@ -219,6 +224,36 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Manner Temperature Meter (0℃ ~ 100℃) */}
+          <div className="bg-surface-container-low p-4 rounded-2xl border border-surface-container space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-on-surface flex items-center gap-1">
+                <span className="material-symbols-outlined text-secondary text-[16px]">thermostat</span>
+                <span>매너 온도 게이지 (0℃ ~ 100℃)</span>
+              </span>
+              <span className="font-bold text-secondary">{user?.manner_temperature ?? 20.0}℃ / 100℃</span>
+            </div>
+
+            {/* Temperature Progress Bar */}
+            <div className="w-full bg-surface-container-high h-2.5 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(0, user?.manner_temperature ?? 20.0))}%` }}
+              />
+            </div>
+
+            <div className="flex justify-between text-[10px] text-on-surface-variant font-medium px-0.5">
+              <span>0℃ (최저)</span>
+              <span>20℃ (시작)</span>
+              <span>50℃</span>
+              <span>100℃ (최고 🔥)</span>
+            </div>
+
+            <p className="text-[11px] text-on-surface-variant leading-relaxed pt-1">
+              🌡️ <strong>매너온도 규칙</strong>: 처음 가입 시 <strong>20℃</strong>에서 시작합니다. 독후감을 기한 내에 작성하면 <strong>+2℃</strong>씩 상승(최고 100℃)하며, 기한 내 미작성 시 <strong>-2℃</strong>씩 하강(최저 0℃)합니다.
+            </p>
           </div>
 
           {/* Level Progress Gauge (1 to 5) */}
@@ -260,7 +295,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
             </div>
 
             <p className="text-[11px] text-on-surface-variant leading-relaxed pt-1">
-              💡 <strong>레벨 규칙</strong>: 클럽 참여 후 완독 1회 시 <strong>레벨 1</strong>부터 시작하며, 5회 완독 시 최고 레벨인 <strong>레벨 5(마스터 독서가)</strong>에 도달합니다.
+              💡 <strong>레벨 규칙</strong>: 클럽 참여 후 완독 1회 시 <strong>레벨 1</strong>부터 시작하며, 5회 완독 시 최고 레벨인 <strong>레벨 5(마스터 독서가 👑)</strong>에 도달합니다.
             </p>
           </div>
 
@@ -283,13 +318,13 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                     key={preset.id}
                     type="button"
                     onClick={() => handleSelectPreset(preset.src)}
-                    className={`group relative rounded-2xl overflow-hidden aspect-square border-2 p-1 transition-all ${
+                    className={`group relative rounded-2xl overflow-hidden flex flex-col items-center border-2 p-1.5 transition-all ${
                       isSelected
                         ? 'border-primary ring-2 ring-primary/30 shadow-md bg-primary-fixed/20'
                         : 'border-surface-container hover:border-primary/50 bg-surface-container-lowest'
                     }`}
                   >
-                    <div className="w-full h-full rounded-xl overflow-hidden bg-surface-container relative">
+                    <div className="w-full aspect-square rounded-xl overflow-hidden bg-surface-container relative">
                       <img
                         src={preset.src}
                         alt={preset.label}
@@ -306,6 +341,11 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                         </div>
                       )}
                     </div>
+                    <span className={`text-[11px] font-bold mt-1.5 transition-colors ${
+                      isSelected ? 'text-primary' : 'text-on-surface-variant'
+                    }`}>
+                      {preset.tag}
+                    </span>
                   </button>
                 );
               })}
