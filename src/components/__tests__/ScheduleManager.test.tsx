@@ -80,8 +80,46 @@ describe('ScheduleManager Component', () => {
       />
     );
 
-    const writeBtns = screen.getAllByRole('button', { name: /독후감 작성/ });
+    const writeBtns = screen.getAllByRole('button', { name: '독후감 작성' });
     fireEvent.click(writeBtns[0]);
     expect(handleWriteReview).toHaveBeenCalledWith(mockSchedules[0]);
+  });
+
+  it('다른 멤버가 독후감을 썼더라도 내가 작성하지 않았으면(my_review_submitted: false) 작성 버튼이 노출되어야 한다', () => {
+    const schedulesWithMixedStatus: ClubSchedule[] = [
+      {
+        id: 'sched-1',
+        club_id: 'club-1',
+        sequence: 1,
+        chapter_title: '제1장. 2020 가을, 산해진미 도시락',
+        page_range: 'p.1 ~ p.65',
+        reviews_count: 2,
+        my_review_submitted: false,
+      },
+      {
+        id: 'sched-2',
+        club_id: 'club-1',
+        sequence: 2,
+        chapter_title: '제2장. 제이에스 오브 제이에스',
+        page_range: 'p.66 ~ p.132',
+        reviews_count: 1,
+        my_review_submitted: true,
+      },
+    ];
+
+    render(
+      <ScheduleManager
+        schedules={schedulesWithMixedStatus}
+        isLeader={false}
+        onAddSchedule={vi.fn()}
+        onWriteReview={vi.fn()}
+      />
+    );
+
+    // 1단원은 내가 안 썼으므로 독후감 작성 버튼 표시
+    expect(screen.getByRole('button', { name: '독후감 작성' })).toBeInTheDocument();
+    // 2단원은 내가 작성 완료했으므로 독후감 수정 버튼 및 작성 완료 뱃지 표시
+    expect(screen.getByRole('button', { name: '독후감 수정' })).toBeInTheDocument();
+    expect(screen.getByText('작성 완료')).toBeInTheDocument();
   });
 });

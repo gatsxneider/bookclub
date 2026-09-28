@@ -173,9 +173,7 @@ export default function ScheduleManager({
       ) : (
         <div className="flex flex-col gap-2.5">
           {schedules.map((schedule, idx) => {
-            const isSubmitted = Boolean(
-              schedule.my_review_submitted || (schedule.reviews_count && schedule.reviews_count > 0)
-            );
+            const isSubmitted = Boolean(schedule.my_review_submitted);
 
             return (
               <div
@@ -254,12 +252,12 @@ export default function ScheduleManager({
                         : 'bg-primary text-on-primary hover:bg-primary-container'
                     }`}
                     title={isSubmitted ? '클릭하여 작성한 독후감을 수정합니다' : '단원 독후감을 작성합니다'}
-                    aria-label={isSubmitted ? '독후감 작성 완료' : '독후감 작성'}
+                    aria-label={isSubmitted ? '독후감 수정' : '독후감 작성'}
                   >
                     <span className="material-symbols-outlined text-[14px]">
-                      {isSubmitted ? 'task_alt' : 'edit_note'}
+                      {isSubmitted ? 'edit' : 'edit_note'}
                     </span>
-                    <span>{isSubmitted ? '독후감 작성 완료' : '독후감 작성'}</span>
+                    <span>{isSubmitted ? '독후감 수정' : '독후감 작성'}</span>
                   </button>
                 </div>
               </div>

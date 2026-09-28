@@ -32,7 +32,7 @@ export async function GET(
       return {
         ...s,
         reviews_count: reviewsList.length,
-        my_review_submitted: hasMyReview || (reviewsList.length > 0 && !userId), // 게스트/데모 시 독후감 있으면 완료 표시
+        my_review_submitted: hasMyReview,
       };
     });
 

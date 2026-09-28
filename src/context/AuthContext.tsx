@@ -267,9 +267,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('cozy_user');
+        window.location.href = '/';
       }
     } catch (err) {
       console.warn('Sign out error:', err);
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('cozy_user');
+        window.location.href = '/';
+      }
     }
   };
 
