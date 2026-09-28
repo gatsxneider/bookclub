@@ -76,7 +76,10 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
       }
 
       // 2. 단원 일정
-      const schedRes = await fetch(`/api/clubs/${clubId}/schedules`);
+      const schedUrl = user?.id
+        ? `/api/clubs/${clubId}/schedules?userId=${user.id}`
+        : `/api/clubs/${clubId}/schedules`;
+      const schedRes = await fetch(schedUrl);
       if (schedRes.ok) {
         const schedData = await schedRes.json();
         setSchedules(schedData.schedules || []);
@@ -98,7 +101,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     loadClubData();
-  }, [clubId]);
+  }, [clubId, user?.id]);
 
   // 방장의 단원 추가
   const handleAddSchedule = async (scheduleData: {

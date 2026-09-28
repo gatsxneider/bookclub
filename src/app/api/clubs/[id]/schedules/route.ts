@@ -8,11 +8,14 @@ export async function GET(
 ) {
   try {
     const clubId = params.id;
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId') || searchParams.get('user_id');
+
     const supabase = createServerSupabaseClient();
 
     const { data: schedules, error } = await supabase
       .from('club_schedules')
-      .select('*, reviews (count)')
+      .select('*, reviews (*)')
       .eq('club_id', clubId)
       .order('sequence', { ascending: true });
 
@@ -20,10 +23,18 @@ export async function GET(
       return NextResponse.json({ schedules: [] });
     }
 
-    const formatted = (schedules || []).map((s: any) => ({
-      ...s,
-      reviews_count: s.reviews?.[0]?.count || 0,
-    }));
+    const formatted = (schedules || []).map((s: any) => {
+      const reviewsList = s.reviews || [];
+      const hasMyReview = Boolean(
+        userId && reviewsList.some((r: any) => r.user_id === userId)
+      );
+
+      return {
+        ...s,
+        reviews_count: reviewsList.length,
+        my_review_submitted: hasMyReview || (reviewsList.length > 0 && !userId), // 게스트/데모 시 독후감 있으면 완료 표시
+      };
+    });
 
     return NextResponse.json({ schedules: formatted });
   } catch (error: any) {

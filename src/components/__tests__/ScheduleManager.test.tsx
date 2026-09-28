@@ -40,18 +40,17 @@ describe('ScheduleManager Component', () => {
     expect(screen.getByText('p.1 ~ p.65')).toBeInTheDocument();
   });
 
-  it('방장일 경우 단원 추가 폼이 토글되고, 방장이 아닐 경우 onRequireAuth가 호출되어야 한다', () => {
-    const handleRequireAuth = vi.fn();
+  it('방장일 경우 독서일정 추가 폼이 토글되고, 방장이 아닐 경우 방장만 추가할 수 있다는 메시지가 출력되어야 한다', () => {
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
     const { rerender } = render(
       <ScheduleManager
         schedules={mockSchedules}
         isLeader={true}
         onAddSchedule={vi.fn()}
         onWriteReview={vi.fn()}
-        onRequireAuth={handleRequireAuth}
       />
     );
-    const addBtn = screen.getByRole('button', { name: /단원 추가/ });
+    const addBtn = screen.getByRole('button', { name: /독서일정 추가/ });
     expect(addBtn).toBeInTheDocument();
     fireEvent.click(addBtn);
     expect(screen.getByText(/방장 전용: 3번째 단원 일정 등록/)).toBeInTheDocument();
@@ -62,12 +61,12 @@ describe('ScheduleManager Component', () => {
         isLeader={false}
         onAddSchedule={vi.fn()}
         onWriteReview={vi.fn()}
-        onRequireAuth={handleRequireAuth}
       />
     );
-    const nonLeaderAddBtn = screen.getByRole('button', { name: /단원 추가/ });
+    const nonLeaderAddBtn = screen.getByRole('button', { name: /독서일정 추가/ });
     fireEvent.click(nonLeaderAddBtn);
-    expect(handleRequireAuth).toHaveBeenCalledTimes(1);
+    expect(alertMock).toHaveBeenCalledWith('독서일정 추가는 모임의 방장만 가능합니다.');
+    alertMock.mockRestore();
   });
 
   it('일정의 독후감 작성 버튼 클릭 시 onWriteReview 콜백이 호출되어야 한다', () => {

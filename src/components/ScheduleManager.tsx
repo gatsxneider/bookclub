@@ -33,11 +33,7 @@ export default function ScheduleManager({
 
   const handleToggleAddForm = () => {
     if (!isLeader) {
-      if (onRequireAuth) {
-        onRequireAuth();
-      } else {
-        alert('단원 일정 추가는 모임의 방장만 가능합니다. 방장 계정으로 로그인해주세요.');
-      }
+      alert('독서일정 추가는 모임의 방장만 가능합니다.');
       return;
     }
     setShowAddForm(!showAddForm);
@@ -88,12 +84,12 @@ export default function ScheduleManager({
           type="button"
           onClick={handleToggleAddForm}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary text-xs font-semibold shadow-sm transition-all self-start sm:self-auto"
-          aria-label="단원 추가"
+          aria-label="독서일정 추가"
         >
           <span className="material-symbols-outlined text-[16px]">
             {showAddForm && isLeader ? 'close' : 'add'}
           </span>
-          <span>{showAddForm && isLeader ? '작성 취소' : '+ 새 단원 추가'}</span>
+          <span>{showAddForm && isLeader ? '작성 취소' : '새 독서일정 추가'}</span>
         </button>
       </div>
 
@@ -171,72 +167,103 @@ export default function ScheduleManager({
             onClick={handleToggleAddForm}
             className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1 font-semibold"
           >
-            <span>상단의 '+ 새 단원 추가'를 눌러 독서 계획을 세워보세요!</span>
+            <span>상단의 '새 독서일정 추가'를 눌러 독서 계획을 세워보세요!</span>
           </button>
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">
-          {schedules.map((schedule, idx) => (
-            <div
-              key={schedule.id || idx}
-              className="group p-4 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all border border-surface-container-high flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-            >
-              <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-surface-container-high text-primary font-bold text-xs flex items-center justify-center shrink-0">
-                  {schedule.sequence || idx + 1}
-                </span>
+          {schedules.map((schedule, idx) => {
+            const isSubmitted = Boolean(
+              schedule.my_review_submitted || (schedule.reviews_count && schedule.reviews_count > 0)
+            );
 
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-title-sm text-sm font-semibold text-on-surface">
-                      {schedule.chapter_title}
-                    </h4>
-                    {schedule.page_range && (
-                      <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[11px]">
-                        {schedule.page_range}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-on-surface-variant mt-1">
-                    {schedule.target_date && (
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px] text-secondary">
-                          event
-                        </span>
-                        <span>목표일: {schedule.target_date}</span>
-                      </span>
-                    )}
-                    <span>•</span>
-                    <span className="text-primary font-medium">
-                      독후감 {schedule.reviews_count || 0}편 작성됨
+            return (
+              <div
+                key={schedule.id || idx}
+                className={`group p-4 rounded-xl transition-all border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  isSubmitted
+                    ? 'bg-surface-container-lowest border-secondary-fixed-dim/60 shadow-sm'
+                    : 'bg-surface-container-low hover:bg-surface-container border-surface-container-high'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {isSubmitted ? (
+                    <span
+                      className="w-8 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed font-bold text-xs flex items-center justify-center shrink-0 shadow-sm"
+                      title="독후감 작성 완료"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">check</span>
                     </span>
+                  ) : (
+                    <span className="w-8 h-8 rounded-full bg-surface-container-high text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                      {schedule.sequence || idx + 1}
+                    </span>
+                  )}
+
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-title-sm text-sm font-semibold text-on-surface">
+                        {schedule.chapter_title}
+                      </h4>
+                      {schedule.page_range && (
+                        <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[11px]">
+                          {schedule.page_range}
+                        </span>
+                      )}
+                      {isSubmitted && (
+                        <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[10px] font-semibold flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[12px]">task_alt</span>
+                          <span>작성 완료</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-on-surface-variant mt-1">
+                      {schedule.target_date && (
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-secondary">
+                            event
+                          </span>
+                          <span>목표일: {schedule.target_date}</span>
+                        </span>
+                      )}
+                      <span>•</span>
+                      <span className="text-primary font-medium">
+                        독후감 {schedule.reviews_count || 0}편 작성됨
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                {onViewReviews && (
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  {onViewReviews && (
+                    <button
+                      type="button"
+                      onClick={() => onViewReviews(schedule)}
+                      className="px-3 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-medium transition-all"
+                    >
+                      독후감 보기
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    onClick={() => onViewReviews(schedule)}
-                    className="px-3 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-medium transition-all"
+                    onClick={() => onWriteReview(schedule)}
+                    className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-all ${
+                      isSubmitted
+                        ? 'bg-secondary-fixed text-on-secondary-fixed hover:bg-secondary hover:text-on-secondary'
+                        : 'bg-primary text-on-primary hover:bg-primary-container'
+                    }`}
+                    aria-label={isSubmitted ? '독후감 작성 완료' : '독후감 작성'}
                   >
-                    독후감 보기
+                    <span className="material-symbols-outlined text-[14px]">
+                      {isSubmitted ? 'task_alt' : 'edit_note'}
+                    </span>
+                    <span>{isSubmitted ? '독후감 작성 완료' : '독후감 작성'}</span>
                   </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => onWriteReview(schedule)}
-                  className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-semibold shadow-sm transition-all"
-                  aria-label="독후감 작성"
-                >
-                  <span className="material-symbols-outlined text-[14px]">edit_note</span>
-                  <span>독후감 작성</span>
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>
