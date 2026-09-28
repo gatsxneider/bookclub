@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { calculateProgress, calculateDday, formatPageRange } from '../scheduleCalculator';
+import {
+  calculateProgress,
+  calculateClubTotalProgress,
+  calculateDday,
+  formatPageRange,
+} from '../scheduleCalculator';
 
 describe('scheduleCalculator', () => {
   it('총 일정과 완료된 일정을 바탕으로 진행률 퍼센티지를 정확히 계산해야 한다', () => {
@@ -8,6 +13,28 @@ describe('scheduleCalculator', () => {
     expect(calculateProgress(4, 5)).toBe(80);
     expect(calculateProgress(5, 5)).toBe(100);
     expect(calculateProgress(0, 0)).toBe(0);
+  });
+
+  it('독서회 전체 완독 진척률을 멤버 수와 단원 수를 기반으로 정확히 계산해야 한다', () => {
+    // 1명, 3개 단원, 3건 작성 -> 100%
+    const res1 = calculateClubTotalProgress(3, 1, 3);
+    expect(res1.percentage).toBe(100);
+    expect(res1.totalReviews).toBe(3);
+    expect(res1.targetReviews).toBe(3);
+
+    // 2명, 3개 단원 (목표 6건), 3건 작성 -> 50%
+    const res2 = calculateClubTotalProgress(3, 2, 3);
+    expect(res2.percentage).toBe(50);
+    expect(res2.totalReviews).toBe(3);
+    expect(res2.targetReviews).toBe(6);
+
+    // 2명, 3개 단원, 6건 모두 작성 -> 100%
+    const res3 = calculateClubTotalProgress(6, 2, 3);
+    expect(res3.percentage).toBe(100);
+
+    // 0건 작성 시 0%
+    const res4 = calculateClubTotalProgress(0, 2, 3);
+    expect(res4.percentage).toBe(0);
   });
 
   it('목표 날짜를 기준으로 D-Day 문자열을 반환해야 한다', () => {

@@ -11,7 +11,11 @@ import AuthModal from '@/components/AuthModal';
 import InviteMemberModal from '@/components/InviteMemberModal';
 import RemoveMemberModal from '@/components/RemoveMemberModal';
 import { Club, ClubSchedule, ClubMember } from '@/types/database';
-import { calculateProgress, calculateDday } from '@/lib/core/scheduleCalculator';
+import {
+  calculateProgress,
+  calculateClubTotalProgress,
+  calculateDday,
+} from '@/lib/core/scheduleCalculator';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ClubDetailPage({ params }: { params: { id: string } }) {
@@ -249,10 +253,23 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
   };
 
   const totalSchedulesCount = schedules.length || 1;
+  const activeMembersCount = members.length || 1;
 
-  // 1. 독서회 전체 완독 진척률 (전체 단원 중 1편 이상의 독후감이 작성된 단원 비율)
-  const clubCompletedChapters = schedules.filter((s) => (s.reviews_count || 0) > 0).length;
-  const clubProgress = calculateProgress(clubCompletedChapters, totalSchedulesCount);
+  // 1. 독서회 전체 완독 진척률 (전체 참여 멤버 수 x 단원 수 대비 총 작성된 독후감 수의 비율)
+  // 예: 멤버 2명, 단원 3개 -> 총 6건 중 3건 작성 시 50%
+  const totalReviewsWritten = schedules.reduce(
+    (sum, s) => sum + (s.reviews_count || 0),
+    0
+  );
+  const {
+    percentage: clubProgress,
+    totalReviews: clubReviewsCount,
+    targetReviews: clubTargetReviews,
+  } = calculateClubTotalProgress(
+    totalReviewsWritten,
+    activeMembersCount,
+    totalSchedulesCount
+  );
 
   // 2. 개인 완독 진척률 (본인이 독후감을 작성 완료한 단원 비율 - 독서 레벨과 직접 연계)
   const myCompletedChapters = schedules.filter((s) => Boolean(s.my_review_submitted)).length;
@@ -360,7 +377,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-2xl font-extrabold text-secondary">{clubProgress}%</span>
                         <span className="text-xs text-on-surface-variant">
-                          ({clubCompletedChapters}/{schedules.length} 단원 기록됨)
+                          ({clubReviewsCount}/{clubTargetReviews}건 기록됨)
                         </span>
                       </div>
                     </div>
