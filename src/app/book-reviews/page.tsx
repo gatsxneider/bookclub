@@ -58,6 +58,8 @@ function BookReviewsFeedContent() {
           is_public: true,
           created_at: '2026-09-24',
           author: { id: '1', nickname: '지우' },
+          club: { id: 'c1', name: '고요한 숲속 심야 독서회', leader_id: '1', status: 'active', max_members: 6 },
+          schedule: { id: 's1', club_id: 'c1', sequence: 4, chapter_title: '제4장. 네 잎 클로버의 기적', page_range: 'p.199 ~ p.262', target_date: '2026-10-01' },
         },
         {
           id: 'rev-2',
@@ -70,6 +72,8 @@ function BookReviewsFeedContent() {
           is_public: true,
           created_at: '2026-09-20',
           author: { id: '2', nickname: '도윤' },
+          club: { id: 'c2', name: '따스한 차 한 잔과 인문학', leader_id: '2', status: 'active', max_members: 8 },
+          schedule: { id: 's2', club_id: 'c2', sequence: 1, chapter_title: '1부. 너무 빨리 흘러가는 세상과 우리의 뇌', page_range: 'p.1 ~ p.80', target_date: '2026-09-20' },
         },
         {
           id: 'rev-3',
@@ -82,6 +86,8 @@ function BookReviewsFeedContent() {
           is_public: true,
           created_at: '2026-09-17',
           author: { id: '3', nickname: '민서' },
+          club: { id: 'c1', name: '고요한 숲속 심야 독서회', leader_id: '1', status: 'active', max_members: 6 },
+          schedule: { id: 's3', club_id: 'c1', sequence: 3, chapter_title: '제3장. 삼각김밥의 용도', page_range: 'p.133 ~ p.198', target_date: '2026-09-24' },
         },
       ]);
     };
@@ -105,7 +111,7 @@ function BookReviewsFeedContent() {
               <span>온기 있는 문장의 나눔</span>
             </div>
             <h1 className="font-headline-md text-2xl font-bold text-on-surface mt-1">
-              독후감 피드
+              {clubId || scheduleId ? '클럽 독후감 전체 모아보기' : '독후감 피드'}
             </h1>
             <p className="text-xs text-on-surface-variant mt-0.5">
               클럽 멤버들이 단원별 독서 일정을 함께하며 기록한 따뜻한 감상과 발제문들을 나눕니다.
@@ -151,12 +157,26 @@ function BookReviewsFeedContent() {
                   {rev.content}
                 </p>
 
-                <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
-                  <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[15px] text-primary">eco</span>
-                    <span>{rev.club?.name || '고요한 숲속 심야 독서회'}</span>
-                  </span>
-                  <div className="flex items-center gap-3">
+                <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant flex-wrap gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="flex items-center gap-1 font-semibold text-primary">
+                      <span className="material-symbols-outlined text-[15px]">eco</span>
+                      <span>{rev.club?.name || '독서클럽'}</span>
+                    </span>
+                    {rev.schedule && (
+                      <>
+                        <span className="text-on-surface-variant/40">•</span>
+                        <span className="inline-flex items-center gap-1 text-[11px] text-secondary font-medium bg-secondary-fixed/30 px-2.5 py-0.5 rounded-full">
+                          <span className="material-symbols-outlined text-[13px]">event</span>
+                          <span>
+                            {rev.schedule.target_date ? `단원 독서 일정: ${rev.schedule.target_date}` : '상시 모임'}
+                            {rev.schedule.page_range ? ` (${rev.schedule.page_range})` : ''}
+                          </span>
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 ml-auto">
                     <button
                       type="button"
                       className="flex items-center gap-1 hover:text-secondary transition-colors"
