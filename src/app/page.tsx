@@ -182,11 +182,11 @@ export default function HomePage() {
                   <span className="text-sm font-bold text-primary">{myClubs.length}개</span>
                 </div>
 
-                {/* 2. 매너 온도 */}
+                {/* 2. 감성 온도 */}
                 <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-surface-container-lowest shadow-[0_1px_3px_rgba(45,40,37,0.03)] border border-surface-container hover:bg-surface-container-low transition-colors">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-secondary" />
-                    <span className="text-xs font-medium text-on-surface-variant">나의 매너온도</span>
+                    <span className="text-xs font-medium text-on-surface-variant">나의 감성 온도</span>
                   </div>
                   <span className="text-sm font-bold text-secondary">{user?.manner_temperature ?? 20.0}℃</span>
                 </div>

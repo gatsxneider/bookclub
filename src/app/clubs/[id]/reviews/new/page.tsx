@@ -149,7 +149,7 @@ function NewReviewContent({ clubId }: { clubId: string }) {
         await refreshProfile();
 
         const tempNotice = data.temp_change
-          ? `\n🌡️ 매너 온도가 +${data.temp_change}℃ 상승하여 ${data.manner_temperature}℃가 되었습니다!`
+          ? `\n🌡️ 감성 온도가 +${data.temp_change}℃ 상승하여 ${data.manner_temperature}℃가 되었습니다!`
           : '';
 
         const completionNotice = data.is_club_completed

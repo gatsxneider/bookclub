@@ -164,7 +164,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                 내 프로필 & 아바타 관리
               </h2>
               <p className="text-xs text-on-surface-variant">
-                독서 레벨, 매너 온도를 확인하고 프로필 이미지를 변경해보세요
+                독서 레벨, 감성 온도를 확인하고 프로필 이미지를 변경해보세요
               </p>
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               {/* Manner Temperature */}
               <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs text-secondary font-semibold">
                 <span className="material-symbols-outlined text-[16px]">thermostat</span>
-                <span>매너온도 {user?.manner_temperature ?? 20.0}℃</span>
+                <span>감성 온도 {user?.manner_temperature ?? 20.0}℃</span>
                 <span className="text-[10px] text-on-surface-variant font-normal">
                   ({(user?.manner_temperature ?? 20.0) >= 80 ? '열정 가득' : (user?.manner_temperature ?? 20.0) >= 40 ? '따뜻한 온기' : '시작하는 온기'})
                 </span>
@@ -241,7 +241,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-on-surface flex items-center gap-1">
                 <span className="material-symbols-outlined text-secondary text-[16px]">thermostat</span>
-                <span>매너 온도 게이지 (0℃ ~ 100℃)</span>
+                <span>감성 온도 게이지 (0℃ ~ 100℃)</span>
               </span>
               <span className="font-bold text-secondary">{user?.manner_temperature ?? 20.0}℃ / 100℃</span>
             </div>
@@ -262,7 +262,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
             </div>
 
             <p className="text-[11px] text-on-surface-variant leading-relaxed pt-1">
-              🌡️ <strong>매너온도 규칙</strong>: 처음 가입 시 <strong>20℃</strong>에서 시작합니다. 독후감을 기한 내에 작성하면 <strong>+2℃</strong>씩 상승(최고 100℃)하며, 기한 내 미작성 시 <strong>-2℃</strong>씩 하강(최저 0℃)합니다.
+              🌡️ <strong>감성 온도 규칙</strong>: 처음 가입 시 <strong>20℃</strong>에서 시작합니다. 독후감을 기한 내에 작성하면 <strong>+2℃</strong>씩 상승(최고 100℃)하며, 기한 내 미작성 시 <strong>-2℃</strong>씩 하강(최저 0℃)합니다.
             </p>
           </div>
 

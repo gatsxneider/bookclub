@@ -176,7 +176,7 @@ export default function RemoveMemberModal({
                               )}
                             </div>
                             <span className="text-[10px] text-on-surface-variant">
-                              매너온도 {m.profile?.manner_temperature ?? 20.0}℃
+                              감성 온도 {m.profile?.manner_temperature ?? 20.0}℃
                             </span>
                           </div>
                         </div>

@@ -286,7 +286,7 @@ export default function MyClubsPage() {
                   <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-1.5 flex-wrap">
                     <span className="inline-flex items-center gap-1 font-medium text-primary">
                       <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
-                      <span>매너온도 {mannerTemp}℃</span>
+                      <span>감성 온도 {mannerTemp}℃</span>
                     </span>
                     <span>•</span>
                     <span className="text-on-surface-variant/80">{user.email}</span>

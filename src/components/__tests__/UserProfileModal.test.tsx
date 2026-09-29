@@ -13,7 +13,7 @@ describe('UserProfileModal Component', () => {
     );
 
     expect(screen.getByText('내 프로필 & 아바타 관리')).toBeInTheDocument();
-    expect(screen.getAllByText(/매너온도/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/감성\s*온도/).length).toBeGreaterThan(0);
     expect(screen.getByText(/독서클럽 완독 레벨/)).toBeInTheDocument();
     expect(screen.getByText('추천 아바타 이미지 선택')).toBeInTheDocument();
     expect(screen.getByText('나만의 사진 직접 업로드')).toBeInTheDocument();
