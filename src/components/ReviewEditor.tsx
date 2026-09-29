@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { ClubSchedule } from '@/types/database';
 
 interface ReviewEditorProps {
+  clubId?: string;
   schedules?: ClubSchedule[];
   selectedScheduleId?: string;
   bookTitle?: string;
@@ -26,6 +27,7 @@ interface ReviewEditorProps {
 }
 
 export default function ReviewEditor({
+  clubId,
   schedules = [],
   selectedScheduleId,
   bookTitle = '선정 도서',
@@ -34,7 +36,7 @@ export default function ReviewEditor({
   initialTitle = '',
   initialContent = '',
   initialQuote = '',
-  initialRating = 5,
+  initialRating = 0,
   initialIsPublic = true,
   isEditMode = false,
   onSubmit,
@@ -45,11 +47,36 @@ export default function ReviewEditor({
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [quote, setQuote] = useState(initialQuote);
-  const [rating, setRating] = useState(initialRating || 5);
+  const [rating, setRating] = useState(initialRating || 0);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [loading, setLoading] = useState(false);
   const [savedTime, setSavedTime] = useState<string | null>(null);
+  const [showSavedToast, setShowSavedToast] = useState(false);
+
+  // 로컬 스토리지 키
+  const draftKey = `cozy_draft_${clubId || 'default'}_${scheduleId || 'common'}`;
+
+  // 임시 저장본 불러오기 (수정 모드가 아닐 때)
+  React.useEffect(() => {
+    if (isEditMode) return;
+    if (initialTitle || initialContent) return;
+
+    try {
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.title) setTitle(parsed.title);
+        if (parsed.content) setContent(parsed.content);
+        if (parsed.quote) setQuote(parsed.quote);
+        if (parsed.rating) setRating(parsed.rating);
+        if (parsed.isPublic !== undefined) setIsPublic(parsed.isPublic);
+        if (parsed.savedTime) setSavedTime(parsed.savedTime);
+      }
+    } catch (err) {
+      console.warn('Failed to load draft from localStorage:', err);
+    }
+  }, [draftKey, isEditMode, initialTitle, initialContent]);
 
   // 초기값이 외부(API 등)에서 변경되었을 때 상태 동기화
   React.useEffect(() => {
@@ -65,7 +92,7 @@ export default function ReviewEditor({
   }, [initialQuote]);
 
   React.useEffect(() => {
-    setRating(initialRating || 5);
+    setRating(initialRating || 0);
   }, [initialRating]);
 
   React.useEffect(() => {
@@ -86,12 +113,30 @@ export default function ReviewEditor({
     return schedules.find((s) => s.id === scheduleId);
   }, [schedules, scheduleId]);
 
+  // 임시 저장 처리 (localStorage 저장 및 시간 기록)
   const handleTempSave = () => {
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(
       now.getMinutes()
     ).padStart(2, '0')}`;
-    setSavedTime(timeStr);
+
+    try {
+      const draftData = {
+        title,
+        content,
+        quote,
+        rating,
+        isPublic,
+        savedTime: timeStr,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draftData));
+      setSavedTime(timeStr);
+      setShowSavedToast(true);
+      setTimeout(() => setShowSavedToast(false), 2500);
+    } catch (err) {
+      console.warn('Failed to save draft to localStorage:', err);
+      alert('브라우저 저장 공간 문제로 임시 저장에 실패했습니다.');
+    }
   };
 
   const handlePublish = async (e: React.FormEvent) => {
@@ -102,7 +147,7 @@ export default function ReviewEditor({
     }
 
     if (!rating || rating < 1 || rating > 5) {
-      alert('단원별 평점(1~5점)을 매겨주세요.');
+      alert('평점을 선택해주세요.');
       return;
     }
 
@@ -116,6 +161,13 @@ export default function ReviewEditor({
         rating,
         is_public: isPublic,
       });
+
+      // 발행 성공 시 임시 저장본 삭제
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (e) {
+        // ignore
+      }
     } catch (err: any) {
       alert(err.message || (isEditMode ? '독후감 수정 중 오류가 발생했습니다.' : '독후감 발행 중 오류가 발생했습니다.'));
     } finally {
@@ -235,7 +287,7 @@ export default function ReviewEditor({
               onMouseLeave={() => setHoverRating(null)}
             >
               {[1, 2, 3, 4, 5].map((star) => {
-                const isFilled = star <= activeRating;
+                const isFilled = activeRating > 0 && star <= activeRating;
                 return (
                   <button
                     key={star}
@@ -247,23 +299,37 @@ export default function ReviewEditor({
                   >
                     <span
                       className={`material-symbols-outlined text-[22px] transition-colors ${
-                        isFilled ? 'text-amber-400' : 'text-outline-variant/50 hover:text-amber-200'
+                        isFilled ? 'text-amber-400 drop-shadow-xs' : 'text-outline-variant/40 hover:text-amber-300'
                       }`}
                       style={{
                         fontVariationSettings: isFilled ? "'FILL' 1, 'wght' 600" : "'FILL' 0, 'wght' 400",
                       }}
                     >
-                      star
+                      {isFilled ? 'star' : 'star'}
                     </span>
                   </button>
                 );
               })}
             </div>
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 min-w-[30px] text-center">
-              {activeRating}점
-            </span>
+            {activeRating > 0 ? (
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 min-w-[30px] text-center">
+                {activeRating}점
+              </span>
+            ) : (
+              <span className="text-[11px] font-medium text-outline-variant min-w-[45px] text-center">
+                선택 안 됨
+              </span>
+            )}
           </div>
         </div>
+
+        {/* 임시저장 성공 토스트 알림 */}
+        {showSavedToast && (
+          <div className="fixed bottom-6 right-6 z-50 bg-inverse-surface text-inverse-on-surface px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 text-xs font-medium border border-outline/20 transition-all">
+            <span className="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+            <span>작성 중인 내용이 안전하게 임시 저장되었습니다 ({savedTime})</span>
+          </div>
+        )}
 
         {/* 방장이 설정한 단원명과 페이지 표시 영역 */}
         {currentSchedule && (

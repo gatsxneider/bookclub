@@ -182,6 +182,7 @@ function NewReviewContent({ clubId }: { clubId: string }) {
             </div>
           ) : (
             <ReviewEditor
+              clubId={clubId}
               schedules={schedules}
               selectedScheduleId={initialScheduleId || (existingReview?.schedule_id || undefined)}
               bookTitle={club?.book?.title || '선정 도서'}
@@ -190,7 +191,7 @@ function NewReviewContent({ clubId }: { clubId: string }) {
               initialTitle={existingReview?.title || ''}
               initialContent={existingReview?.content || ''}
               initialQuote={existingReview?.quote || ''}
-              initialRating={existingReview?.rating || 5}
+              initialRating={existingReview?.rating || 0}
               initialIsPublic={existingReview?.is_public ?? true}
               isEditMode={Boolean(existingReview?.id)}
               onSubmit={handleSubmit}
