@@ -154,62 +154,63 @@ function BookReviewsFeedContent() {
                     </div>
                   </div>
 
-                <h2 className="font-headline-sm text-lg font-bold text-on-surface">
-                  {rev.title}
-                </h2>
+                  <h2 className="font-headline-sm text-lg font-bold text-on-surface">
+                    {rev.title}
+                  </h2>
 
-                {rev.quote && (
-                  <blockquote className="bg-surface-container-low p-3.5 rounded-xl border-l-4 border-primary text-xs italic text-on-surface leading-relaxed">
-                    {rev.quote}
-                  </blockquote>
-                )}
+                  {rev.quote && (
+                    <blockquote className="bg-surface-container-low p-3.5 rounded-xl border-l-4 border-primary text-xs italic text-on-surface leading-relaxed">
+                      {rev.quote}
+                    </blockquote>
+                  )}
 
-                <p className="font-body-reading text-sm text-on-surface-variant leading-relaxed">
-                  {rev.content}
-                </p>
+                  <p className="font-body-reading text-sm text-on-surface-variant leading-relaxed">
+                    {rev.content}
+                  </p>
 
-                <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant flex-wrap gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="flex items-center gap-1 font-semibold text-primary">
-                      <span className="material-symbols-outlined text-[15px]">eco</span>
-                      <span>{rev.club?.name || '독서클럽'}</span>
-                    </span>
-                    {rev.schedule && (
-                      <>
-                        <span className="text-on-surface-variant/40">•</span>
-                        <span className="inline-flex items-center gap-1 text-[11px] text-secondary font-medium bg-secondary-fixed/30 px-2.5 py-0.5 rounded-full">
-                          <span className="material-symbols-outlined text-[13px]">auto_stories</span>
-                          <span>
-                            {rev.schedule.chapter_title || (rev.schedule.target_date ? `단원 일정: ${rev.schedule.target_date}` : '단원 일정')}
-                            {rev.schedule.page_range ? ` (${rev.schedule.page_range})` : ''}
-                            {rev.schedule.target_date ? ` · ${rev.schedule.target_date}` : ''}
+                  <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant flex-wrap gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="flex items-center gap-1 font-semibold text-primary">
+                        <span className="material-symbols-outlined text-[15px]">eco</span>
+                        <span>{rev.club?.name || '독서클럽'}</span>
+                      </span>
+                      {rev.schedule && (
+                        <>
+                          <span className="text-on-surface-variant/40">•</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] text-secondary font-medium bg-secondary-fixed/30 px-2.5 py-0.5 rounded-full">
+                            <span className="material-symbols-outlined text-[13px]">auto_stories</span>
+                            <span>
+                              {rev.schedule.chapter_title || (rev.schedule.target_date ? `단원 일정: ${rev.schedule.target_date}` : '단원 일정')}
+                              {rev.schedule.page_range ? ` (${rev.schedule.page_range})` : ''}
+                              {rev.schedule.target_date ? ` · ${rev.schedule.target_date}` : ''}
+                            </span>
                           </span>
-                        </span>
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 ml-auto">
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 hover:text-secondary transition-colors"
+                        onClick={() => alert('공감했습니다 ❤️')}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">favorite_border</span>
+                        <span>공감하기</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 hover:text-primary transition-colors"
+                        onClick={() => alert('댓글 기능이 준비 중입니다.')}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">chat_bubble_outline</span>
+                        <span>댓글</span>
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 ml-auto">
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 hover:text-secondary transition-colors"
-                      onClick={() => alert('공감했습니다 ❤️')}
-                    >
-                      <span className="material-symbols-outlined text-[16px]">favorite_border</span>
-                      <span>공감하기</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 hover:text-primary transition-colors"
-                      onClick={() => alert('댓글 기능이 준비 중입니다.')}
-                    >
-                      <span className="material-symbols-outlined text-[16px]">chat_bubble_outline</span>
-                      <span>댓글</span>
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
