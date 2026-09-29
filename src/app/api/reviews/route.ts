@@ -126,10 +126,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // 4. 완독 여부 판별 및 독서 레벨(completed_count) 승급 처리
+    // 4. 완독 여부 판별 및 독서 레벨(completed_count) 승급 + 개인별 도서 전체 평점 저장
     let isClubCompleted = false;
     let newCompletedCount = profile?.completed_count != null ? Number(profile.completed_count) : 1;
     let newLevel = calculateUserLevel(newCompletedCount);
+    let bookRating: number | null = null;
 
     if (validated.club_id) {
       const { data: allSchedules } = await supabase
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
       if (allSchedules && allSchedules.length > 0) {
         const { data: userReviews } = await supabase
           .from('reviews')
-          .select('schedule_id')
+          .select('id, schedule_id, rating')
           .eq('club_id', validated.club_id)
           .eq('user_id', userId);
 
@@ -165,6 +166,53 @@ export async function POST(req: NextRequest) {
               updated_at: new Date().toISOString(),
             })
             .eq('id', userId);
+
+          // 개인별 전체 평점 계산: 단원별 평점의 평균 (소수점 첫째자리 반올림)
+          const validRatings: number[] = [];
+          (userReviews || []).forEach((r) => {
+            if (r.id !== review.id && typeof r.rating === 'number') {
+              validRatings.push(r.rating);
+            }
+          });
+          if (typeof validated.rating === 'number') {
+            validRatings.push(validated.rating);
+          }
+
+          if (validRatings.length > 0) {
+            const sum = validRatings.reduce((acc, cur) => acc + cur, 0);
+            bookRating = Math.round((sum / validRatings.length) * 10) / 10;
+          } else {
+            bookRating = validated.rating;
+          }
+
+          // club_members 테이블에 완독 여부 및 개인별 전체 평점 저장
+          await supabase
+            .from('club_members')
+            .update({
+              is_completed: true,
+              book_rating: bookRating,
+              completed_at: new Date().toISOString(),
+            })
+            .eq('club_id', validated.club_id)
+            .eq('user_id', userId);
+
+          // user_book_ratings 테이블에 저장 (향후 통계/마이페이지 등에서 독립적 활용 가능)
+          const { data: clubInfo } = await supabase
+            .from('clubs')
+            .select('isbn')
+            .eq('id', validated.club_id)
+            .maybeSingle();
+
+          await supabase
+            .from('user_book_ratings')
+            .upsert({
+              user_id: userId,
+              club_id: validated.club_id,
+              isbn: clubInfo?.isbn || null,
+              rating: bookRating,
+              is_completed: true,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id, club_id' });
         }
       }
     }
@@ -175,6 +223,7 @@ export async function POST(req: NextRequest) {
       manner_temperature: newTemperature,
       temp_change: change,
       is_club_completed: isClubCompleted,
+      book_rating: bookRating,
       completed_count: newCompletedCount,
       level: newLevel,
     });
@@ -194,7 +243,7 @@ export async function PATCH(req: NextRequest) {
     // 1. 기존 리뷰 및 작성자 확인 (보안 강화)
     const { data: existingReview, error: fetchError } = await supabase
       .from('reviews')
-      .select('id, user_id')
+      .select('id, user_id, club_id, schedule_id')
       .eq('id', validated.id)
       .maybeSingle();
 
@@ -234,7 +283,64 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, review: updatedReview });
+    // 3. 완독 상태인 경우 전체 평점(개인별) 재계산 및 갱신
+    let updatedBookRating: number | null = null;
+    const targetClubId = existingReview.club_id;
+    const targetUserId = existingReview.user_id;
+
+    if (targetClubId) {
+      const { data: allSchedules } = await supabase
+        .from('club_schedules')
+        .select('id')
+        .eq('club_id', targetClubId);
+
+      if (allSchedules && allSchedules.length > 0) {
+        const { data: userReviews } = await supabase
+          .from('reviews')
+          .select('id, schedule_id, rating')
+          .eq('club_id', targetClubId)
+          .eq('user_id', targetUserId);
+
+        const reviewedScheduleIds = new Set(
+          (userReviews || []).map((r) => r.schedule_id).filter(Boolean)
+        );
+
+        const allFinished = allSchedules.every((s) => reviewedScheduleIds.has(s.id));
+        if (allFinished && userReviews && userReviews.length > 0) {
+          const validRatings = userReviews
+            .map((r) => (r.id === validated.id ? validated.rating : r.rating))
+            .filter((r): r is number => typeof r === 'number');
+
+          if (validRatings.length > 0) {
+            const sum = validRatings.reduce((acc, cur) => acc + cur, 0);
+            updatedBookRating = Math.round((sum / validRatings.length) * 10) / 10;
+
+            await supabase
+              .from('club_members')
+              .update({
+                book_rating: updatedBookRating,
+              })
+              .eq('club_id', targetClubId)
+              .eq('user_id', targetUserId);
+
+            await supabase
+              .from('user_book_ratings')
+              .update({
+                rating: updatedBookRating,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('club_id', targetClubId)
+              .eq('user_id', targetUserId);
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      review: updatedReview,
+      book_rating: updatedBookRating,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }

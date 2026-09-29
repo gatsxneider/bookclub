@@ -69,8 +69,51 @@ describe('ReviewEditor Component', () => {
     fireEvent.change(textarea, { target: { value: '독고 씨의 변화가 감동적이었습니다.' } });
 
     const publishBtn = screen.getByRole('button', { name: /독서클럽에 발행하기/ });
+    expect(publishBtn).toBeInTheDocument();
     fireEvent.click(publishBtn);
 
-    expect(handleSubmit).toHaveBeenCalled();
+    expect(handleSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '불편함 속에서 만난 온기',
+        content: '독고 씨의 변화가 감동적이었습니다.',
+        rating: 5,
+        schedule_id: 'sched-1',
+      })
+    );
+  });
+
+  it('방장이 설정한 단원명과 페이지 정보가 표시되어야 한다', () => {
+    render(
+      <ReviewEditor
+        schedules={mockSchedules}
+        selectedScheduleId="sched-1"
+        bookTitle="불편한 편의점"
+        onSubmit={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('1회차')).toBeInTheDocument();
+    expect(screen.getByText('제1장. 2020 가을, 산해진미 도시락')).toBeInTheDocument();
+    expect(screen.getByText('p.1 ~ p.65')).toBeInTheDocument();
+  });
+
+  it('평점 텍스트와 별점 선택이 동작해야 한다', () => {
+    const handleSubmit = vi.fn();
+    render(
+      <ReviewEditor
+        schedules={mockSchedules}
+        selectedScheduleId="sched-1"
+        bookTitle="불편한 편의점"
+        onSubmit={handleSubmit}
+      />
+    );
+
+    expect(screen.getByText('평점:')).toBeInTheDocument();
+    expect(screen.getByText('5점')).toBeInTheDocument();
+
+    const star4Button = screen.getByLabelText('평점 4점 선택');
+    fireEvent.click(star4Button);
+    expect(screen.getByText('4점')).toBeInTheDocument();
   });
 });
+

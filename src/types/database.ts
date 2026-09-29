@@ -36,8 +36,22 @@ export interface ClubMember {
   user_id: string;
   role: ClubMemberRole;
   status: ClubMemberStatus;
+  book_rating?: number;
+  is_completed?: boolean;
+  completed_at?: string;
   joined_at?: string;
   profile?: Profile;
+}
+
+export interface UserBookRating {
+  id: string;
+  user_id: string;
+  club_id?: string;
+  isbn?: string;
+  rating: number;
+  is_completed: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ClubSchedule {

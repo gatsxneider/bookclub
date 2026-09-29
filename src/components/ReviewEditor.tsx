@@ -45,7 +45,8 @@ export default function ReviewEditor({
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [quote, setQuote] = useState(initialQuote);
-  const [rating, setRating] = useState(initialRating);
+  const [rating, setRating] = useState(initialRating || 5);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [loading, setLoading] = useState(false);
   const [savedTime, setSavedTime] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export default function ReviewEditor({
   }, [initialQuote]);
 
   React.useEffect(() => {
-    setRating(initialRating);
+    setRating(initialRating || 5);
   }, [initialRating]);
 
   React.useEffect(() => {
@@ -100,6 +101,11 @@ export default function ReviewEditor({
       return;
     }
 
+    if (!rating || rating < 1 || rating > 5) {
+      alert('단원별 평점(1~5점)을 매겨주세요.');
+      return;
+    }
+
     setLoading(true);
     try {
       await onSubmit({
@@ -130,6 +136,8 @@ export default function ReviewEditor({
     const newContent = content.substring(0, start) + replacement + content.substring(end);
     setContent(newContent);
   };
+
+  const activeRating = hoverRating !== null ? hoverRating : rating;
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -199,7 +207,7 @@ export default function ReviewEditor({
       {/* 2. Title & Author Banner Box */}
       <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container flex flex-col gap-4">
         {/* Author Row */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-surface-container">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold shadow-sm">
               <span className="material-symbols-outlined text-[20px]">person</span>
@@ -219,24 +227,67 @@ export default function ReviewEditor({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-on-surface-variant">단원 평점:</span>
-            <div className="flex gap-0.5">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  className="text-secondary hover:scale-110 transition-transform"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {star <= rating ? 'star' : 'star_border'}
-                  </span>
-                </button>
-              ))}
+          {/* 평점 선택 영역 */}
+          <div className="flex items-center gap-2 bg-surface-container-low/70 px-3 py-1.5 rounded-full border border-surface-container">
+            <span className="text-xs font-semibold text-on-surface-variant">평점:</span>
+            <div
+              className="flex items-center gap-1"
+              onMouseLeave={() => setHoverRating(null)}
+            >
+              {[1, 2, 3, 4, 5].map((star) => {
+                const isFilled = star <= activeRating;
+                return (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    className="cursor-pointer transition-transform hover:scale-125 focus:outline-none p-0.5"
+                    aria-label={`평점 ${star}점 선택`}
+                  >
+                    <span
+                      className={`material-symbols-outlined text-[22px] transition-colors ${
+                        isFilled ? 'text-amber-400' : 'text-outline-variant/50 hover:text-amber-200'
+                      }`}
+                      style={{
+                        fontVariationSettings: isFilled ? "'FILL' 1, 'wght' 600" : "'FILL' 0, 'wght' 400",
+                      }}
+                    >
+                      star
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 min-w-[30px] text-center">
+              {activeRating}점
+            </span>
           </div>
         </div>
+
+        {/* 방장이 설정한 단원명과 페이지 표시 영역 */}
+        {currentSchedule && (
+          <div className="flex items-center gap-2 pt-1">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary-fixed/30 border border-primary/20 text-xs text-on-surface shadow-2xs">
+              <span className="material-symbols-outlined text-[16px] text-primary">menu_book</span>
+              <span className="font-bold text-primary">
+                {currentSchedule.sequence ? `${currentSchedule.sequence}회차` : '단원'}
+              </span>
+              <span className="text-primary/30 font-light">|</span>
+              <span className="font-semibold text-on-surface">{currentSchedule.chapter_title}</span>
+              {currentSchedule.page_range && (
+                <>
+                  <span className="text-primary/30 font-light">·</span>
+                  <span className="text-on-surface-variant font-medium">
+                    {currentSchedule.page_range.toLowerCase().startsWith('p')
+                      ? currentSchedule.page_range
+                      : `p.${currentSchedule.page_range}`}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Lyrical Title Input */}
         <div>

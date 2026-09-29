@@ -54,6 +54,9 @@ CREATE TABLE IF NOT EXISTS public.club_members (
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('leader', 'member')),
   status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected')),
+  book_rating NUMERIC,
+  is_completed BOOLEAN DEFAULT false,
+  completed_at TIMESTAMPTZ,
   joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT club_members_club_user_unique UNIQUE (club_id, user_id)
 );
@@ -94,6 +97,19 @@ CREATE INDEX IF NOT EXISTS idx_reviews_club_id ON public.reviews(club_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_schedule_id ON public.reviews(schedule_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON public.reviews(user_id);
 
+-- 7. user_book_ratings table (개인별 도서 완독 평점)
+CREATE TABLE IF NOT EXISTS public.user_book_ratings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  club_id UUID REFERENCES public.clubs(id) ON DELETE CASCADE,
+  isbn TEXT REFERENCES public.books(isbn) ON DELETE CASCADE,
+  rating NUMERIC NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  is_completed BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT user_book_ratings_user_club_unique UNIQUE (user_id, club_id)
+);
+
 -- RLS (행 수준 보안) 활성화
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.books ENABLE ROW LEVEL SECURITY;
@@ -101,6 +117,7 @@ ALTER TABLE public.clubs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.club_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.club_schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_book_ratings ENABLE ROW LEVEL SECURITY;
 
 -- RLS 정책 설정
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
@@ -130,3 +147,9 @@ CREATE POLICY "Public reviews are viewable by everyone" ON public.reviews FOR SE
 CREATE POLICY "Anyone can insert reviews" ON public.reviews FOR INSERT WITH CHECK (true);
 CREATE POLICY "Anyone can update reviews" ON public.reviews FOR UPDATE USING (true);
 CREATE POLICY "Anyone can delete reviews" ON public.reviews FOR DELETE USING (true);
+
+CREATE POLICY "Public user_book_ratings are viewable by everyone" ON public.user_book_ratings FOR SELECT USING (true);
+CREATE POLICY "Anyone can insert user_book_ratings" ON public.user_book_ratings FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can update user_book_ratings" ON public.user_book_ratings FOR UPDATE USING (true);
+CREATE POLICY "Anyone can delete user_book_ratings" ON public.user_book_ratings FOR DELETE USING (true);
+
