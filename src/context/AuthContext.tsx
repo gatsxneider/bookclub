@@ -18,7 +18,7 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, nickname: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, nickname: string) => Promise<{ success: boolean; isExistingEmail?: boolean; error?: string }>;
   quickLogin: (nickname: string, avatarUrl?: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
@@ -173,8 +173,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, nickname: string) => {
     try {
       const trimmedNick = nickname.trim();
+      const trimmedEmail = email.trim().toLowerCase();
+
+      // 1. 닉네임 중복 사전 검사
+      const { data: existingNick } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('nickname', trimmedNick)
+        .maybeSingle();
+
+      if (existingNick) {
+        return {
+          success: false,
+          error: `'${trimmedNick}'은(는) 이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.`,
+        };
+      }
+
+      // 2. 이메일 중복 사전 검사
+      const { data: existingEmailProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', trimmedEmail)
+        .maybeSingle();
+
+      if (existingEmailProfile) {
+        return {
+          success: false,
+          isExistingEmail: true,
+          error: '이미 가입된 회원입니다. 로그인 화면으로 이동합니다.',
+        };
+      }
+
+      // 3. Supabase Auth 가입 실행
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: trimmedEmail,
         password,
         options: {
           data: {
@@ -184,13 +216,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
+        const isAlreadyRegistered =
+          error.message.includes('already registered') ||
+          error.message.includes('already in use') ||
+          error.message.includes('User already exists');
+
+        if (isAlreadyRegistered) {
+          return {
+            success: false,
+            isExistingEmail: true,
+            error: '이미 가입된 회원입니다. 로그인 화면으로 이동합니다.',
+          };
+        }
+
         return { success: false, error: error.message };
       }
 
       if (data.user) {
-        // profiles 테이블에 필명 생성 및 최초 프로필 이미지를 고양이(/avatars/avatar_cat.png)로 설정
+        // profiles 테이블에 필명 및 이메일 저장
         await supabase.from('profiles').upsert({
           id: data.user.id,
+          email: trimmedEmail,
           nickname: trimmedNick,
           avatar_url: '/avatars/avatar_cat.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,
@@ -199,7 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const newUser: UserProfile = {
           id: data.user.id,
-          email: data.user.email || email,
+          email: data.user.email || trimmedEmail,
           nickname: trimmedNick,
           avatar_url: '/avatars/avatar_cat.png',
           manner_temperature: INITIAL_MANNER_TEMPERATURE,

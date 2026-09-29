@@ -49,4 +49,42 @@ describe('AuthModal Component', () => {
     // Form required validation or error message check
     expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
   });
+
+  it('회원가입 탭에서 닉네임 중복 확인 버튼이 렌더링되고 동작해야 한다', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('check-nickname')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ available: true, message: '사용 가능한 닉네임입니다! ✨' }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      })
+    );
+
+    render(
+      <AuthProvider>
+        <AuthModal isOpen={true} onClose={vi.fn()} />
+      </AuthProvider>
+    );
+
+    const signupTab = screen.getByRole('button', { name: '회원가입' });
+    fireEvent.click(signupTab);
+
+    expect(screen.getByRole('button', { name: '중복 확인' })).toBeInTheDocument();
+
+    const nickInput = screen.getByPlaceholderText('예: 모래고래, 달빛서재');
+    fireEvent.change(nickInput, { target: { value: '모래고래' } });
+
+    const checkBtn = screen.getByRole('button', { name: '중복 확인' });
+    fireEvent.click(checkBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('사용 가능한 닉네임입니다! ✨')).toBeInTheDocument();
+      expect(screen.getByText('확인됨')).toBeInTheDocument();
+    });
+  });
 });
+
