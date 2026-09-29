@@ -20,6 +20,7 @@ import {
   isClubCompleted,
   calculateClubTotalProgress,
   getEffectiveClubEndDate,
+  getNearestUpcomingSchedule,
   getNearestUpcomingScheduleDday,
 } from '@/lib/core/scheduleCalculator';
 import { useAuth } from '@/context/AuthContext';
@@ -109,8 +110,11 @@ export default function HomePage() {
   const activeClubs = myClubs.filter((c) => !isClubCompleted(c));
   const completedClubs = myClubs.filter((c) => isClubCompleted(c));
 
-  // 참여 중인 클럽의 단원별 일정 중 가장 빨리 도래하는 종료일 기준 D-day
-  const readingScheduleDday = getNearestUpcomingScheduleDday(activeClubs.length > 0 ? activeClubs : myClubs);
+  // 참여 중인 클럽의 단원별 일정 중 가장 빨리 도래하는 종료일 기준 D-day 및 해당 독서회 링크
+  const nearestSchedule = getNearestUpcomingSchedule(activeClubs.length > 0 ? activeClubs : myClubs);
+  const targetClubUrl = nearestSchedule.clubId
+    ? `/clubs/${nearestSchedule.clubId}`
+    : (user && myClubs.length > 0 ? `/clubs/${myClubs[0].id}` : undefined);
 
   // 현재 활성화된 탭에 따른 클럽 목록
   const displayedClubs = activeClubTab === 'active' ? activeClubs : completedClubs;
@@ -200,16 +204,32 @@ export default function HomePage() {
                   <span className="text-sm font-bold text-secondary">{user?.manner_temperature ?? 20.0}℃</span>
                 </div>
 
-                {/* 3. 독서 일정 */}
-                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-secondary-fixed/50 text-on-secondary-fixed shadow-[0_1px_3px_rgba(45,40,37,0.03)] border border-secondary-fixed hover:bg-secondary-fixed/80 transition-colors">
-                  <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-secondary text-[16px]">schedule</span>
-                    <span className="text-xs font-medium">독서 일정</span>
+                {/* 3. 독서 일정 (클릭 시 해당 독서회 화면으로 이동) */}
+                {targetClubUrl ? (
+                  <Link
+                    href={targetClubUrl}
+                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-secondary-fixed/50 text-on-secondary-fixed shadow-[0_1px_3px_rgba(45,40,37,0.03)] border border-secondary-fixed hover:bg-secondary-fixed/80 transition-all cursor-pointer group"
+                    title="해당 독서회 화면으로 이동"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-secondary text-[16px] group-hover:scale-110 transition-transform">schedule</span>
+                      <span className="text-xs font-medium group-hover:underline">독서 일정</span>
+                    </div>
+                    <span className="text-xs font-bold text-secondary px-2 py-0.5 rounded-full bg-surface/90 shadow-xs group-hover:bg-surface transition-colors">
+                      {nearestSchedule.dDay}
+                    </span>
+                  </Link>
+                ) : (
+                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-secondary-fixed/50 text-on-secondary-fixed shadow-[0_1px_3px_rgba(45,40,37,0.03)] border border-secondary-fixed">
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-secondary text-[16px]">schedule</span>
+                      <span className="text-xs font-medium">독서 일정</span>
+                    </div>
+                    <span className="text-xs font-bold text-secondary px-2 py-0.5 rounded-full bg-surface/90 shadow-xs">
+                      {nearestSchedule.dDay}
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-secondary px-2 py-0.5 rounded-full bg-surface/90 shadow-xs">
-                    {readingScheduleDday}
-                  </span>
-                </div>
+                )}
               </div>
             </div>
           </section>

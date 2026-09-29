@@ -9,6 +9,7 @@ import AuthModal from '@/components/AuthModal';
 import UserProfileModal from '@/components/UserProfileModal';
 import { Review } from '@/types/database';
 import { useAuth, calculateUserLevel } from '@/context/AuthContext';
+import curatedBooksData from '@/lib/constants/curatedBooks.json';
 
 // 독서 레벨 정보 매핑
 const LEVEL_CONFIG: Record<number, { title: string; badge: string; desc: string }> = {
@@ -170,14 +171,32 @@ export default function MyClubsPage() {
                 };
               });
 
+              let bookThumbnail =
+                club.book?.thumbnail ||
+                club.book?.thumbnail_url ||
+                club.book?.cover_image_url;
+
+              if (!bookThumbnail && (club.isbn || club.book?.isbn)) {
+                const targetIsbn = club.isbn || club.book?.isbn;
+                for (const list of Object.values(curatedBooksData)) {
+                  const found = (list as any[]).find((b: any) => (b.isbn || '').includes(targetIsbn));
+                  if (found?.thumbnail) {
+                    bookThumbnail = found.thumbnail;
+                    break;
+                  }
+                }
+              }
+
+              if (!bookThumbnail) {
+                bookThumbnail =
+                  'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5871383%3Ftimestamp%3D20240904121510';
+              }
+
               return {
                 clubId: club.id,
                 clubName: club.name || '코지 북클럽',
                 bookTitle: club.book?.title || club.name,
-                bookThumbnail:
-                  club.book?.thumbnail_url ||
-                  club.book?.cover_image_url ||
-                  'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5871383%3Ftimestamp%3D20240904121510',
+                bookThumbnail,
                 leader: club.leader?.nickname || '방장',
                 membersCount: club.members ? club.members.length : 1,
                 schedules,
@@ -379,6 +398,12 @@ export default function MyClubsPage() {
                             src={club.bookThumbnail}
                             alt={club.bookTitle}
                             className="w-12 h-16 rounded object-cover shadow-sm shrink-0"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (target.src !== 'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5871383%3Ftimestamp%3D20240904121510') {
+                                target.src = 'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5871383%3Ftimestamp%3D20240904121510';
+                              }
+                            }}
                           />
                           <div className="flex flex-col">
                             <Link

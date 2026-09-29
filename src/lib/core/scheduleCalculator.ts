@@ -129,6 +129,94 @@ export function calculateDday(targetDateStr?: string, baseDate: Date = new Date(
   return '종료';
 }
 
+export interface NearestScheduleResult {
+  dDay: string;
+  clubId?: string;
+  scheduleId?: string;
+}
+
+/**
+ * 참여 중인 클럽들의 각 단원별 일정 종료일(target_date) 중 가장 빨리 도래하는 일자를 기준으로 D-day 및 해당 독서회 ID 반환
+ * @param clubs 참여 중인 클럽 목록
+ * @param baseDate 기준 일자 (기본값: 오늘)
+ */
+export function getNearestUpcomingSchedule(
+  clubs: Array<{
+    id?: string;
+    end_date?: string | null;
+    schedules?: Array<{ id?: string; target_date?: string | null }> | null;
+  }>,
+  baseDate: Date = new Date()
+): NearestScheduleResult {
+  if (!clubs || clubs.length === 0) {
+    return { dDay: '상시 토론' };
+  }
+
+  const baseDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate()).getTime();
+
+  // 1. 참여 클럽들의 모든 단원 일정 target_date와 club.id 수집
+  const items: Array<{ dateStr: string; clubId?: string; scheduleId?: string; diffDays: number }> = [];
+
+  for (const club of clubs) {
+    if (club.schedules && club.schedules.length > 0) {
+      for (const s of club.schedules) {
+        if (s.target_date && s.target_date.trim() && !isNaN(new Date(s.target_date).getTime())) {
+          const target = new Date(s.target_date.trim());
+          const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+          const diffDays = Math.ceil((targetDay - baseDay) / (1000 * 60 * 60 * 24));
+          items.push({
+            dateStr: s.target_date.trim(),
+            clubId: club.id,
+            scheduleId: s.id,
+            diffDays,
+          });
+        }
+      }
+    }
+  }
+
+  // 2. 단원 일정이 없으면 클럽별 end_date를 fallback으로 수집
+  if (items.length === 0) {
+    for (const club of clubs) {
+      if (club.end_date && club.end_date.trim() && !isNaN(new Date(club.end_date).getTime())) {
+        const target = new Date(club.end_date.trim());
+        const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+        const diffDays = Math.ceil((targetDay - baseDay) / (1000 * 60 * 60 * 24));
+        items.push({
+          dateStr: club.end_date.trim(),
+          clubId: club.id,
+          diffDays,
+        });
+      }
+    }
+  }
+
+  if (items.length === 0) {
+    return { dDay: '상시 토론', clubId: clubs[0]?.id };
+  }
+
+  // 오늘 이후(diffDays >= 0)인 날짜 중 가장 작은 diffDays(가장 빨리 도래하는 일자) 찾기
+  const upcoming = items.filter((d) => d.diffDays >= 0);
+  if (upcoming.length > 0) {
+    upcoming.sort((a, b) => a.diffDays - b.diffDays);
+    const nearest = upcoming[0];
+    return {
+      dDay: calculateDday(nearest.dateStr, baseDate),
+      clubId: nearest.clubId,
+      scheduleId: nearest.scheduleId,
+    };
+  }
+
+  // 만약 모든 일정이 이미 지난 경우, 가장 최근에 지난 일정 기준 calculateDday 반환 ('종료')
+  items.sort((a, b) => b.diffDays - a.diffDays);
+  const mostRecent = items[0];
+  return {
+    dDay: calculateDday(mostRecent.dateStr, baseDate),
+    clubId: mostRecent.clubId,
+    scheduleId: mostRecent.scheduleId,
+  };
+}
+
 /**
  * 참여 중인 클럽들의 각 단원별 일정 종료일(target_date) 중 가장 빨리 도래하는 일자를 기준으로 D-day 계산
  * @param clubs 참여 중인 클럽 목록
@@ -136,60 +224,13 @@ export function calculateDday(targetDateStr?: string, baseDate: Date = new Date(
  */
 export function getNearestUpcomingScheduleDday(
   clubs: Array<{
+    id?: string;
     end_date?: string | null;
-    schedules?: Array<{ target_date?: string | null }> | null;
+    schedules?: Array<{ id?: string; target_date?: string | null }> | null;
   }>,
   baseDate: Date = new Date()
 ): string {
-  if (!clubs || clubs.length === 0) {
-    return '상시 토론';
-  }
-
-  const baseDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate()).getTime();
-  
-  // 1. 참여 클럽들의 모든 단원 일정 target_date 수집
-  const allDates: string[] = [];
-  for (const club of clubs) {
-    if (club.schedules && club.schedules.length > 0) {
-      for (const s of club.schedules) {
-        if (s.target_date && s.target_date.trim() && !isNaN(new Date(s.target_date).getTime())) {
-          allDates.push(s.target_date.trim());
-        }
-      }
-    }
-  }
-
-  // 2. 단원 일정이 없으면 클럽별 end_date를 fallback으로 수집
-  if (allDates.length === 0) {
-    for (const club of clubs) {
-      if (club.end_date && club.end_date.trim() && !isNaN(new Date(club.end_date).getTime())) {
-        allDates.push(club.end_date.trim());
-      }
-    }
-  }
-
-  if (allDates.length === 0) {
-    return '상시 토론';
-  }
-
-  // 날짜별 diffDays 계산 (YYYY-MM-DD 기준)
-  const dateDiffs = allDates.map((dateStr) => {
-    const target = new Date(dateStr);
-    const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
-    const diffDays = Math.ceil((targetDay - baseDay) / (1000 * 60 * 60 * 24));
-    return { dateStr, diffDays };
-  });
-
-  // 오늘 이후(diffDays >= 0)인 날짜 중 가장 작은 diffDays(가장 빨리 도래하는 일자) 찾기
-  const upcoming = dateDiffs.filter((d) => d.diffDays >= 0);
-  if (upcoming.length > 0) {
-    upcoming.sort((a, b) => a.diffDays - b.diffDays);
-    return calculateDday(upcoming[0].dateStr, baseDate);
-  }
-
-  // 만약 모든 일정이 이미 지난 경우, 가장 최근에 지난 일정 기준 calculateDday 반환 ('종료')
-  dateDiffs.sort((a, b) => b.diffDays - a.diffDays);
-  return calculateDday(dateDiffs[0].dateStr, baseDate);
+  return getNearestUpcomingSchedule(clubs, baseDate).dDay;
 }
 
 export function formatPageRange(rangeStr?: string): string {

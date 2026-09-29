@@ -64,7 +64,7 @@ describe('MyClubsPage Component', () => {
                     leader_id: 'test-user-123',
                     book: {
                       title: '불편한 편의점',
-                      thumbnail_url: 'https://example.com/thumb.jpg',
+                      thumbnail: 'https://example.com/thumb.jpg',
                     },
                     members: [{ user_id: 'test-user-123' }],
                     schedules: [
@@ -100,6 +100,7 @@ describe('MyClubsPage Component', () => {
     // 통계 지표 및 탭 확인
     await waitFor(() => {
       expect(screen.getByText(/테스트 독서 모임/)).toBeInTheDocument();
+      expect(screen.getByAltText('불편한 편의점')).toHaveAttribute('src', 'https://example.com/thumb.jpg');
     });
   });
 
