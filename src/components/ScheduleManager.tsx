@@ -12,6 +12,15 @@ interface ScheduleManagerProps {
     page_range: string;
     target_date: string;
   }) => Promise<void>;
+  onUpdateSchedule?: (
+    scheduleId: string,
+    updatedData: {
+      chapter_title: string;
+      page_range: string;
+      target_date: string;
+    }
+  ) => Promise<void>;
+  onDeleteSchedule?: (scheduleId: string) => Promise<void>;
   onWriteReview: (schedule: ClubSchedule) => void;
   onViewReviews?: (schedule: ClubSchedule) => void;
   onRequireAuth?: () => void;
@@ -21,24 +30,51 @@ export default function ScheduleManager({
   schedules,
   isLeader,
   onAddSchedule,
+  onUpdateSchedule,
+  onDeleteSchedule,
   onWriteReview,
   onViewReviews,
   onRequireAuth,
 }: ScheduleManagerProps) {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
+
+  // 추가 폼 상태
   const [chapterTitle, setChapterTitle] = useState('');
   const [pageRange, setPageRange] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // 수정 폼 상태
+  const [editTitle, setEditTitle] = useState('');
+  const [editPages, setEditPages] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+
+  // 독서일정 추가 폼 토글 (방장 전용)
   const handleToggleAddForm = () => {
     if (!isLeader) {
       alert('독서일정 추가는 모임의 방장만 가능합니다.');
       return;
     }
     setShowAddForm(!showAddForm);
+    if (!showAddForm) {
+      setEditingScheduleId(null);
+    }
   };
 
+  // 독서일정 수정 모드 토글 (방장 전용)
+  const handleToggleEditMode = () => {
+    if (!isLeader) {
+      alert('독서일정 수정은 모임의 방장만 가능합니다.');
+      return;
+    }
+    setIsEditMode(!isEditMode);
+    setEditingScheduleId(null);
+  };
+
+  // 새 일정 생성 제출
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chapterTitle.trim()) return;
@@ -62,6 +98,51 @@ export default function ScheduleManager({
     }
   };
 
+  // 개별 일정 수정 시작
+  const handleStartEdit = (schedule: ClubSchedule) => {
+    setEditingScheduleId(schedule.id);
+    setEditTitle(schedule.chapter_title || '');
+    setEditPages(schedule.page_range || '');
+    setEditDate(schedule.target_date || '');
+  };
+
+  // 개별 일정 수정 저장
+  const handleSaveEdit = async (scheduleId: string) => {
+    if (!editTitle.trim()) {
+      alert('단원 제목을 입력해주세요.');
+      return;
+    }
+
+    setEditLoading(true);
+    try {
+      if (onUpdateSchedule) {
+        await onUpdateSchedule(scheduleId, {
+          chapter_title: editTitle.trim(),
+          page_range: editPages.trim(),
+          target_date: editDate,
+        });
+      }
+      setEditingScheduleId(null);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // 개별 일정 삭제
+  const handleDelete = async (scheduleId: string, title: string) => {
+    if (!confirm(`'${title}' 일정을 정말 삭제하시겠습니까?`)) return;
+
+    try {
+      if (onDeleteSchedule) {
+        await onDeleteSchedule(scheduleId);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <section className="bg-surface-container-lowest rounded-2xl p-space-md sm:p-space-lg shadow-sm border border-surface-container flex flex-col gap-4">
       {/* Header */}
@@ -80,17 +161,36 @@ export default function ScheduleManager({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleToggleAddForm}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary text-xs font-semibold shadow-sm transition-all self-start sm:self-auto"
-          aria-label="독서일정 추가"
-        >
-          <span className="material-symbols-outlined text-[16px]">
-            {showAddForm && isLeader ? 'close' : 'add'}
-          </span>
-          <span>{showAddForm && isLeader ? '작성 취소' : '새 독서일정 추가'}</span>
-        </button>
+        {/* Buttons: 독서일정 수정 & 새 독서일정 추가 */}
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <button
+            type="button"
+            onClick={handleToggleEditMode}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold shadow-sm transition-all ${
+              isEditMode && isLeader
+                ? 'bg-secondary text-on-secondary hover:bg-secondary/90'
+                : 'bg-surface-container hover:bg-surface-container-high text-on-surface'
+            }`}
+            aria-label="독서일정 수정"
+          >
+            <span className="material-symbols-outlined text-[16px]">
+              {isEditMode && isLeader ? 'check' : 'edit'}
+            </span>
+            <span>{isEditMode && isLeader ? '수정 완료' : '독서일정 수정'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleToggleAddForm}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary text-xs font-semibold shadow-sm transition-all"
+            aria-label="독서일정 추가"
+          >
+            <span className="material-symbols-outlined text-[16px]">
+              {showAddForm && isLeader ? 'close' : 'add'}
+            </span>
+            <span>{showAddForm && isLeader ? '작성 취소' : '새 독서일정 추가'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Leader Add Form */}
@@ -174,6 +274,88 @@ export default function ScheduleManager({
         <div className="flex flex-col gap-2.5">
           {schedules.map((schedule, idx) => {
             const isSubmitted = Boolean(schedule.my_review_submitted);
+            const isEditing = editingScheduleId === schedule.id;
+
+            if (isEditing && isLeader) {
+              /* Inline Edit Form */
+              return (
+                <div
+                  key={schedule.id || idx}
+                  className="p-4 rounded-xl bg-surface-container-low border-2 border-primary/30 space-y-3 animate-fade-in"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-primary flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px]">edit</span>
+                      <span>제{schedule.sequence || idx + 1}단원 일정 수정</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEditingScheduleId(null)}
+                      className="text-xs text-on-surface-variant hover:text-on-surface"
+                    >
+                      취소
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-on-surface-variant mb-1">
+                        단원 제목 *
+                      </label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-on-surface-variant mb-1">
+                        페이지 범위
+                      </label>
+                      <input
+                        type="text"
+                        value={editPages}
+                        onChange={(e) => setEditPages(e.target.value)}
+                        placeholder="예: p.1 ~ p.65"
+                        className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-medium text-on-surface-variant">독서 마감일:</label>
+                      <input
+                        type="date"
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        className="bg-surface-container-lowest text-on-surface px-2.5 py-1.5 rounded-lg text-xs outline-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditingScheduleId(null)}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high transition-all"
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveEdit(schedule.id)}
+                        disabled={editLoading || !editTitle.trim()}
+                        className="px-4 py-1.5 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+                      >
+                        {editLoading ? '저장 중...' : '저장하기'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div
@@ -232,33 +414,59 @@ export default function ScheduleManager({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  {onViewReviews && (
-                    <button
-                      type="button"
-                      onClick={() => onViewReviews(schedule)}
-                      className="px-3 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-medium transition-all"
-                    >
-                      독후감 보기
-                    </button>
-                  )}
+                <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+                  {/* 방장 수정 모드일 때: 수정 및 삭제 버튼 표시 */}
+                  {isEditMode && isLeader ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit(schedule)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary text-xs font-semibold shadow-xs transition-all"
+                        aria-label="단원 수정"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                        <span>수정</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(schedule.id, schedule.chapter_title)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-error-container text-on-error-container hover:bg-error hover:text-on-error text-xs font-semibold shadow-xs transition-all"
+                        aria-label="단원 삭제"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">delete</span>
+                        <span>삭제</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {onViewReviews && (
+                        <button
+                          type="button"
+                          onClick={() => onViewReviews(schedule)}
+                          className="px-3 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-medium transition-all"
+                        >
+                          독후감 보기
+                        </button>
+                      )}
 
-                  <button
-                    type="button"
-                    onClick={() => onWriteReview(schedule)}
-                    className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-all ${
-                      isSubmitted
-                        ? 'bg-secondary-fixed text-on-secondary-fixed hover:bg-secondary hover:text-on-secondary'
-                        : 'bg-primary text-on-primary hover:bg-primary-container'
-                    }`}
-                    title={isSubmitted ? '클릭하여 작성한 독후감을 수정합니다' : '단원 독후감을 작성합니다'}
-                    aria-label={isSubmitted ? '독후감 수정' : '독후감 작성'}
-                  >
-                    <span className="material-symbols-outlined text-[14px]">
-                      {isSubmitted ? 'edit' : 'edit_note'}
-                    </span>
-                    <span>{isSubmitted ? '독후감 수정' : '독후감 작성'}</span>
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => onWriteReview(schedule)}
+                        className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-all ${
+                          isSubmitted
+                            ? 'bg-secondary-fixed text-on-secondary-fixed hover:bg-secondary hover:text-on-secondary'
+                            : 'bg-primary text-on-primary hover:bg-primary-container'
+                        }`}
+                        title={isSubmitted ? '클릭하여 작성한 독후감을 수정합니다' : '단원 독후감을 작성합니다'}
+                        aria-label={isSubmitted ? '독후감 수정' : '독후감 작성'}
+                      >
+                        <span className="material-symbols-outlined text-[14px]">
+                          {isSubmitted ? 'edit' : 'edit_note'}
+                        </span>
+                        <span>{isSubmitted ? '독후감 작성 완료' : '독후감 작성'}</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );

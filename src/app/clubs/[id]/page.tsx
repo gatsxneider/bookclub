@@ -150,6 +150,63 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
+  // 방장의 단원 수정
+  const handleUpdateSchedule = async (
+    scheduleId: string,
+    updatedData: { chapter_title: string; page_range: string; target_date: string }
+  ) => {
+    try {
+      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
+      const res = await fetch(`/api/clubs/${clubId}/schedules`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schedule_id: scheduleId,
+          ...updatedData,
+          user_id: currentUserId,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || '단원 일정 수정 실패');
+      }
+
+      const data = await res.json();
+      if (data.schedule) {
+        setSchedules((prev) =>
+          prev.map((s) => (s.id === scheduleId ? { ...s, ...data.schedule } : s))
+        );
+      }
+      alert('단원 일정이 성공적으로 수정되었습니다.');
+    } catch (err: any) {
+      alert(err.message || '단원 수정 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 방장의 단원 삭제
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    try {
+      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
+      const res = await fetch(
+        `/api/clubs/${clubId}/schedules?scheduleId=${scheduleId}&userId=${currentUserId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || '단원 일정 삭제 실패');
+      }
+
+      setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
+      alert('단원 일정이 삭제되었습니다.');
+    } catch (err: any) {
+      alert(err.message || '단원 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   // 독후감 작성 페이지로 이동
   const handleWriteReview = (schedule: ClubSchedule) => {
     router.push(`/clubs/${clubId}/reviews/new?scheduleId=${schedule.id}`);
@@ -507,6 +564,8 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
               schedules={schedules}
               isLeader={isLeader}
               onAddSchedule={handleAddSchedule}
+              onUpdateSchedule={handleUpdateSchedule}
+              onDeleteSchedule={handleDeleteSchedule}
               onWriteReview={handleWriteReview}
               onViewReviews={(s) => router.push(`/book-reviews?schedule_id=${s.id}`)}
               onRequireAuth={() => setIsAuthOpen(true)}

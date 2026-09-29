@@ -122,4 +122,38 @@ describe('ScheduleManager Component', () => {
     expect(screen.getByRole('button', { name: '독후감 수정' })).toBeInTheDocument();
     expect(screen.getByText('작성 완료')).toBeInTheDocument();
   });
+
+  it('방장일 경우 독서일정 수정 버튼 클릭 시 수정 모드가 활성화되고, 비방장일 경우 경고가 발생해야 한다', () => {
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const { rerender } = render(
+      <ScheduleManager
+        schedules={mockSchedules}
+        isLeader={true}
+        onAddSchedule={vi.fn()}
+        onWriteReview={vi.fn()}
+      />
+    );
+
+    const editModeBtn = screen.getByRole('button', { name: /독서일정 수정/ });
+    expect(editModeBtn).toBeInTheDocument();
+    fireEvent.click(editModeBtn);
+
+    // 수정 모드 활성화 확인 (개별 단원의 '수정', '삭제' 버튼 노출)
+    expect(screen.getAllByRole('button', { name: '단원 수정' }).length).toBe(2);
+    expect(screen.getAllByRole('button', { name: '단원 삭제' }).length).toBe(2);
+
+    rerender(
+      <ScheduleManager
+        schedules={mockSchedules}
+        isLeader={false}
+        onAddSchedule={vi.fn()}
+        onWriteReview={vi.fn()}
+      />
+    );
+
+    const nonLeaderEditBtn = screen.getByRole('button', { name: /독서일정 수정/ });
+    fireEvent.click(nonLeaderEditBtn);
+    expect(alertMock).toHaveBeenCalledWith('독서일정 수정은 모임의 방장만 가능합니다.');
+    alertMock.mockRestore();
+  });
 });
