@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     const clubId = searchParams.get('club_id');
     const scheduleId = searchParams.get('schedule_id');
     const userId = searchParams.get('user_id');
+    const viewerId = searchParams.get('viewer_id');
 
     const supabase = createServerSupabaseClient();
 
@@ -42,7 +43,42 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ reviews: [] });
     }
 
-    return NextResponse.json({ reviews: reviews || [] });
+    if (!reviews || reviews.length === 0) {
+      return NextResponse.json({ reviews: [] });
+    }
+
+    const effectiveViewerId = viewerId || userId;
+
+    // viewerId가 있는 경우 사용자가 누른 공감 수(my_empathy_count) 조회
+    let userEmpathiesMap: Record<string, number> = {};
+    if (effectiveViewerId) {
+      const reviewIds = reviews.map((r) => r.id);
+      const { data: empathies } = await supabase
+        .from('review_empathies')
+        .select('review_id, count')
+        .in('review_id', reviewIds)
+        .eq('user_id', effectiveViewerId);
+
+      if (empathies) {
+        empathies.forEach((e) => {
+          userEmpathiesMap[e.review_id] = e.count;
+        });
+      }
+    }
+
+    // 보안 및 프라이버시 처리:
+    // 총 공감 건수(likes_count)는 본인의 독후감(rev.user_id === effectiveViewerId)에 한해서만 제공.
+    // 타인의 독후감에는 likes_count를 숨겨서(undefined) 본인 외에는 알 수 없도록 보호.
+    const processedReviews = reviews.map((rev) => {
+      const isMyReview = Boolean(effectiveViewerId && rev.user_id === effectiveViewerId);
+      return {
+        ...rev,
+        my_empathy_count: userEmpathiesMap[rev.id] || 0,
+        likes_count: isMyReview ? (rev.likes_count || 0) : undefined,
+      };
+    });
+
+    return NextResponse.json({ reviews: processedReviews });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

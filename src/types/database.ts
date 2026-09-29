@@ -94,6 +94,8 @@ export interface Review {
   content: string;
   quote?: string;
   rating?: number;
+  likes_count?: number;
+  my_empathy_count?: number;
   is_public: boolean;
   created_at?: string;
   updated_at?: string;
@@ -102,3 +104,13 @@ export interface Review {
   club?: Club;
   book?: Book;
 }
+
+export interface ReviewEmpathy {
+  id: string;
+  review_id: string;
+  user_id: string;
+  count: number;
+  created_at?: string;
+  updated_at?: string;
+}
+

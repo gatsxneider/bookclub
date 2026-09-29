@@ -9,6 +9,7 @@ import CreateClubModal from '@/components/CreateClubModal';
 import AuthModal from '@/components/AuthModal';
 import { Review } from '@/types/database';
 import { useAuth } from '@/context/AuthContext';
+import { checkCanEmpathize, MAX_EMPATHY_COUNT } from '@/lib/core/empathy';
 
 function BookReviewsFeedContent() {
   const searchParams = useSearchParams();
@@ -24,6 +25,7 @@ function BookReviewsFeedContent() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [empathizingReviewId, setEmpathizingReviewId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -43,6 +45,10 @@ function BookReviewsFeedContent() {
             return;
           }
           params.append('user_id', user.id);
+        }
+
+        if (user?.id) {
+          params.append('viewer_id', user.id);
         }
 
         const queryString = params.toString();
@@ -72,6 +78,63 @@ function BookReviewsFeedContent() {
 
     fetchReviews();
   }, [clubId, scheduleId, user?.id, isClubOrScheduleFeed]);
+
+  const handleEmpathize = async (reviewId: string, authorId: string, currentMyCount: number) => {
+    if (!user?.id) {
+      setIsAuthOpen(true);
+      return;
+    }
+
+    const check = checkCanEmpathize(authorId, user.id, currentMyCount);
+    if (!check.allowed) {
+      if (check.reason === 'self_review') {
+        alert('본인이 작성한 독후감에는 공감할 수 없습니다.');
+        return;
+      }
+      if (check.reason === 'max_reached') {
+        alert(`한 독후감당 최대 ${MAX_EMPATHY_COUNT}회까지만 공감할 수 있습니다.`);
+        return;
+      }
+      return;
+    }
+
+    setEmpathizingReviewId(reviewId);
+    try {
+      const res = await fetch('/api/reviews/empathy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          review_id: reviewId,
+          user_id: user.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || '공감 반영에 실패했습니다.');
+        return;
+      }
+
+      // 낙관적 업데이트
+      setReviews((prev) =>
+        prev.map((r) => {
+          if (r.id === reviewId) {
+            const newCount = data.my_empathy_count ?? (r.my_empathy_count || 0) + 1;
+            return {
+              ...r,
+              my_empathy_count: newCount,
+            };
+          }
+          return r;
+        })
+      );
+    } catch (err) {
+      console.error('Empathy error:', err);
+      alert('공감 처리 중 오류가 발생했습니다.');
+    } finally {
+      setEmpathizingReviewId(null);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
@@ -285,14 +348,63 @@ function BookReviewsFeedContent() {
                       </div>
 
                       <div className="flex items-center gap-3 ml-auto">
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 hover:text-secondary transition-colors"
-                          onClick={() => alert('공감했습니다 ❤️')}
-                        >
-                          <span className="material-symbols-outlined text-[16px]">favorite_border</span>
-                          <span>공감하기</span>
-                        </button>
+                        {!isClubOrScheduleFeed ? (
+                          /* 1. 상단 '내 독후감 피드'로 들어왔을 때: '공감하기' 버튼이 위치한 곳에 총 공감 건수 표시 */
+                          <div
+                            data-testid="my-review-likes"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold shadow-2xs"
+                          >
+                            <span className="material-symbols-outlined text-[16px] text-rose-500 fill-rose-500">
+                              favorite
+                            </span>
+                            <span>받은 공감 {rev.likes_count || 0}개</span>
+                          </div>
+                        ) : rev.user_id === user?.id ? (
+                          /* 2. 클럽/단원 모아보기에서 내가 쓴 글인 경우: 타인에게 총 공감 수는 숨기고 본인 글 안내 */
+                          <div className="inline-flex items-center gap-1 text-[11px] text-on-surface-variant/70 font-medium px-2.5 py-1 rounded-full bg-surface-container">
+                            <span className="material-symbols-outlined text-[14px]">edit_note</span>
+                            <span>내가 쓴 독후감</span>
+                          </div>
+                        ) : (
+                          /* 3. 클럽/단원 모아보기에서 다른 사람의 독후감인 경우: 5회까지 공감 가능 버튼 (총 공감 수는 미표시) */
+                          <button
+                            type="button"
+                            disabled={empathizingReviewId === rev.id || (rev.my_empathy_count || 0) >= MAX_EMPATHY_COUNT}
+                            onClick={() => handleEmpathize(rev.id, rev.user_id, rev.my_empathy_count || 0)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                              (rev.my_empathy_count || 0) >= MAX_EMPATHY_COUNT
+                                ? 'bg-rose-100 text-rose-600 cursor-default opacity-90'
+                                : (rev.my_empathy_count || 0) > 0
+                                ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-105 active:scale-95 shadow-xs'
+                                : 'text-on-surface-variant hover:text-rose-500 hover:bg-rose-50/60'
+                            }`}
+                            title={
+                              (rev.my_empathy_count || 0) >= MAX_EMPATHY_COUNT
+                                ? '최대 5회 공감 완료'
+                                : (rev.my_empathy_count || 0) > 0
+                                ? `공감하기 (내 공감 ${rev.my_empathy_count}/5회)`
+                                : '공감하기 (최대 5회)'
+                            }
+                          >
+                            <span
+                              className={`material-symbols-outlined text-[16px] transition-transform ${
+                                (rev.my_empathy_count || 0) > 0
+                                  ? 'text-rose-500 fill-rose-500 scale-110'
+                                  : 'text-on-surface-variant'
+                              }`}
+                            >
+                              {(rev.my_empathy_count || 0) > 0 ? 'favorite' : 'favorite_border'}
+                            </span>
+                            <span>
+                              {(rev.my_empathy_count || 0) >= MAX_EMPATHY_COUNT
+                                ? '공감완료 (5/5)'
+                                : (rev.my_empathy_count || 0) > 0
+                                ? `공감 ${rev.my_empathy_count}/5`
+                                : '공감하기'}
+                            </span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           className="flex items-center gap-1 hover:text-primary transition-colors"
