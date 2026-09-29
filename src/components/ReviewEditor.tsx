@@ -331,30 +331,6 @@ export default function ReviewEditor({
           </div>
         )}
 
-        {/* 방장이 설정한 단원명과 페이지 표시 영역 */}
-        {currentSchedule && (
-          <div className="flex items-center gap-2 pt-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary-fixed/30 border border-primary/20 text-xs text-on-surface shadow-2xs">
-              <span className="material-symbols-outlined text-[16px] text-primary">menu_book</span>
-              <span className="font-bold text-primary">
-                {currentSchedule.sequence ? `${currentSchedule.sequence}회차` : '단원'}
-              </span>
-              <span className="text-primary/30 font-light">|</span>
-              <span className="font-semibold text-on-surface">{currentSchedule.chapter_title}</span>
-              {currentSchedule.page_range && (
-                <>
-                  <span className="text-primary/30 font-light">·</span>
-                  <span className="text-on-surface-variant font-medium">
-                    {currentSchedule.page_range.toLowerCase().startsWith('p')
-                      ? currentSchedule.page_range
-                      : `p.${currentSchedule.page_range}`}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Lyrical Title Input */}
         <div>
           <input

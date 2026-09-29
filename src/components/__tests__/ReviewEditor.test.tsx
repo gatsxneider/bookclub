@@ -99,7 +99,7 @@ describe('ReviewEditor Component', () => {
     alertMock.mockRestore();
   });
 
-  it('방장이 설정한 단원명과 페이지 정보가 표시되어야 한다', () => {
+  it('상단 바에 단원 목록 선택 드롭다운이 정상 렌더링되어야 한다', () => {
     render(
       <ReviewEditor
         schedules={mockSchedules}
@@ -109,9 +109,9 @@ describe('ReviewEditor Component', () => {
       />
     );
 
-    expect(screen.getByText('1회차')).toBeInTheDocument();
-    expect(screen.getByText('제1장. 2020 가을, 산해진미 도시락')).toBeInTheDocument();
-    expect(screen.getByText('p.1 ~ p.65')).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
+    expect(screen.getByText(/제1장. 2020 가을, 산해진미 도시락/)).toBeInTheDocument();
+    expect(screen.getByText(/제2장. 제이에스 오브 제이에스/)).toBeInTheDocument();
   });
 
   it('임시 저장 버튼 클릭 시 작성 내용이 localStorage에 저장되어야 한다', () => {
