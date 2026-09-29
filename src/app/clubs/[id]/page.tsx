@@ -334,6 +334,11 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
 
   const dDay = calculateDday(club?.end_date);
 
+  const leaderNickname =
+    club?.leader?.nickname ||
+    members.find((m) => m.role === 'leader')?.profile?.nickname ||
+    '방장';
+
   return (
     <div className="flex flex-col min-h-screen bg-surface">
       <Navbar
@@ -408,6 +413,9 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface-variant">
                       멤버 {members.length} / {club?.max_members || 6}명
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface-variant">
+                      방장: {leaderNickname}
                     </span>
                   </div>
 
