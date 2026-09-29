@@ -25,8 +25,8 @@ export default function Navbar({
   const navLinks = [
     { label: '홈', href: '/' },
     { label: '내 서재 & 클럽', href: '/my-clubs' },
+    { label: '내 독후감 피드', href: '/book-reviews' },
     { label: '도서 탐색', href: '/explore' },
-    { label: '독후감 피드', href: '/book-reviews' },
   ];
 
   return (

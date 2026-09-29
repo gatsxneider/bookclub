@@ -20,8 +20,8 @@ describe('Navbar Component', () => {
     expect(screen.getByText(/숲속의 북클럽/)).toBeInTheDocument();
     expect(screen.getByText('홈')).toBeInTheDocument();
     expect(screen.getByText('내 서재 & 클럽')).toBeInTheDocument();
+    expect(screen.getByText('내 독후감 피드')).toBeInTheDocument();
     expect(screen.getByText('도서 탐색')).toBeInTheDocument();
-    expect(screen.getByText('독후감 피드')).toBeInTheDocument();
   });
 
   it('새 독서클럽 버튼 클릭 시 onOpenNewClub 콜백이 실행되어야 한다', () => {

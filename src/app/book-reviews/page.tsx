@@ -2,16 +2,19 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import BookSearchModal from '@/components/BookSearchModal';
 import CreateClubModal from '@/components/CreateClubModal';
 import AuthModal from '@/components/AuthModal';
 import { Review } from '@/types/database';
+import { useAuth } from '@/context/AuthContext';
 
 function BookReviewsFeedContent() {
   const searchParams = useSearchParams();
   const clubId = searchParams.get('club_id') || searchParams.get('clubId');
   const scheduleId = searchParams.get('schedule_id') || searchParams.get('scheduleId');
+  const { user } = useAuth();
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,79 +24,37 @@ function BookReviewsFeedContent() {
 
   useEffect(() => {
     const fetchReviews = async () => {
+      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
       setLoading(true);
       try {
         let url = '/api/reviews';
         const params = new URLSearchParams();
         if (clubId) params.append('club_id', clubId);
         if (scheduleId) params.append('schedule_id', scheduleId);
-        if (params.toString()) {
-          url += `?${params.toString()}`;
-        }
+        // 내 독후감만 조회하도록 user_id 파라미터 적용
+        params.append('user_id', currentUserId);
+
+        url += `?${params.toString()}`;
 
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
-          if (data.reviews && data.reviews.length > 0) {
+          if (data.reviews && Array.isArray(data.reviews)) {
             setReviews(data.reviews);
             return;
           }
         }
+        setReviews([]);
       } catch (err) {
         console.warn('Reviews fetch error:', err);
+        setReviews([]);
       } finally {
         setLoading(false);
       }
-
-      // 기본 폴백 데이터 (데이터가 비어있을 때 피드 예시)
-      setReviews([
-        {
-          id: 'rev-1',
-          user_id: '1',
-          title: '불편함 속에서 길어 올린 가장 다정한 온기 — 4단원을 읽고',
-          content:
-            '혼자 늦은 밤 편의점 파라솔 테이블에 앉아 캔맥주와 참치김밥을 먹는 사람들의 고단함. 독고 씨가 그들에게 무심한 듯 건네는 따뜻한 배려가 가슴을 뭉클하게 했습니다. 우리 사회에 필요한 것은 어쩌면 대단한 정답이 아니라 서로의 어깨를 토닥이는 작은 관심일 것입니다.',
-          quote: '“결국 삶은 관계였고 관계는 소통이었다. 행복은 혼자 누릴 수 있는 것이 아니었다.”',
-          rating: 5,
-          is_public: true,
-          created_at: '2026-09-24',
-          author: { id: '1', nickname: '지우' },
-          club: { id: 'c1', name: '고요한 숲속 심야 독서회', leader_id: '1', status: 'active', max_members: 6 },
-          schedule: { id: 's1', club_id: 'c1', sequence: 4, chapter_title: '제4장. 네 잎 클로버의 기적', page_range: 'p.199 ~ p.262', target_date: '2026-10-01' },
-        },
-        {
-          id: 'rev-2',
-          user_id: '2',
-          title: '산만함의 시대, 나를 되찾는 몰입의 연습 — 도둑맞은 집중력 1단원',
-          content:
-            '끝없이 알림을 울려대는 스마트폰과 알고리즘 속에서 우리의 깊은 생각의 힘이 어떻게 잠식당하는지 깊이 깨달았습니다. 함께 책을 읽는 이 시간만큼은 온전히 화면을 끄고 종이책의 질감에 집중해봅니다.',
-          quote: '“집중력 위기는 개인의 실패가 아니라 현대 사회 시스템이 설계한 결과다.”',
-          rating: 5,
-          is_public: true,
-          created_at: '2026-09-20',
-          author: { id: '2', nickname: '도윤' },
-          club: { id: 'c2', name: '따스한 차 한 잔과 인문학', leader_id: '2', status: 'active', max_members: 8 },
-          schedule: { id: 's2', club_id: 'c2', sequence: 1, chapter_title: '1부. 너무 빨리 흘러가는 세상과 우리의 뇌', page_range: 'p.1 ~ p.80', target_date: '2026-09-20' },
-        },
-        {
-          id: 'rev-3',
-          user_id: '3',
-          title: '참참참 세트와 편의점 야간의 공기',
-          content:
-            '산해진미 도시락을 먹으며 밤을 버티던 이들의 마음이 풀려가는 과정이 소설이라기보다 실제 우리 동네 이야기처럼 다가왔습니다. 작가의 따뜻한 시선이 활자 너머로 전해집니다.',
-          quote: '“밥 딜런의 외할머니가 그랬어. 행복은 이미 누리고 있는 것을 좋아하는 것이라고.”',
-          rating: 4,
-          is_public: true,
-          created_at: '2026-09-17',
-          author: { id: '3', nickname: '민서' },
-          club: { id: 'c1', name: '고요한 숲속 심야 독서회', leader_id: '1', status: 'active', max_members: 6 },
-          schedule: { id: 's3', club_id: 'c1', sequence: 3, chapter_title: '제3장. 삼각김밥의 용도', page_range: 'p.133 ~ p.198', target_date: '2026-09-24' },
-        },
-      ]);
     };
 
     fetchReviews();
-  }, [clubId, scheduleId]);
+  }, [clubId, scheduleId, user?.id]);
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
@@ -105,43 +66,93 @@ function BookReviewsFeedContent() {
 
       <main className="w-full pt-24 pb-16 flex-1">
         <div className="max-w-4xl mx-auto px-gutter flex flex-col gap-6">
-          <div>
-            <div className="flex items-center gap-2 text-primary text-xs font-semibold">
-              <span className="material-symbols-outlined text-[18px]">spa</span>
-              <span>온기 있는 문장의 나눔</span>
+          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-surface-container pb-4">
+            <div>
+              <div className="flex items-center gap-2 text-primary text-xs font-semibold">
+                <span className="material-symbols-outlined text-[18px]">spa</span>
+                <span>온기 있는 나의 기록</span>
+              </div>
+              <h1 className="font-headline-md text-2xl font-bold text-on-surface mt-1">
+                {clubId || scheduleId ? '단원 독후감 모아보기' : '내 독후감 피드'}
+              </h1>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                내가 단원별 독서 일정을 함께하며 정성스럽게 기록한 감상과 발제문들을 모아봅니다.
+              </p>
             </div>
-            <h1 className="font-headline-md text-2xl font-bold text-on-surface mt-1">
-              {clubId || scheduleId ? '클럽 독후감 전체 모아보기' : '독후감 피드'}
-            </h1>
-            <p className="text-xs text-on-surface-variant mt-0.5">
-              클럽 멤버들이 단원별 독서 일정을 함께하며 기록한 따뜻한 감상과 발제문들을 나눕니다.
-            </p>
+
+            {reviews.length > 0 && (
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-bold shadow-xs">
+                <span className="material-symbols-outlined text-[16px]">menu_book</span>
+                <span>총 {reviews.length}편의 서평 기록</span>
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col gap-4">
-            {reviews.map((rev) => (
-              <article
-                key={rev.id}
-                className="bg-surface-container-lowest rounded-2xl p-6 sm:p-7 shadow-sm border border-surface-container flex flex-col gap-3.5 hover:shadow-md transition-shadow"
+          {loading ? (
+            <div className="py-24 text-center text-primary flex flex-col items-center justify-center gap-3">
+              <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+              <span className="text-sm font-medium">내가 작성한 독후감을 불러오는 중입니다...</span>
+            </div>
+          ) : !user ? (
+            <div className="py-20 text-center bg-surface-container-lowest rounded-3xl p-8 border border-surface-container flex flex-col items-center justify-center gap-3 shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-outline">
+                <span className="material-symbols-outlined text-[28px]">lock</span>
+              </div>
+              <h3 className="font-title-md text-base font-bold text-on-surface">로그인이 필요합니다</h3>
+              <p className="text-xs text-on-surface-variant max-w-sm">
+                로그인하시면 내가 작성한 단원별 서평과 독후감을 모아보고 관리할 수 있습니다.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsAuthOpen(true)}
+                className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold shadow-md hover:bg-primary-container transition-all"
               >
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-primary text-xs shadow-sm">
-                      {rev.author?.nickname?.[0] || '지'}
+                <span className="material-symbols-outlined text-[16px]">login</span>
+                <span>로그인하기</span>
+              </button>
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="py-20 text-center bg-surface-container-lowest rounded-3xl p-8 border border-surface-container flex flex-col items-center justify-center gap-3 shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-primary-fixed/40 flex items-center justify-center text-primary">
+                <span className="material-symbols-outlined text-[28px]">edit_note</span>
+              </div>
+              <h3 className="font-title-md text-base font-bold text-on-surface">아직 작성한 독후감이 없습니다</h3>
+              <p className="text-xs text-on-surface-variant max-w-sm">
+                참여 중인 독서클럽의 단원 일정을 읽고 따뜻한 감상을 남겨보세요.
+              </p>
+              <Link
+                href="/my-clubs"
+                className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold shadow-md hover:bg-primary-container transition-all"
+              >
+                <span className="material-symbols-outlined text-[16px]">auto_stories</span>
+                <span>내 서재 & 클럽 바로가기</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {reviews.map((rev) => (
+                <article
+                  key={rev.id}
+                  className="bg-surface-container-lowest rounded-2xl p-6 sm:p-7 shadow-sm border border-surface-container flex flex-col gap-3.5 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-primary text-xs shadow-sm">
+                        {rev.author?.nickname?.[0] || user.nickname?.[0] || '지'}
+                      </div>
+                      <span className="text-xs font-bold text-on-surface">
+                        {rev.author?.nickname || user.nickname || '나'}
+                      </span>
+                      <span className="text-[11px] text-on-surface-variant">
+                        {rev.created_at?.split('T')[0]}
+                      </span>
                     </div>
-                    <span className="text-xs font-bold text-on-surface">
-                      {rev.author?.nickname || '멤버'}
-                    </span>
-                    <span className="text-[11px] text-on-surface-variant">
-                      {rev.created_at?.split('T')[0]}
-                    </span>
-                  </div>
 
-                  <div className="flex items-center gap-1 text-secondary text-xs">
-                    <span>★</span>
-                    <span className="font-bold">{rev.rating || 5}.0</span>
+                    <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
+                      <span className="material-symbols-outlined text-[16px] fill-amber-400 text-amber-400">star</span>
+                      <span>{rev.rating || 5}.0</span>
+                    </div>
                   </div>
-                </div>
 
                 <h2 className="font-headline-sm text-lg font-bold text-on-surface">
                   {rev.title}
