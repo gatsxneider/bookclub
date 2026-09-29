@@ -117,9 +117,10 @@ describe('MyClubsPage Component', () => {
 
     render(<MyClubsPage />);
 
-    expect(screen.getByText('로그인하고 나만의 서재를 만나보세요')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '로그인 / 회원가입' })).toBeInTheDocument();
-    expect(screen.getByText('로그인이 필요한 서비스입니다')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '로그인하고 내 클럽 확인하기' })).toBeInTheDocument();
+    expect(screen.getAllByText('내 서재 & 클럽').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('온기 있는 나의 서재')).toBeInTheDocument();
+    expect(screen.getByText('로그인이 필요합니다')).toBeInTheDocument();
+    expect(screen.getByText(/로그인하시면 참여 중인 독서 클럽의 일정과 단원별 독후감 작성 현황을 확인하실 수 있습니다/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /로그인하기/ })).toBeInTheDocument();
   });
 });

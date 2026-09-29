@@ -41,26 +41,18 @@ describe('Navbar Component', () => {
     expect(handleNewClub).toHaveBeenCalled();
   });
 
-  it('비로그인 상태에서 내 서재 & 클럽 링크 클릭 시 로그인 안내 알림과 함께 onOpenAuth가 호출되어야 한다', () => {
-    const handleAuth = vi.fn();
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-
+  it('내 서재 & 클럽 링크가 올바른 /my-clubs 경로를 가리켜야 한다', () => {
     render(
       <AuthProvider>
         <Navbar
           onOpenSearch={vi.fn()}
           onOpenNewClub={vi.fn()}
-          onOpenAuth={handleAuth}
+          onOpenAuth={vi.fn()}
         />
       </AuthProvider>
     );
 
-    const myClubsLink = screen.getByText('내 서재 & 클럽');
-    fireEvent.click(myClubsLink);
-
-    expect(alertSpy).toHaveBeenCalledWith(
-      expect.stringContaining('로그인이 필요한 서비스입니다')
-    );
-    expect(handleAuth).toHaveBeenCalled();
+    const myClubsLink = screen.getByText('내 서재 & 클럽').closest('a');
+    expect(myClubsLink).toHaveAttribute('href', '/my-clubs');
   });
 });

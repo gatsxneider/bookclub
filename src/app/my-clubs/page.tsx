@@ -148,7 +148,6 @@ export default function MyClubsPage() {
                 return isLeader || isMember;
               });
 
-              // 참여 중인 클럽이 있으면 그것을 사용
               if (myJoined.length > 0) {
                 filteredClubs = myJoined;
               }
@@ -156,7 +155,6 @@ export default function MyClubsPage() {
 
             const formatted: UserClubView[] = filteredClubs.map((club: any) => {
               const schedules: ClubScheduleItem[] = (club.schedules || []).map((s: any, idx: number) => {
-                // 해당 회원이 이 단원에 독후감을 썼는지 확인
                 const userReview = (s.reviews || []).find(
                   (r: any) => r.user_id === user?.id || (myReviews || []).some((mr) => mr.schedule_id === s.id)
                 );
@@ -215,394 +213,375 @@ export default function MyClubsPage() {
       />
 
       <main className="w-full pt-24 pb-16 flex-1">
-        <div className="max-w-7xl mx-auto px-gutter flex flex-col gap-6">
-          {/* Top Banner / My Profile Status */}
-          <section className="bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-sm border border-surface-container flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              {/* Profile Avatar */}
-              {user?.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.nickname || '프로필 아바타'}
-                  className="w-16 h-16 rounded-full object-cover shadow-sm border-2 border-primary/20 shrink-0"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary text-2xl font-bold shadow-sm shrink-0">
-                  {user?.nickname ? user.nickname.charAt(0) : '독'}
+        {authLoading ? (
+          <div className="max-w-4xl mx-auto px-gutter py-24 text-center text-primary flex flex-col items-center justify-center gap-3">
+            <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+            <span className="text-sm font-medium">서재 정보를 불러오는 중입니다...</span>
+          </div>
+        ) : !user ? (
+          /* 비로그인 상태 화면: 내 독후감 피드와 완전히 동일한 구성 */
+          <div className="max-w-4xl mx-auto px-gutter flex flex-col gap-6">
+            <div className="flex items-center justify-between flex-wrap gap-4 border-b border-surface-container pb-4">
+              <div>
+                <div className="flex items-center gap-2 text-primary text-xs font-semibold">
+                  <span className="material-symbols-outlined text-[18px]">spa</span>
+                  <span>온기 있는 나의 서재</span>
                 </div>
-              )}
+                <h1 className="font-headline-md text-2xl font-bold text-on-surface mt-1">
+                  내 서재 & 클럽
+                </h1>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  참여 중인 독서 클럽의 일정과 단원별 독후감 작성 현황을 확인합니다.
+                </p>
+              </div>
+            </div>
 
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="font-headline-md text-xl sm:text-2xl font-bold text-on-surface">
-                    {user ? `${user.nickname} 님의 따뜻한 서재` : '로그인하고 나만의 서재를 만나보세요'}
-                  </h1>
-                  {user && (
+            <div className="py-20 text-center bg-surface-container-lowest rounded-3xl p-8 border border-surface-container flex flex-col items-center justify-center gap-3 shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-outline">
+                <span className="material-symbols-outlined text-[28px]">lock</span>
+              </div>
+              <h3 className="font-title-md text-base font-bold text-on-surface">로그인이 필요합니다</h3>
+              <p className="text-xs text-on-surface-variant max-w-sm">
+                로그인하시면 참여 중인 독서 클럽의 일정과 단원별 독후감 작성 현황을 확인하실 수 있습니다.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsAuthOpen(true)}
+                className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold shadow-md hover:bg-primary-container transition-all"
+              >
+                <span className="material-symbols-outlined text-[16px]">login</span>
+                <span>로그인하기</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* 로그인 회원 전용 서재 & 클럽 화면 */
+          <div className="max-w-7xl mx-auto px-gutter flex flex-col gap-6">
+            {/* Top Banner / My Profile Status */}
+            <section className="bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-sm border border-surface-container flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                {/* Profile Avatar */}
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.nickname || '프로필 아바타'}
+                    className="w-16 h-16 rounded-full object-cover shadow-sm border-2 border-primary/20 shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary text-2xl font-bold shadow-sm shrink-0">
+                    {user.nickname ? user.nickname.charAt(0) : '독'}
+                  </div>
+                )}
+
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="font-headline-md text-xl sm:text-2xl font-bold text-on-surface">
+                      {user.nickname} 님의 따뜻한 서재
+                    </h1>
                     <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">
                       {levelInfo.badge}
                     </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-1.5 flex-wrap">
-                  {user ? (
-                    <>
-                      <span className="inline-flex items-center gap-1 font-medium text-primary">
-                        <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
-                        <span>매너온도 {mannerTemp}℃</span>
-                      </span>
-                      <span>•</span>
-                      <span className="text-on-surface-variant/80">{user.email}</span>
-                      <span>•</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsProfileOpen(true)}
-                        className="inline-flex items-center gap-0.5 text-xs text-secondary hover:underline font-medium"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">manage_accounts</span>
-                        <span>프로필 설정</span>
-                      </button>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2 mt-1">
-                      <span>로그인하시면 참여 중인 독서 클럽과 작성한 독후감을 모아볼 수 있습니다.</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsAuthOpen(true)}
-                        className="px-3 py-1 rounded-full bg-primary text-on-primary font-bold text-xs hover:bg-primary/90 transition-all"
-                      >
-                        로그인 / 회원가입
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Metrics */}
-            <div className="grid grid-cols-3 gap-3 border-t md:border-t-0 md:border-l border-surface-container pt-4 md:pt-0 md:pl-6 text-center">
-              <div className="flex flex-col">
-                <span className="text-xs text-on-surface-variant">참여 클럽</span>
-                <span className="text-xl font-bold text-primary mt-0.5">
-                  {user ? userClubs.length : 0}개
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-on-surface-variant">작성한 독후감</span>
-                <span className="text-xl font-bold text-secondary mt-0.5">
-                  {user ? myReviews.length : 0}편
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-on-surface-variant">완독한 책</span>
-                <span className="text-xl font-bold text-on-surface mt-0.5">
-                  {user ? (user.completed_count ?? 0) : 0}권
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {/* Tab Navigation */}
-          <div className="flex items-center gap-2 border-b border-surface-container pb-2 overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => setActiveTab('current')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                activeTab === 'current'
-                  ? 'bg-primary text-on-primary shadow-sm'
-                  : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              독서 진행 일정 & 독후감 체크리스트 ({userClubs.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('my-reviews')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                activeTab === 'my-reviews'
-                  ? 'bg-primary text-on-primary shadow-sm'
-                  : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              내가 쓴 독후감 모아보기 ({myReviews.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('completed')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                activeTab === 'completed'
-                  ? 'bg-primary text-on-primary shadow-sm'
-                  : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              완독 기념서가 ({completedBooks.length}권)
-            </button>
-          </div>
-
-          {/* TAB 1: 독서 진행 일정 & 독후감 작성 여부 */}
-          {activeTab === 'current' && (
-            <div className="flex flex-col gap-6">
-              {!user ? (
-                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-primary-fixed/30 flex items-center justify-center text-primary text-3xl">
-                    🔒
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <h3 className="text-lg font-bold text-on-surface">로그인이 필요한 서비스입니다</h3>
-                    <p className="text-xs text-on-surface-variant">
-                      로그인하시면 참여 중인 독서 클럽의 단원별 일정과 독후감 작성 현황을 확인하실 수 있습니다.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 mt-2">
+
+                  <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-1.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1 font-medium text-primary">
+                      <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+                      <span>매너온도 {mannerTemp}℃</span>
+                    </span>
+                    <span>•</span>
+                    <span className="text-on-surface-variant/80">{user.email}</span>
+                    <span>•</span>
                     <button
                       type="button"
-                      onClick={() => setIsAuthOpen(true)}
-                      className="px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm hover:bg-primary/90 transition-all"
+                      onClick={() => setIsProfileOpen(true)}
+                      className="inline-flex items-center gap-0.5 text-xs text-secondary hover:underline font-medium"
                     >
-                      로그인하고 내 클럽 확인하기
+                      <span className="material-symbols-outlined text-[13px]">manage_accounts</span>
+                      <span>프로필 설정</span>
                     </button>
-                    <Link
-                      href="/"
-                      className="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all"
-                    >
-                      홈으로 이동
-                    </Link>
                   </div>
                 </div>
-              ) : userClubs.length > 0 ? (
-                userClubs.map((club) => (
-                  <section
-                    key={club.clubId}
-                    className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container flex flex-col gap-4"
-                  >
-                    {/* Club Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-surface-container">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={club.bookThumbnail}
-                          alt={club.bookTitle}
-                          className="w-12 h-16 rounded object-cover shadow-sm shrink-0"
-                        />
-                        <div className="flex flex-col">
-                          <Link
-                            href={`/clubs/${club.clubId}`}
-                            className="font-headline-sm text-base font-bold text-on-surface hover:text-primary transition-colors"
-                          >
-                            {club.clubName}
-                          </Link>
-                          <p className="text-xs text-on-surface-variant mt-0.5">
-                            선정도서: 《{club.bookTitle}》 • 방장: {club.leader} • 멤버 {club.membersCount}명
-                          </p>
+              </div>
+
+              {/* Quick Metrics */}
+              <div className="grid grid-cols-3 gap-3 border-t md:border-t-0 md:border-l border-surface-container pt-4 md:pt-0 md:pl-6 text-center">
+                <div className="flex flex-col">
+                  <span className="text-xs text-on-surface-variant">참여 클럽</span>
+                  <span className="text-xl font-bold text-primary mt-0.5">
+                    {userClubs.length}개
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-on-surface-variant">작성한 독후감</span>
+                  <span className="text-xl font-bold text-secondary mt-0.5">
+                    {myReviews.length}편
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-on-surface-variant">완독한 책</span>
+                  <span className="text-xl font-bold text-on-surface mt-0.5">
+                    {user.completed_count ?? 0}권
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-2 border-b border-surface-container pb-2 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setActiveTab('current')}
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                  activeTab === 'current'
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                독서 진행 일정 & 독후감 체크리스트 ({userClubs.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('my-reviews')}
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                  activeTab === 'my-reviews'
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                내가 쓴 독후감 모아보기 ({myReviews.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('completed')}
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                  activeTab === 'completed'
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                완독 기념서가 ({completedBooks.length}권)
+              </button>
+            </div>
+
+            {/* TAB 1: 독서 진행 일정 & 독후감 작성 여부 */}
+            {activeTab === 'current' && (
+              <div className="flex flex-col gap-6">
+                {userClubs.length > 0 ? (
+                  userClubs.map((club) => (
+                    <section
+                      key={club.clubId}
+                      className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container flex flex-col gap-4"
+                    >
+                      {/* Club Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-surface-container">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={club.bookThumbnail}
+                            alt={club.bookTitle}
+                            className="w-12 h-16 rounded object-cover shadow-sm shrink-0"
+                          />
+                          <div className="flex flex-col">
+                            <Link
+                              href={`/clubs/${club.clubId}`}
+                              className="font-headline-sm text-base font-bold text-on-surface hover:text-primary transition-colors"
+                            >
+                              {club.clubName}
+                            </Link>
+                            <p className="text-xs text-on-surface-variant mt-0.5">
+                              선정도서: 《{club.bookTitle}》 • 방장: {club.leader} • 멤버 {club.membersCount}명
+                            </p>
+                          </div>
                         </div>
+
+                        <Link
+                          href={`/clubs/${club.clubId}`}
+                          className="px-3.5 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold transition-all self-start sm:self-auto flex items-center gap-1"
+                        >
+                          <span>클럽 서재 바로가기</span>
+                          <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                        </Link>
                       </div>
 
-                      <Link
-                        href={`/clubs/${club.clubId}`}
-                        className="px-3.5 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold transition-all self-start sm:self-auto flex items-center gap-1"
-                      >
-                        <span>클럽 서재 바로가기</span>
-                        <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
-                      </Link>
-                    </div>
+                      {/* Schedule Check List */}
+                      <div className="flex flex-col gap-2">
+                        <h4 className="text-xs font-bold text-primary flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[16px]">task_alt</span>
+                          <span>단원별 독서 일정 및 나의 독후감 작성 현황</span>
+                        </h4>
 
-                    {/* Schedule Check List */}
-                    <div className="flex flex-col gap-2">
-                      <h4 className="text-xs font-bold text-primary flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[16px]">task_alt</span>
-                        <span>단원별 독서 일정 및 나의 독후감 작성 현황</span>
-                      </h4>
-
-                      {club.schedules.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-2 pt-1">
-                          {club.schedules.map((s) => (
-                            <div
-                              key={s.id}
-                              className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span
-                                  className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${
-                                    s.submitted
-                                      ? 'bg-primary text-on-primary'
-                                      : 'bg-surface-container-high text-on-surface-variant'
-                                  }`}
-                                >
-                                  {s.submitted ? '✓' : s.seq}
-                                </span>
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-xs font-semibold text-on-surface">
-                                      {s.title}
-                                    </span>
-                                    <span className="text-[11px] text-on-surface-variant">
-                                      ({s.pages})
+                        {club.schedules.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-2 pt-1">
+                            {club.schedules.map((s) => (
+                              <div
+                                key={s.id}
+                                className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span
+                                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${
+                                      s.submitted
+                                        ? 'bg-primary text-on-primary'
+                                        : 'bg-surface-container-high text-on-surface-variant'
+                                    }`}
+                                  >
+                                    {s.submitted ? '✓' : s.seq}
+                                  </span>
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-semibold text-on-surface">
+                                        {s.title}
+                                      </span>
+                                      <span className="text-[11px] text-on-surface-variant">
+                                        ({s.pages})
+                                      </span>
+                                    </div>
+                                    <span className="text-[11px] text-on-surface-variant mt-0.5">
+                                      목표일: {s.targetDate}
                                     </span>
                                   </div>
-                                  <span className="text-[11px] text-on-surface-variant mt-0.5">
-                                    목표일: {s.targetDate}
-                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-2 self-end sm:self-auto">
+                                  {s.submitted ? (
+                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">
+                                      <span className="material-symbols-outlined text-[14px]">check</span>
+                                      <span>독후감 작성 완료</span>
+                                    </span>
+                                  ) : (
+                                    <Link
+                                      href={`/clubs/${club.clubId}/reviews/new?scheduleId=${s.id}`}
+                                      className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-secondary text-on-secondary hover:bg-secondary-container text-xs font-semibold shadow-sm transition-all"
+                                    >
+                                      <span className="material-symbols-outlined text-[14px]">edit</span>
+                                      <span>독후감 쓰기</span>
+                                    </Link>
+                                  )}
                                 </div>
                               </div>
-
-                              <div className="flex items-center gap-2 self-end sm:self-auto">
-                                {s.submitted ? (
-                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">
-                                    <span className="material-symbols-outlined text-[14px]">check</span>
-                                    <span>독후감 작성 완료</span>
-                                  </span>
-                                ) : (
-                                  <Link
-                                    href={`/clubs/${club.clubId}/reviews/new?scheduleId=${s.id}`}
-                                    className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-secondary text-on-secondary hover:bg-secondary-container text-xs font-semibold shadow-sm transition-all"
-                                  >
-                                    <span className="material-symbols-outlined text-[14px]">edit</span>
-                                    <span>독후감 쓰기</span>
-                                  </Link>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-on-surface-variant py-2">등록된 독서 일정이 없습니다.</p>
-                      )}
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-on-surface-variant py-2">등록된 독서 일정이 없습니다.</p>
+                        )}
+                      </div>
+                    </section>
+                  ))
+                ) : (
+                  <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary text-3xl">
+                      📚
                     </div>
-                  </section>
-                ))
-              ) : (
-                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary text-3xl">
-                    📚
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-lg font-bold text-on-surface">참여 중인 독서 클럽이 없습니다</h3>
+                      <p className="text-xs text-on-surface-variant">
+                        새로운 독서 클럽을 직접 만들거나, 취향에 맞는 클럽에 참여해보세요.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsCreateOpen(true)}
+                        className="px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm hover:bg-primary/90 transition-all"
+                      >
+                        새 독서클럽 만들기
+                      </button>
+                      <Link
+                        href="/"
+                        className="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all"
+                      >
+                        독서클럽 탐색하기
+                      </Link>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <h3 className="text-lg font-bold text-on-surface">참여 중인 독서 클럽이 없습니다</h3>
-                    <p className="text-xs text-on-surface-variant">
-                      새로운 독서 클럽을 직접 만들거나, 취향에 맞는 클럽에 참여해보세요.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsCreateOpen(true)}
-                      className="px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm hover:bg-primary/90 transition-all"
-                    >
-                      새 독서클럽 만들기
-                    </button>
-                    <Link
-                      href="/"
-                      className="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all"
-                    >
-                      독서클럽 탐색하기
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {/* TAB 2: 내가 쓴 독후감 모아보기 */}
-          {activeTab === 'my-reviews' && (
-            <div className="flex flex-col gap-4">
-              {!user ? (
-                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-primary-fixed/30 flex items-center justify-center text-primary text-3xl">
-                    🔒
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <h3 className="text-lg font-bold text-on-surface">로그인이 필요한 서비스입니다</h3>
+            {/* TAB 2: 내가 쓴 독후감 모아보기 */}
+            {activeTab === 'my-reviews' && (
+              <div className="flex flex-col gap-4">
+                {myReviews.length > 0 ? (
+                  myReviews.map((rev) => (
+                    <article
+                      key={rev.id}
+                      className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container flex flex-col gap-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-primary font-bold">
+                          {rev.created_at?.split('T')[0]} 기록
+                        </span>
+                        <div className="flex items-center gap-1 text-secondary text-xs">
+                          <span>★</span>
+                          <span className="font-bold">{rev.rating || 5}.0</span>
+                        </div>
+                      </div>
+
+                      <h3 className="font-headline-sm text-lg font-bold text-on-surface">
+                        {rev.title}
+                      </h3>
+
+                      {rev.quote && (
+                        <blockquote className="bg-surface-container-low p-3 rounded-lg border-l-4 border-primary text-xs italic text-on-surface leading-relaxed">
+                          {rev.quote}
+                        </blockquote>
+                      )}
+
+                      <p className="font-body-reading text-sm text-on-surface-variant leading-relaxed">
+                        {rev.content}
+                      </p>
+                    </article>
+                  ))
+                ) : (
+                  <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-2xl">
+                      ✍️
+                    </div>
+                    <h3 className="text-base font-bold text-on-surface">아직 작성된 독후감이 없습니다</h3>
                     <p className="text-xs text-on-surface-variant">
-                      로그인하시면 지금까지 작성하신 모든 독후감을 한곳에서 모아볼 수 있습니다.
+                      참여 중인 클럽의 단원별 일정에 맞춰 첫 번째 독서 기록을 남겨보세요.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsAuthOpen(true)}
-                    className="mt-2 px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm hover:bg-primary/90 transition-all"
-                  >
-                    로그인하고 독후감 모아보기
-                  </button>
-                </div>
-              ) : myReviews.length > 0 ? (
-                myReviews.map((rev) => (
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: 완독 기념서가 */}
+            {activeTab === 'completed' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {completedBooks.map((b, idx) => (
                   <article
-                    key={rev.id}
-                    className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container flex flex-col gap-3"
+                    key={idx}
+                    className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-surface-container flex flex-col justify-between gap-3"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-primary font-bold">
-                        {rev.created_at?.split('T')[0]} 기록
-                      </span>
-                      <div className="flex items-center gap-1 text-secondary text-xs">
-                        <span>★</span>
-                        <span className="font-bold">{rev.rating || 5}.0</span>
+                    <div className="flex gap-4">
+                      <img
+                        src={b.cover}
+                        alt={b.title}
+                        className="w-16 h-24 rounded-lg object-cover shadow-sm shrink-0"
+                      />
+                      <div className="flex flex-col">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-semibold self-start mb-1">
+                          <span className="material-symbols-outlined text-[12px]">verified</span>
+                          <span>완독 완료</span>
+                        </span>
+                        <h4 className="font-headline-sm text-sm font-bold text-on-surface">
+                          『{b.title}』
+                        </h4>
+                        <p className="text-xs text-on-surface-variant">{b.author} 저</p>
+                        <p className="text-[11px] text-on-surface-variant/80 mt-1">{b.clubName}</p>
                       </div>
                     </div>
 
-                    <h3 className="font-headline-sm text-lg font-bold text-on-surface">
-                      {rev.title}
-                    </h3>
-
-                    {rev.quote && (
-                      <blockquote className="bg-surface-container-low p-3 rounded-lg border-l-4 border-primary text-xs italic text-on-surface leading-relaxed">
-                        {rev.quote}
-                      </blockquote>
-                    )}
-
-                    <p className="font-body-reading text-sm text-on-surface-variant leading-relaxed">
-                      {rev.content}
-                    </p>
-                  </article>
-                ))
-              ) : (
-                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-3">
-                  <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-2xl">
-                    ✍️
-                  </div>
-                  <h3 className="text-base font-bold text-on-surface">아직 작성된 독후감이 없습니다</h3>
-                  <p className="text-xs text-on-surface-variant">
-                    참여 중인 클럽의 단원별 일정에 맞춰 첫 번째 독서 기록을 남겨보세요.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: 완독 기념서가 */}
-          {activeTab === 'completed' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {completedBooks.map((b, idx) => (
-                <article
-                  key={idx}
-                  className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-surface-container flex flex-col justify-between gap-3"
-                >
-                  <div className="flex gap-4">
-                    <img
-                      src={b.cover}
-                      alt={b.title}
-                      className="w-16 h-24 rounded-lg object-cover shadow-sm shrink-0"
-                    />
-                    <div className="flex flex-col">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-semibold self-start mb-1">
-                        <span className="material-symbols-outlined text-[12px]">verified</span>
-                        <span>완독 완료</span>
-                      </span>
-                      <h4 className="font-headline-sm text-sm font-bold text-on-surface">
-                        『{b.title}』
-                      </h4>
-                      <p className="text-xs text-on-surface-variant">{b.author} 저</p>
-                      <p className="text-[11px] text-on-surface-variant/80 mt-1">{b.clubName}</p>
+                    <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
+                      <span>{b.completedDate}</span>
+                      <span className="font-medium text-primary">총 {b.reviewsWritten}편의 기록</span>
                     </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
-                    <span>{b.completedDate}</span>
-                    <span className="font-medium text-primary">총 {b.reviewsWritten}편의 기록</span>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       <BookSearchModal
