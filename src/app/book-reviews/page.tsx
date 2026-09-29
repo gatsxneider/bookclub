@@ -264,72 +264,31 @@ function BookReviewsFeedContent() {
                 const authorNickname = rev.author?.nickname || (rev.user_id === user?.id ? user.nickname : '독서가');
                 const authorInitial = authorNickname ? authorNickname.charAt(0) : '독';
                 const bookTitle = rev.book?.title || rev.club?.book?.title;
+                const bookThumbnail = rev.book?.thumbnail || rev.club?.book?.thumbnail;
 
                 return (
                   <article
                     key={rev.id}
                     className="bg-surface-container-lowest rounded-2xl p-6 sm:p-7 shadow-sm border border-surface-container flex flex-col gap-3.5 hover:shadow-md transition-shadow"
                   >
+                    {/* 1. 상단 영역: 도서 & 단원 정보 (좌측) + 별점 평점 (우측) */}
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        {rev.club && (
-                          <Link
-                            href={`/clubs/${rev.club_id || rev.club.id}`}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">eco</span>
-                            <span>{rev.club.name}</span>
-                          </Link>
-                        )}
-                        <div className="flex items-center gap-2">
-                          {rev.author?.avatar_url ? (
-                            <img
-                              src={rev.author.avatar_url}
-                              alt={authorNickname}
-                              className="w-8 h-8 rounded-full object-cover shadow-sm border border-primary/20 shrink-0"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-primary text-xs shadow-sm shrink-0">
-                              {authorInitial}
-                            </div>
-                          )}
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-on-surface">
-                              {authorNickname}
-                            </span>
-                            <span className="text-[11px] text-on-surface-variant">
-                              {rev.created_at?.split('T')[0]}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
-                        <span className="material-symbols-outlined text-[16px] fill-amber-400 text-amber-400">star</span>
-                        <span>{rev.rating || 5}.0</span>
-                      </div>
-                    </div>
-
-                    <h2 className="font-headline-sm text-lg font-bold text-on-surface">
-                      {rev.title}
-                    </h2>
-
-                    {rev.quote && (
-                      <blockquote className="bg-surface-container-low p-3.5 rounded-xl border-l-4 border-primary text-xs italic text-on-surface leading-relaxed">
-                        {rev.quote}
-                      </blockquote>
-                    )}
-
-                    <p className="font-body-reading text-sm text-on-surface-variant leading-relaxed">
-                      {rev.content}
-                    </p>
-
-                    <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant flex-wrap gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         {bookTitle && (
-                          <span className="flex items-center gap-1 font-semibold text-on-surface">
-                            <span className="material-symbols-outlined text-[15px] text-primary">menu_book</span>
-                            <span>{bookTitle}</span>
+                          <span className="flex items-center gap-1.5 font-semibold text-xs text-on-surface">
+                            {bookThumbnail ? (
+                              <img
+                                src={bookThumbnail}
+                                alt={bookTitle}
+                                className="w-4 h-5.5 rounded-xs object-cover shadow-2xs shrink-0 border border-surface-container"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <span className="material-symbols-outlined text-[16px] text-primary">menu_book</span>
+                            )}
+                            <span className="font-bold">{bookTitle}</span>
                           </span>
                         )}
                         {rev.schedule && (
@@ -347,6 +306,65 @@ function BookReviewsFeedContent() {
                         )}
                       </div>
 
+                      <div className="flex items-center gap-1 text-amber-500 text-xs font-bold ml-auto sm:ml-0">
+                        <span className="material-symbols-outlined text-[16px] fill-amber-400 text-amber-400">star</span>
+                        <span>{rev.rating || 5}.0</span>
+                      </div>
+                    </div>
+
+                    {/* 2. 본문 영역: 제목, 인용구, 본문 */}
+                    <h2 className="font-headline-sm text-lg font-bold text-on-surface">
+                      {rev.title}
+                    </h2>
+
+                    {rev.quote && (
+                      <blockquote className="bg-surface-container-low p-3.5 rounded-xl border-l-4 border-primary text-xs italic text-on-surface leading-relaxed">
+                        {rev.quote}
+                      </blockquote>
+                    )}
+
+                    <p className="font-body-reading text-sm text-on-surface-variant leading-relaxed">
+                      {rev.content}
+                    </p>
+
+                    {/* 3. 하단 영역: 독서회명 & 멤버(작성자) 정보 (좌측) + 공감하기/댓글 (우측) */}
+                    <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant flex-wrap gap-2">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        {rev.club && (
+                          <Link
+                            href={`/clubs/${rev.club_id || rev.club.id}`}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">eco</span>
+                            <span>{rev.club.name}</span>
+                          </Link>
+                        )}
+                        <div className="flex items-center gap-2">
+                          {rev.author?.avatar_url ? (
+                            <img
+                              src={rev.author.avatar_url}
+                              alt={authorNickname}
+                              className="w-7 h-7 rounded-full object-cover shadow-sm border border-primary/20 shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.src = '/avatars/avatar_cat.png';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-primary text-xs shadow-sm shrink-0">
+                              {authorInitial}
+                            </div>
+                          )}
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-on-surface">
+                              {authorNickname}
+                            </span>
+                            <span className="text-[11px] text-on-surface-variant">
+                              {rev.created_at?.split('T')[0]}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="flex items-center gap-3 ml-auto">
                         {!isClubOrScheduleFeed ? (
                           /* 1. 상단 '내 독후감 피드'로 들어왔을 때: '공감하기' 버튼이 위치한 곳에 총 공감 건수 표시 */
@@ -359,14 +377,8 @@ function BookReviewsFeedContent() {
                             </span>
                             <span>받은 공감 {rev.likes_count || 0}개</span>
                           </div>
-                        ) : rev.user_id === user?.id ? (
-                          /* 2. 클럽/단원 모아보기에서 내가 쓴 글인 경우: 타인에게 총 공감 수는 숨기고 본인 글 안내 */
-                          <div className="inline-flex items-center gap-1 text-[11px] text-on-surface-variant/70 font-medium px-2.5 py-1 rounded-full bg-surface-container">
-                            <span className="material-symbols-outlined text-[14px]">edit_note</span>
-                            <span>내가 쓴 독후감</span>
-                          </div>
-                        ) : (
-                          /* 3. 클럽/단원 모아보기에서 다른 사람의 독후감인 경우: 5회까지 공감 가능 버튼 (총 공감 수는 미표시) */
+                        ) : rev.user_id === user?.id ? null : (
+                          /* 2. 클럽/단원 모아보기에서 다른 사람의 독후감인 경우: 5회까지 공감 가능 버튼 */
                           <button
                             type="button"
                             disabled={empathizingReviewId === rev.id || (rev.my_empathy_count || 0) >= MAX_EMPATHY_COUNT}

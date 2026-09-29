@@ -83,7 +83,7 @@ describe('BookReviewsFeedPage Component', () => {
       expect(screen.getByText('내 독후감')).toBeInTheDocument();
       expect(screen.getByText('달빛독서가')).toBeInTheDocument();
       expect(screen.getByText('공감하기')).toBeInTheDocument();
-      expect(screen.getByText('내가 쓴 독후감')).toBeInTheDocument();
+      expect(screen.queryByText('내가 쓴 독후감')).not.toBeInTheDocument();
     });
 
     // fetch 호출 시 user_id 없이 club_id만 전달되었는지 확인
