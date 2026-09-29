@@ -12,7 +12,9 @@ import BookDetailModal from '@/components/BookDetailModal';
 import ClubSearchModal from '@/components/ClubSearchModal';
 import AuthModal from '@/components/AuthModal';
 import CozyLogo from '@/components/CozyLogo';
+import Footer from '@/components/Footer';
 import { Book, Club } from '@/types/database';
+
 import { filterCuratedBooks } from '@/lib/core/bookSearch';
 import curatedBooksData from '@/lib/constants/curatedBooks.json';
 import {
@@ -499,7 +501,11 @@ export default function HomePage() {
         </div>
       </main>
 
+      {/* Footer */}
+      <Footer />
+
       {/* Modals */}
+
       <BookDetailModal
         isOpen={isDetailOpen}
         book={selectedBookForDetail}

@@ -10,7 +10,9 @@ import CreateClubModal from '@/components/CreateClubModal';
 import AuthModal from '@/components/AuthModal';
 import InviteMemberModal from '@/components/InviteMemberModal';
 import RemoveMemberModal from '@/components/RemoveMemberModal';
+import Footer from '@/components/Footer';
 import { Club, ClubSchedule, ClubMember } from '@/types/database';
+
 import {
   calculateProgress,
   calculateClubTotalProgress,
@@ -685,7 +687,10 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
         </div>
       </main>
 
+      <Footer />
+
       <BookSearchModal
+
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectBook={() => {}}

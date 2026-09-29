@@ -7,7 +7,9 @@ import BookSearchModal from '@/components/BookSearchModal';
 import CreateClubModal from '@/components/CreateClubModal';
 import AuthModal from '@/components/AuthModal';
 import UserProfileModal from '@/components/UserProfileModal';
+import Footer from '@/components/Footer';
 import { Review } from '@/types/database';
+
 import { useAuth, calculateUserLevel } from '@/context/AuthContext';
 import curatedBooksData from '@/lib/constants/curatedBooks.json';
 
@@ -609,7 +611,10 @@ export default function MyClubsPage() {
         )}
       </main>
 
+      <Footer />
+
       <BookSearchModal
+
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectBook={() => {}}

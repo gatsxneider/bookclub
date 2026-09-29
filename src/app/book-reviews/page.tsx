@@ -7,7 +7,9 @@ import Navbar from '@/components/Navbar';
 import BookSearchModal from '@/components/BookSearchModal';
 import CreateClubModal from '@/components/CreateClubModal';
 import AuthModal from '@/components/AuthModal';
+import Footer from '@/components/Footer';
 import { Review } from '@/types/database';
+
 import { useAuth } from '@/context/AuthContext';
 import { checkCanEmpathize, MAX_EMPATHY_COUNT } from '@/lib/core/empathy';
 
@@ -435,7 +437,10 @@ function BookReviewsFeedContent() {
         </div>
       </main>
 
+      <Footer />
+
       <BookSearchModal
+
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectBook={() => {}}

@@ -8,7 +8,9 @@ import BookSearchModal from '@/components/BookSearchModal';
 import BookDetailModal from '@/components/BookDetailModal';
 import CreateClubModal from '@/components/CreateClubModal';
 import AuthModal from '@/components/AuthModal';
+import Footer from '@/components/Footer';
 import { Book } from '@/types/database';
+
 import { filterCuratedBooks } from '@/lib/core/bookSearch';
 import curatedBooksData from '@/lib/constants/curatedBooks.json';
 
@@ -81,7 +83,10 @@ export default function ExplorePage() {
         </div>
       </main>
 
+      <Footer />
+
       <BookDetailModal
+
         isOpen={isDetailOpen}
         book={selectedBookForDetail}
         onClose={() => setIsDetailOpen(false)}

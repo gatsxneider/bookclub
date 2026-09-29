@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { Message, MessageType } from '@/types/database';
+import { Message, MessageType, Profile } from '@/types/database';
 import { useAuth } from '@/context/AuthContext';
 
 interface NoteBoxModalProps {
@@ -29,11 +29,24 @@ export default function NoteBoxModal({
 
   // 쪽지 쓰기 폼 상태
   const [writeReceiver, setWriteReceiver] = useState(initialReceiverNickname);
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [writeTitle, setWriteTitle] = useState('');
   const [writeContent, setWriteContent] = useState('');
   const [sending, setSending] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // 회원 검색 드롭다운 & 모달 상태
+  const [userSuggestions, setUserSuggestions] = useState<Profile[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [isUserSearchModalOpen, setIsUserSearchModalOpen] = useState(false);
+  const [modalSearchKeyword, setModalSearchKeyword] = useState('');
+  const [modalSearchResults, setModalSearchResults] = useState<Profile[]>([]);
+  const [isModalSearching, setIsModalSearching] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // 안읽은 개수 계산
   const unreadCount = inboxMessages.filter((m) => !m.is_read).length;
@@ -67,7 +80,100 @@ export default function NoteBoxModal({
     }
   }, [user]);
 
-  // 모달 오픈 시 데이터 로드 및 D-day 자동 점검
+  // 회원 실시간 자동완성 검색
+  const searchUsers = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setUserSuggestions([]);
+      setShowUserDropdown(false);
+      return;
+    }
+
+    setIsSearchingUsers(true);
+    try {
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(trimmed)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const list: Profile[] = (data.users || []).filter((u: Profile) => u.id !== user?.id);
+        setUserSuggestions(list);
+        setShowUserDropdown(list.length > 0);
+      }
+    } catch (err) {
+      console.warn('User search error:', err);
+    } finally {
+      setIsSearchingUsers(false);
+    }
+  }, [user?.id]);
+
+  // 닉네임 입력 시 디바운스 검색
+  const handleReceiverInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setWriteReceiver(val);
+    setSelectedUser(null);
+
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
+
+    searchDebounceTimer.current = setTimeout(() => {
+      searchUsers(val);
+    }, 200);
+  };
+
+  // 회원 선택 시
+  const handleSelectUser = (profile: Profile) => {
+    setSelectedUser(profile);
+    setWriteReceiver(profile.nickname);
+    setShowUserDropdown(false);
+    setUserSuggestions([]);
+  };
+
+  // 모달 기반 회원 검색
+  const handleModalSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsModalSearching(true);
+    try {
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(modalSearchKeyword.trim())}`);
+      if (res.ok) {
+        const data = await res.json();
+        const list: Profile[] = (data.users || []).filter((u: Profile) => u.id !== user?.id);
+        setModalSearchResults(list);
+      }
+    } catch (err) {
+      console.warn('Modal user search failed:', err);
+    } finally {
+      setIsModalSearching(false);
+    }
+  };
+
+  const handleOpenUserSearchModal = () => {
+    setModalSearchKeyword('');
+    setModalSearchResults([]);
+    setIsUserSearchModalOpen(true);
+    // 기본 상위 회원 목록 로드
+    fetch(`/api/users/search?q=`)
+      .then((res) => res.json())
+      .then((data) => {
+        const list: Profile[] = (data.users || []).filter((u: Profile) => u.id !== user?.id);
+        setModalSearchResults(list);
+      })
+      .catch(() => {});
+  };
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowUserDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // 모달 오픈 시 초기화
   useEffect(() => {
     if (isOpen && user) {
       setActiveTab(initialTab);
@@ -77,9 +183,10 @@ export default function NoteBoxModal({
       }
       setSelectedMessage(null);
       setFeedbackMsg(null);
+      setSelectedUser(null);
+      setShowUserDropdown(false);
 
       setLoading(true);
-      // D-Day 알림 쪽지 체크 비동기 실행
       fetch('/api/messages/dday-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,7 +204,6 @@ export default function NoteBoxModal({
     setSelectedMessage(msg);
     setFeedbackMsg(null);
 
-    // 받은 쪽지이고 읽지 않은 경우 읽음 처리
     if (boxType === 'inbox' && !msg.is_read && user) {
       try {
         const res = await fetch(`/api/messages/${msg.id}`, {
@@ -106,7 +212,6 @@ export default function NoteBoxModal({
           body: JSON.stringify({ action: 'mark_read', userId: user.id }),
         });
         if (res.ok) {
-          // 로컬 상태 갱신
           setInboxMessages((prev) =>
             prev.map((m) => (m.id === msg.id ? { ...m, is_read: true, read_at: new Date().toISOString() } : m))
           );
@@ -200,7 +305,7 @@ export default function NoteBoxModal({
     e.preventDefault();
     if (!user) return;
     if (!writeReceiver.trim()) {
-      setFeedbackMsg({ type: 'error', text: '받는 회원의 닉네임을 입력해주세요.' });
+      setFeedbackMsg({ type: 'error', text: '받는 회원의 닉네임을 입력하거나 검색하여 선택해주세요.' });
       return;
     }
     if (!writeTitle.trim()) {
@@ -221,6 +326,7 @@ export default function NoteBoxModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sender_id: user.id,
+          receiver_id: selectedUser?.id || null,
           receiver_nickname: writeReceiver.trim(),
           title: writeTitle.trim(),
           content: writeContent.trim(),
@@ -232,6 +338,7 @@ export default function NoteBoxModal({
       if (res.ok) {
         setFeedbackMsg({ type: 'success', text: `'${writeReceiver}' 님에게 쪽지를 성공적으로 보냈습니다.` });
         setWriteReceiver('');
+        setSelectedUser(null);
         setWriteTitle('');
         setWriteContent('');
         fetchSent();
@@ -252,6 +359,7 @@ export default function NoteBoxModal({
   const handleReply = (msg: Message) => {
     const senderNick = msg.sender?.nickname || '회원';
     setWriteReceiver(senderNick);
+    setSelectedUser(msg.sender || null);
     setWriteTitle(`Re: ${msg.title.replace(/^Re:\s*/, '')}`);
     setWriteContent(`\n\n--- 이전 쪽지 내용 ---\n${msg.content}`);
     setSelectedMessage(null);
@@ -321,7 +429,7 @@ export default function NoteBoxModal({
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-surface rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-surface-container flex flex-col max-h-[85vh] animate-scale-up">
+      <div className="bg-surface rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-surface-container flex flex-col max-h-[85vh] animate-scale-up relative">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-surface-container flex items-center justify-between bg-surface-container-lowest">
           <div className="flex items-center gap-2.5">
@@ -602,7 +710,6 @@ export default function NoteBoxModal({
                         : 'bg-transparent text-on-surface-variant'
                     }`}
                   >
-                    {/* Icon / Status */}
                     <div className="shrink-0 pt-0.5">
                       <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center ${
@@ -617,7 +724,6 @@ export default function NoteBoxModal({
                       </div>
                     </div>
 
-                    {/* Content preview */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-0.5">
                         <div className="flex items-center gap-2 truncate">
@@ -702,20 +808,129 @@ export default function NoteBoxModal({
           ) : (
             /* 쪽지 쓰기 폼 */
             <form onSubmit={handleSendMessage} className="space-y-4 animate-fade-in">
-              <div>
-                <label className="block text-xs font-bold text-on-surface mb-1.5">
-                  받는 회원 닉네임 <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
+              {/* 받는 회원 닉네임 입력 & 검색 영역 */}
+              <div className="relative" ref={dropdownRef}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-on-surface">
+                    받는 회원 닉네임 <span className="text-rose-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleOpenUserSearchModal}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary-container bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">person_search</span>
+                    <span>회원 검색에서 찾기</span>
+                  </button>
+                </div>
+
+                <div className="relative flex items-center">
                   <input
                     type="text"
                     required
                     value={writeReceiver}
-                    onChange={(e) => setWriteReceiver(e.target.value)}
-                    placeholder="쪽지를 받을 회원의 닉네임을 정확히 입력하세요"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-surface-container bg-surface-container-lowest text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    onChange={handleReceiverInputChange}
+                    onFocus={() => {
+                      if (userSuggestions.length > 0) setShowUserDropdown(true);
+                    }}
+                    placeholder="닉네임을 직접 입력하거나 우측 회원 검색을 이용하세요"
+                    className="w-full px-3.5 py-2.5 pr-24 rounded-xl border border-surface-container bg-surface-container-lowest text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
+                  <div className="absolute right-2 flex items-center gap-1">
+                    {isSearchingUsers && (
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-1" />
+                    )}
+                    {writeReceiver && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWriteReceiver('');
+                          setSelectedUser(null);
+                          setUserSuggestions([]);
+                          setShowUserDropdown(false);
+                        }}
+                        className="p-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                        title="입력 내용 지우기"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">close</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleOpenUserSearchModal}
+                      className="px-2 py-1 rounded-lg bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-semibold flex items-center gap-0.5 transition-colors"
+                      title="회원 검색"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">search</span>
+                      <span className="hidden sm:inline">검색</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* 선택된 회원 칩 표시 */}
+                {selectedUser && (
+                  <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-xs font-semibold text-primary animate-fade-in">
+                    <img
+                      src={selectedUser.avatar_url || '/images/avatar.png'}
+                      alt={selectedUser.nickname}
+                      className="w-4 h-4 rounded-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/images/avatar.png';
+                      }}
+                    />
+                    <span>{selectedUser.nickname} 님 선택됨</span>
+                    <span className="text-[10px] text-primary/70 font-normal">
+                      (감성 온도 {selectedUser.manner_temperature ?? 20.0}℃)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUser(null)}
+                      className="ml-1 text-primary/70 hover:text-primary p-0.5 rounded-full"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">close</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* 실시간 회원 자동완성 드롭다운 */}
+                {showUserDropdown && userSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-surface rounded-xl shadow-xl border border-surface-container z-30 overflow-hidden max-h-56 overflow-y-auto animate-fade-in divide-y divide-surface-container">
+                    <div className="px-3 py-1.5 bg-surface-container-low text-[10px] font-bold text-on-surface-variant flex items-center justify-between">
+                      <span>일치하는 회원 ({userSuggestions.length})</span>
+                      <span>클릭하여 수신자로 선택</span>
+                    </div>
+                    {userSuggestions.map((profile) => (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={() => handleSelectUser(profile)}
+                        className="w-full px-3.5 py-2 flex items-center justify-between gap-3 text-left hover:bg-surface-container-low transition-colors group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img
+                            src={profile.avatar_url || '/images/avatar.png'}
+                            alt={profile.nickname}
+                            className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-surface-container"
+                            onError={(e) => {
+                              e.currentTarget.src = '/images/avatar.png';
+                            }}
+                          />
+                          <div className="truncate">
+                            <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors truncate">
+                              {profile.nickname}
+                            </span>
+                            <span className="text-[10px] text-on-surface-variant ml-1.5">
+                              Lv.{profile.completed_count || 1}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-primary font-medium shrink-0">
+                          {profile.manner_temperature ?? 20.0}℃
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -768,6 +983,116 @@ export default function NoteBoxModal({
             </form>
           )}
         </div>
+
+        {/* 회원 검색 서브 모달 (인라인 오버레이) */}
+        {isUserSearchModalOpen && (
+          <div className="absolute inset-0 bg-surface/95 backdrop-blur-sm z-40 flex flex-col p-5 animate-fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-surface-container">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[16px]">person_search</span>
+                </div>
+                <h3 className="font-title-sm text-sm font-bold text-on-surface">
+                  회원 검색 및 추가
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsUserSearchModalOpen(false)}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            {/* 검색창 */}
+            <form onSubmit={handleModalSearch} className="flex gap-2 my-3">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={modalSearchKeyword}
+                  onChange={(e) => setModalSearchKeyword(e.target.value)}
+                  placeholder="회원 닉네임을 검색하세요"
+                  className="w-full bg-surface-container-lowest border border-surface-container text-on-surface pl-9 pr-3 py-2 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  autoFocus
+                />
+                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[17px]">
+                  search
+                </span>
+              </div>
+              <button
+                type="submit"
+                disabled={isModalSearching}
+                className="px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-bold hover:bg-primary-container transition-all"
+              >
+                검색
+              </button>
+            </form>
+
+            {/* 검색 결과 목록 */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              {isModalSearching ? (
+                <div className="py-12 text-center text-on-surface-variant">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-xs">회원을 검색하는 중입니다...</p>
+                </div>
+              ) : modalSearchResults.length === 0 ? (
+                <div className="py-12 text-center text-on-surface-variant">
+                  <span className="material-symbols-outlined text-3xl opacity-40 mb-1">
+                    person_off
+                  </span>
+                  <p className="text-xs font-semibold">검색 결과가 없습니다.</p>
+                  <p className="text-[11px] opacity-70 mt-0.5">
+                    다른 닉네임으로 검색해보세요.
+                  </p>
+                </div>
+              ) : (
+                modalSearchResults.map((prof) => (
+                  <div
+                    key={prof.id}
+                    className="p-3 bg-surface-container-lowest hover:bg-surface-container-low rounded-xl border border-surface-container flex items-center justify-between gap-3 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={prof.avatar_url || '/images/avatar.png'}
+                        alt={prof.nickname}
+                        className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-primary/20"
+                        onError={(e) => {
+                          e.currentTarget.src = '/images/avatar.png';
+                        }}
+                      />
+                      <div className="truncate">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-on-surface truncate">
+                            {prof.nickname} 님
+                          </span>
+                          <span className="px-1.5 py-0.2 rounded-full bg-primary/10 text-primary text-[9px] font-extrabold">
+                            Lv.{prof.completed_count || 1}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-primary font-medium">
+                          감성 온도 {prof.manner_temperature ?? 20.0}℃
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSelectUser(prof);
+                        setIsUserSearchModalOpen(false);
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-bold hover:bg-primary-container shadow-xs transition-all shrink-0 flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">check</span>
+                      <span>선택</span>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
