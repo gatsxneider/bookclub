@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Club } from '@/types/database';
+import { useAuth } from '@/context/AuthContext';
 
 interface ClubSearchModalProps {
   isOpen: boolean;
@@ -19,12 +20,15 @@ export default function ClubSearchModal({
   onSelectClub,
 }: ClubSearchModalProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [requestingClubId, setRequestingClubId] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
 
   // 모달 열릴 때 상태 초기화 및 최신 클럽 목록 불러오기
   useEffect(() => {
@@ -33,14 +37,15 @@ export default function ClubSearchModal({
       setSearchKeyword('');
       setCurrentPage(1);
       setStatusFilter('all');
+      setToastMsg(null);
       return;
     }
 
-    // 모달이 열릴 때 검색어 및 필터 초기화
     setSearchInput('');
     setSearchKeyword('');
     setCurrentPage(1);
     setStatusFilter('all');
+    setToastMsg(null);
 
     const fetchAllClubs = async () => {
       setLoading(true);
@@ -82,6 +87,7 @@ export default function ClubSearchModal({
     setSearchKeyword('');
     setCurrentPage(1);
     setStatusFilter('all');
+    setToastMsg(null);
     onClose();
   };
 
@@ -133,14 +139,82 @@ export default function ClubSearchModal({
     }
   };
 
-  const handleClubClick = (club: Club) => {
-    handleClose();
-    if (onSelectClub) {
-      onSelectClub(club);
-    } else {
-      router.push(`/clubs/${club.id}`);
+  // 멤버 가입 요청 또는 클럽 입장 핸들러
+  const handleClubAction = async (club: Club, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // 1. 로그인 여부 확인
+    if (!user) {
+      setToastMsg({
+        type: 'info',
+        text: '독서모임에 참여하거나 가입을 요청하려면 먼저 로그인해 주세요.',
+      });
+      return;
+    }
+
+    // 2. 내가 방장인지 또는 이미 멤버인지 확인
+    const isLeader = club.leader_id === user.id;
+    const isMember = (club.members || []).some(
+      (m) => m.user_id === user.id && m.status === 'approved'
+    );
+
+    if (isLeader || isMember) {
+      handleClose();
+      if (onSelectClub) {
+        onSelectClub(club);
+      } else {
+        router.push(`/clubs/${club.id}`);
+      }
+      return;
+    }
+
+    // 3. 방장에게 가입 요청 쪽지 발송
+    const leaderNickname = club.leader?.nickname || '방장';
+    if (
+      !confirm(
+        `'${club.name}' 클럽의 방장(${leaderNickname}) 님께 멤버 가입 요청 쪽지를 보내시겠습니까?`
+      )
+    ) {
+      return;
+    }
+
+    setRequestingClubId(club.id);
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender_id: user.id,
+          receiver_id: club.leader_id,
+          title: `📨 [멤버 가입 요청] '${user.nickname}' 님의 '${club.name}' 가입 신청`,
+          content: `안녕하세요, 방장님! '${user.nickname}' 님이 '${club.name}' 독서모임의 멤버 가입을 요청하였습니다. 쪽지함에서 승인 버튼을 누르시면 바로 멤버로 등록됩니다.`,
+          type: 'club_join_request',
+          related_club_id: club.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setToastMsg({
+          type: 'success',
+          text: `'${leaderNickname}' 방장님께 가입 요청 쪽지가 발송되었습니다! 방장님이 승인하면 쪽지함으로 알림이 옵니다.`,
+        });
+      } else {
+        setToastMsg({
+          type: 'error',
+          text: data.error || '가입 요청 전송에 실패했습니다.',
+        });
+      }
+    } catch (err: any) {
+      setToastMsg({
+        type: 'error',
+        text: err.message || '가입 요청 중 오류가 발생했습니다.',
+      });
+    } finally {
+      setRequestingClubId(null);
     }
   };
+
 
   if (!isOpen) return null;
 
@@ -176,6 +250,37 @@ export default function ClubSearchModal({
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
+
+        {/* Toast Banner */}
+        {toastMsg && (
+          <div
+            className={`px-5 py-3 text-xs font-semibold flex items-center justify-between border-b shrink-0 ${
+              toastMsg.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : toastMsg.type === 'info'
+                ? 'bg-sky-50 text-sky-800 border-sky-200'
+                : 'bg-rose-50 text-rose-800 border-rose-200'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[17px]">
+                {toastMsg.type === 'success'
+                  ? 'check_circle'
+                  : toastMsg.type === 'info'
+                  ? 'info'
+                  : 'error'}
+              </span>
+              <span>{toastMsg.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastMsg(null)}
+              className="text-current opacity-70 hover:opacity-100 p-0.5"
+            >
+              <span className="material-symbols-outlined text-[15px]">close</span>
+            </button>
+          </div>
+        )}
 
         {/* 2. Search & Filter Bar */}
         <div className="p-4 bg-surface-container-lowest border-b border-surface-container flex flex-col gap-3 shrink-0">
@@ -306,10 +411,18 @@ export default function ClubSearchModal({
                   ? club.book.authors.join(', ')
                   : club.book?.authors || '';
 
+                const isLeader = user && club.leader_id === user.id;
+                const isMember =
+                  user &&
+                  (club.members || []).some(
+                    (m) => m.user_id === user.id && m.status === 'approved'
+                  );
+                const isRequesting = requestingClubId === club.id;
+
                 return (
                   <div
                     key={club.id}
-                    onClick={() => handleClubClick(club)}
+                    onClick={(e) => handleClubAction(club, e)}
                     className="group bg-surface-container-lowest hover:bg-surface-container-low rounded-xl p-3.5 border border-surface-container hover:border-primary/40 shadow-xs hover:shadow-md transition-all cursor-pointer flex gap-3.5 relative overflow-hidden"
                   >
                     {/* Left: Book Thumbnail */}
@@ -329,11 +442,13 @@ export default function ClubSearchModal({
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            club.status === 'completed'
-                              ? 'bg-surface-container-high text-on-surface-variant'
-                              : 'bg-primary-fixed text-on-primary-fixed'
-                          }`}>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              club.status === 'completed'
+                                ? 'bg-surface-container-high text-on-surface-variant'
+                                : 'bg-primary-fixed text-on-primary-fixed'
+                            }`}
+                          >
                             {club.status === 'completed' ? '완료' : '진행중'}
                           </span>
                           <span className="text-[11px] text-secondary font-medium truncate">
@@ -353,13 +468,45 @@ export default function ClubSearchModal({
 
                       <div className="pt-2 mt-1 border-t border-surface-container flex items-center justify-between text-[11px] text-on-surface-variant">
                         <span className="truncate flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px] text-primary">person</span>
+                          <span className="material-symbols-outlined text-[13px] text-primary">
+                            person
+                          </span>
                           <span>{club.leader?.nickname || '방장'} 님</span>
                         </span>
-                        <span className="text-primary font-semibold shrink-0 flex items-center gap-0.5">
-                          <span>입장하기</span>
-                          <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                        </span>
+
+                        {/* Action Label */}
+                        <div className="text-primary font-semibold shrink-0 flex items-center gap-0.5">
+                          {isRequesting ? (
+                            <span className="text-xs text-primary animate-pulse font-bold">
+                              요청 중...
+                            </span>
+                          ) : isLeader || isMember ? (
+                            <>
+                              <span className="font-bold">입장하기</span>
+                              <span className="material-symbols-outlined text-[14px]">
+                                arrow_forward
+                              </span>
+                            </>
+                          ) : club.status === 'completed' ? (
+                            <>
+                              <span>둘러보기</span>
+                              <span className="material-symbols-outlined text-[14px]">
+                                arrow_forward
+                              </span>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => handleClubAction(club, e)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-on-primary transition-all text-[11px] font-bold"
+                            >
+                              <span className="material-symbols-outlined text-[13px]">
+                                person_add
+                              </span>
+                              <span>멤버 가입 요청</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import ClubSearchModal from '../ClubSearchModal';
+import { AuthProvider } from '@/context/AuthContext';
 import { Club } from '@/types/database';
 
 vi.mock('next/navigation', () => ({
@@ -65,7 +66,11 @@ describe('ClubSearchModal Component', () => {
   });
 
   it('모달이 열렸을 때 독서클럽 찾기 타이틀과 클럽 목록이 렌더링되어야 한다', async () => {
-    render(<ClubSearchModal isOpen={true} onClose={vi.fn()} />);
+    render(
+      <AuthProvider>
+        <ClubSearchModal isOpen={true} onClose={vi.fn()} />
+      </AuthProvider>
+    );
 
     expect(screen.getByText('독서 클럽 찾기')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/클럽명, 도서명, 저자, 방장 닉네임으로 검색/)).toBeInTheDocument();
@@ -78,7 +83,11 @@ describe('ClubSearchModal Component', () => {
   });
 
   it('독서 클럽 검색 버튼 클릭 시 검색어로 필터링되어야 한다', async () => {
-    render(<ClubSearchModal isOpen={true} onClose={vi.fn()} />);
+    render(
+      <AuthProvider>
+        <ClubSearchModal isOpen={true} onClose={vi.fn()} />
+      </AuthProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('고요한 숲속 심야 독서회')).toBeInTheDocument();
@@ -94,32 +103,25 @@ describe('ClubSearchModal Component', () => {
     expect(screen.getByText('도둑맞은 집중력 함께 읽기')).toBeInTheDocument();
   });
 
-  it('클럽 카드를 클릭하면 onSelectClub 콜백이 호출되어야 한다', async () => {
-    const handleSelectClub = vi.fn();
-    const handleClose = vi.fn();
-
+  it('클럽 목록에 멤버 가입 요청 버튼이 렌더링되어야 한다', async () => {
     render(
-      <ClubSearchModal
-        isOpen={true}
-        onClose={handleClose}
-        onSelectClub={handleSelectClub}
-      />
+      <AuthProvider>
+        <ClubSearchModal isOpen={true} onClose={vi.fn()} />
+      </AuthProvider>
     );
 
     await waitFor(() => {
       expect(screen.getByText('고요한 숲속 심야 독서회')).toBeInTheDocument();
+      expect(screen.getAllByText('멤버 가입 요청').length).toBeGreaterThan(0);
     });
-
-    const clubCard = screen.getByText('고요한 숲속 심야 독서회').closest('div');
-    if (clubCard) {
-      fireEvent.click(clubCard);
-      expect(handleSelectClub).toHaveBeenCalledWith(mockClubs[0]);
-      expect(handleClose).toHaveBeenCalled();
-    }
   });
 
   it('모달이 닫혔다가 다시 열렸을 때 검색어가 초기화되어야 한다', async () => {
-    const { rerender } = render(<ClubSearchModal isOpen={true} onClose={vi.fn()} />);
+    const { rerender } = render(
+      <AuthProvider>
+        <ClubSearchModal isOpen={true} onClose={vi.fn()} />
+      </AuthProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('고요한 숲속 심야 독서회')).toBeInTheDocument();
@@ -130,13 +132,20 @@ describe('ClubSearchModal Component', () => {
     expect(searchInput.value).toBe('린건');
 
     // 모달 닫기
-    rerender(<ClubSearchModal isOpen={false} onClose={vi.fn()} />);
+    rerender(
+      <AuthProvider>
+        <ClubSearchModal isOpen={false} onClose={vi.fn()} />
+      </AuthProvider>
+    );
 
     // 모달 다시 열기
-    rerender(<ClubSearchModal isOpen={true} onClose={vi.fn()} />);
+    rerender(
+      <AuthProvider>
+        <ClubSearchModal isOpen={true} onClose={vi.fn()} />
+      </AuthProvider>
+    );
 
     const reopenedInput = screen.getByPlaceholderText(/클럽명, 도서명, 저자, 방장 닉네임으로 검색/) as HTMLInputElement;
     expect(reopenedInput.value).toBe('');
   });
 });
-

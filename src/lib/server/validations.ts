@@ -52,3 +52,15 @@ export const updateReviewSchema = z.object({
 export const updateMemberStatusSchema = z.object({
   status: z.enum(['approved', 'rejected']),
 });
+
+export const createMessageSchema = z.object({
+  sender_id: z.string().uuid().optional().nullable(),
+  receiver_id: z.string().uuid().optional().nullable(),
+  receiver_nickname: z.string().min(1).max(50).optional(),
+  title: z.string().min(1, '쪽지 제목을 입력해주세요').max(150, '제목은 150자 이내여야 합니다'),
+  content: z.string().min(1, '쪽지 내용을 입력해주세요').max(3000, '내용은 3000자 이내여야 합니다').transform((val) => sanitizeHtml(val)),
+  type: z.enum(['general', 'club_join_request', 'club_join_approved', 'club_schedule', 'club_schedule_dday']).default('general'),
+  related_club_id: z.string().uuid().optional().nullable(),
+  related_schedule_id: z.string().uuid().optional().nullable(),
+});
+

@@ -111,6 +111,47 @@ export async function POST(
       return NextResponse.json({ error: insertError.message }, { status: 400 });
     }
 
+    // 3. 클럽 멤버들에게 새 일정 안내 쪽지 발송
+    try {
+      const { data: clubData } = await supabase
+        .from('clubs')
+        .select('name')
+        .eq('id', clubId)
+        .maybeSingle();
+
+      const { data: members } = await supabase
+        .from('club_members')
+        .select('user_id')
+        .eq('club_id', clubId)
+        .eq('status', 'approved');
+
+      if (members && members.length > 0) {
+        const clubName = clubData?.name || '독서클럽';
+        const targetDateText = validated.target_date ? ` (목표일: ${validated.target_date})` : '';
+        const noteTitle = `📅 [일정 등록] '${clubName}'의 새 독서 일정이 등록되었습니다.`;
+        const noteContent = `'${clubName}' 모임에 새로운 일정 [${validated.sequence}단원: ${sanitizedTitle}]${targetDateText}이(가) 등록되었습니다. 일정에 맞춰 독서를 진행해 보세요!`;
+
+        const messagesToInsert = members
+          .filter((m) => m.user_id !== requestUserId)
+          .map((m) => ({
+            sender_id: requestUserId,
+            receiver_id: m.user_id,
+            title: noteTitle,
+            content: noteContent,
+            type: 'club_schedule',
+            related_club_id: clubId,
+            related_schedule_id: newSchedule.id,
+            is_read: false,
+          }));
+
+        if (messagesToInsert.length > 0) {
+          await supabase.from('messages').insert(messagesToInsert);
+        }
+      }
+    } catch (msgErr) {
+      console.warn('Failed to send schedule notification messages:', msgErr);
+    }
+
     return NextResponse.json({ success: true, schedule: newSchedule });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });

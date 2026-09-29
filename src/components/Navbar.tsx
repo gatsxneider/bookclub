@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import CozyLogo from './CozyLogo';
 import UserProfileModal from './UserProfileModal';
+import NoteBoxModal from './NoteBoxModal';
 import { useAuth } from '@/context/AuthContext';
 
 interface NavbarProps {
   onOpenSearch: () => void;
-  onOpenNewClub: () => void;
+  onOpenNewClub?: () => void;
   onOpenAuth: () => void;
 }
 
@@ -88,12 +89,37 @@ function NavLinksFallback({ pathname }: { pathname: string }) {
 
 export default function Navbar({
   onOpenSearch,
-  onOpenNewClub,
   onOpenAuth,
 }: NavbarProps) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNoteBoxOpen, setIsNoteBoxOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // 안읽은 쪽지 개수 가져오기
+  const fetchUnreadCount = useCallback(async () => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/messages?userId=${user.id}&box=unread_count`);
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(Number(data.unreadCount) || 0);
+      }
+    } catch (err) {
+      console.warn('Unread note count check error:', err);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    // 30초마다 안읽은 쪽지 폴링
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
 
   return (
     <>
@@ -134,20 +160,11 @@ export default function Navbar({
               <span className="material-symbols-outlined text-[20px]">search</span>
             </button>
 
-            <button
-              type="button"
-              onClick={onOpenNewClub}
-              className="inline-flex items-center gap-1 bg-primary text-on-primary font-title-sm text-xs px-4 py-2 rounded-full shadow-sm hover:bg-primary-container transition-all"
-              aria-label="새 독서클럽"
-            >
-              <span className="material-symbols-outlined text-[16px]">add</span>
-              <span>새 독서클럽</span>
-            </button>
-
             {/* 로그인 상태에 따른 버튼 전환 영역 */}
             {user ? (
-              /* 로그인 후: 닉네임과 로그아웃 버튼 표시 & 클릭 시 프로필 아바타/레벨 모달 오픈 */
+              /* 로그인 후: 닉네임 + 쪽지함 아이콘 + 로그아웃 버튼 */
               <div className="flex items-center gap-2 pl-1">
+                {/* 1. 회원 정보 (프로필 버튼) */}
                 <button
                   type="button"
                   onClick={() => setIsProfileOpen(true)}
@@ -183,6 +200,40 @@ export default function Navbar({
                   </div>
                 </button>
 
+                {/* 2. 쪽지함 아이콘 (회원정보와 로그아웃 사이에 위치) */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsNoteBoxOpen(true)}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all relative group ${
+                      unreadCount > 0
+                        ? 'bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 ring-2 ring-amber-500/40 animate-note-sparkle'
+                        : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface border border-surface-container'
+                    }`}
+                    title={
+                      unreadCount > 0
+                        ? `쪽지함 (읽지 않은 쪽지 ${unreadCount}개)`
+                        : '쪽지함'
+                    }
+                    aria-label="쪽지함 열기"
+                  >
+                    <span className="material-symbols-outlined text-[19px] group-hover:scale-110 transition-transform">
+                      {unreadCount > 0 ? 'mark_email_unread' : 'mail'}
+                    </span>
+
+                    {/* 안 읽은 쪽지가 있을 때 반짝이는 뱃지 & 글로우 */}
+                    {unreadCount > 0 && (
+                      <>
+                        <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 bg-gradient-to-r from-rose-500 to-amber-500 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-md animate-bounce ring-2 ring-surface">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* 3. 로그아웃 버튼 */}
                 <button
                   type="button"
                   onClick={signOut}
@@ -211,6 +262,17 @@ export default function Navbar({
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
       />
+
+      {/* 쪽지함 Modal */}
+      <NoteBoxModal
+        isOpen={isNoteBoxOpen}
+        onClose={() => {
+          setIsNoteBoxOpen(false);
+          fetchUnreadCount();
+        }}
+        onUnreadCountChange={(count) => setUnreadCount(count)}
+      />
     </>
   );
 }
+

@@ -114,3 +114,32 @@ export interface ReviewEmpathy {
   updated_at?: string;
 }
 
+export type MessageType =
+  | 'general'
+  | 'club_join_request'
+  | 'club_join_approved'
+  | 'club_schedule'
+  | 'club_schedule_dday';
+
+export interface Message {
+  id: string;
+  sender_id?: string | null;
+  receiver_id: string;
+  title: string;
+  content: string;
+  type: MessageType;
+  related_club_id?: string | null;
+  related_schedule_id?: string | null;
+  action_status?: 'pending' | 'approved' | 'rejected' | null;
+  is_read: boolean;
+  sender_deleted: boolean;
+  receiver_deleted: boolean;
+  created_at: string;
+  read_at?: string | null;
+  sender?: Profile | null;
+  receiver?: Profile | null;
+  club?: Club | null;
+  schedule?: ClubSchedule | null;
+}
+
+

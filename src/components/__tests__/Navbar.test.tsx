@@ -45,22 +45,22 @@ describe('Navbar Component', () => {
     expect(screen.getByText('도서 탐색')).toBeInTheDocument();
   });
 
-  it('새 독서클럽 버튼 클릭 시 onOpenNewClub 콜백이 실행되어야 한다', () => {
-    const handleNewClub = vi.fn();
+  it('검색 트리거 버튼 클릭 시 onOpenSearch 콜백이 실행되어야 한다', () => {
+    const handleSearch = vi.fn();
     render(
       <AuthProvider>
         <Navbar
-          onOpenSearch={vi.fn()}
-          onOpenNewClub={handleNewClub}
+          onOpenSearch={handleSearch}
           onOpenAuth={vi.fn()}
         />
       </AuthProvider>
     );
 
-    const btn = screen.getByRole('button', { name: /새 독서클럽/ });
+    const btn = screen.getByRole('button', { name: /도서 검색/ });
     fireEvent.click(btn);
-    expect(handleNewClub).toHaveBeenCalled();
+    expect(handleSearch).toHaveBeenCalled();
   });
+
 
   it('내 서재 & 클럽 링크가 올바른 /my-clubs 경로를 가리켜야 한다', () => {
     render(
