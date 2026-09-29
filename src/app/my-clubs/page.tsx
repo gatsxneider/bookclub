@@ -6,103 +6,73 @@ import Navbar from '@/components/Navbar';
 import BookSearchModal from '@/components/BookSearchModal';
 import CreateClubModal from '@/components/CreateClubModal';
 import AuthModal from '@/components/AuthModal';
+import UserProfileModal from '@/components/UserProfileModal';
 import { Review } from '@/types/database';
+import { useAuth, calculateUserLevel } from '@/context/AuthContext';
+
+// 독서 레벨 정보 매핑
+const LEVEL_CONFIG: Record<number, { title: string; badge: string; desc: string }> = {
+  1: {
+    title: '씨앗 독서가',
+    badge: '씨앗 독서가 🌱 (Lv.1)',
+    desc: '첫 번째 완독의 기쁨을 시작한 독서가',
+  },
+  2: {
+    title: '새싹 독서가',
+    badge: '새싹 독서가 🌿 (Lv.2)',
+    desc: '문장의 온기를 찾아가는 2회 완독가',
+  },
+  3: {
+    title: '나무 독서가',
+    badge: '나무 독서가 🌳 (Lv.3)',
+    desc: '서재의 깊이를 더해가는 3회 완독가',
+  },
+  4: {
+    title: '숲속 독서가',
+    badge: '숲속 독서가 🌲 (Lv.4)',
+    desc: '다양한 책의 숲을 누비는 4회 완독가',
+  },
+  5: {
+    title: '마스터 독서가',
+    badge: '마스터 독서가 👑 (Lv.5)',
+    desc: '5회 이상 완독을 달성한 최고의 독서 마스터',
+  },
+};
+
+interface ClubScheduleItem {
+  id: string;
+  seq: number;
+  title: string;
+  pages: string;
+  targetDate: string;
+  submitted: boolean;
+  reviewTitle?: string;
+}
+
+interface UserClubView {
+  clubId: string;
+  clubName: string;
+  bookTitle: string;
+  bookThumbnail: string;
+  leader: string;
+  membersCount: number;
+  schedules: ClubScheduleItem[];
+}
 
 export default function MyClubsPage() {
+  const { user, loading: authLoading } = useAuth();
+
   const [activeTab, setActiveTab] = useState<'current' | 'completed' | 'my-reviews'>('current');
   const [myReviews, setMyReviews] = useState<Review[]>([]);
+  const [userClubs, setUserClubs] = useState<UserClubView[]>([]);
+  const [loadingClubs, setLoadingClubs] = useState(true);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // 기본 독서 일정 및 작성 여부 데이터
-  const readingScheduleStatus = [
-    {
-      clubId: 'cozy-default-club',
-      clubName: '고요한 숲속 심야 독서회',
-      bookTitle: '불편한 편의점',
-      bookThumbnail:
-        'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5871383%3Ftimestamp%3D20240904121510',
-      leader: '달빛책방지기',
-      membersCount: 6,
-      schedules: [
-        {
-          id: 'sched-1',
-          seq: 1,
-          title: '제1장. 2020 가을, 산해진미 도시락',
-          pages: 'p.1 ~ p.65',
-          targetDate: '2026-09-10',
-          submitted: true,
-          reviewTitle: '노숙인 독고 씨와의 첫 만남과 온기',
-        },
-        {
-          id: 'sched-2',
-          seq: 2,
-          title: '제2장. 제이에스 오브 제이에스',
-          pages: 'p.66 ~ p.132',
-          targetDate: '2026-09-17',
-          submitted: true,
-          reviewTitle: '진상 손님을 대하는 따뜻한 시선',
-        },
-        {
-          id: 'sched-3',
-          seq: 3,
-          title: '제3장. 삼각김밥의 용도',
-          pages: 'p.133 ~ p.198',
-          targetDate: '2026-09-24',
-          submitted: true,
-          reviewTitle: '참참참 세트가 주는 소박한 위안',
-        },
-        {
-          id: 'sched-4',
-          seq: 4,
-          title: '제4장. 네 잎 클로버의 기적',
-          pages: 'p.199 ~ p.262',
-          targetDate: '2026-10-01',
-          submitted: false,
-        },
-        {
-          id: 'sched-5',
-          seq: 5,
-          title: '제5장. 불편한 편의점의 에필로그',
-          pages: 'p.263 ~ p.310',
-          targetDate: '2026-10-15',
-          submitted: false,
-        },
-      ],
-    },
-    {
-      clubId: 'cozy-second-club',
-      clubName: '따스한 차 한 잔과 인문학',
-      bookTitle: '도둑맞은 집중력',
-      bookThumbnail:
-        'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F6298533%3Ftimestamp%3D20240904122115',
-      leader: '유진',
-      membersCount: 8,
-      schedules: [
-        {
-          id: 's2-1',
-          seq: 1,
-          title: '1부. 너무 빨리 흘러가는 세상과 우리의 뇌',
-          pages: 'p.1 ~ p.80',
-          targetDate: '2026-09-20',
-          submitted: true,
-          reviewTitle: '산만함의 원인은 내 의지박약이 아니었다',
-        },
-        {
-          id: 's2-2',
-          seq: 2,
-          title: '2부. 몰입을 방해하는 감시 자본주의',
-          pages: 'p.81 ~ p.175',
-          targetDate: '2026-10-05',
-          submitted: false,
-        },
-      ],
-    },
-  ];
-
-  // 완독한 책 목록
+  // 기본 완독 기념 책 목록
   const completedBooks = [
     {
       title: '어린 왕자',
@@ -133,60 +103,108 @@ export default function MyClubsPage() {
     },
   ];
 
-  // 독후감 목록
+  // 1. 내 독후감 목록 조회 (로그인 회원 ID 기준)
   useEffect(() => {
     const fetchReviews = async () => {
+      if (!user?.id) {
+        setMyReviews([]);
+        return;
+      }
       try {
-        const res = await fetch('/api/reviews');
+        const res = await fetch(`/api/reviews?user_id=${user.id}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.reviews && data.reviews.length > 0) {
+          if (data.reviews && Array.isArray(data.reviews)) {
             setMyReviews(data.reviews);
             return;
           }
         }
-      } catch {}
-
-      // 기본 독후감 데이터
-      setMyReviews([
-        {
-          id: 'rev-1',
-          user_id: '00000000-0000-0000-0000-000000000001',
-          title: '참참참 세트가 주는 소박한 위안 — 불편한 편의점 3단원',
-          content:
-            '혼자 늦은 밤 편의점 파라솔 테이블에 앉아 캔맥주와 참치김밥을 먹는 사람들의 고단함. 독고 씨가 그들에게 무심한 듯 건네는 따뜻한 배려가 가슴을 뭉클하게 했습니다.',
-          quote: '“밥 딜런의 외할머니가 그랬어. 행복은 이미 누리고 있는 것을 좋아하는 것이라고.”',
-          rating: 5,
-          is_public: true,
-          created_at: '2026-09-24',
-        },
-        {
-          id: 'rev-2',
-          user_id: '00000000-0000-0000-0000-000000000001',
-          title: '산만함의 원인은 내 의지박약이 아니었다 — 도둑맞은 집중력 1단원',
-          content:
-            '끝없이 알림을 울려대는 스마트폰과 알고리즘 속에서 우리의 깊은 생각의 힘이 어떻게 잠식당하는지 깊이 깨달았습니다. 함께 책을 읽는 이 시간만큼은 온전히 화면을 끄고 종이책의 질감에 집중해봅니다.',
-          quote: '“집중력 위기는 개인의 실패가 아니라 현대 사회 시스템이 설계한 결과다.”',
-          rating: 5,
-          is_public: true,
-          created_at: '2026-09-20',
-        },
-        {
-          id: 'rev-3',
-          user_id: '00000000-0000-0000-0000-000000000001',
-          title: '어른이 된다는 것의 의미 — 어린 왕자를 완독하며',
-          content:
-            '가장 중요한 것은 눈에 보이지 않고 오직 마음으로 보아야 한다는 여우의 말을 다시금 곱씹어봅니다. 길들인다는 것은 책임을 진다는 것임을 배웠습니다.',
-          quote: '“사막이 아름다운 것은 어딘가에 우물을 숨기고 있기 때문이야.”',
-          rating: 5,
-          is_public: true,
-          created_at: '2026-08-20',
-        },
-      ]);
+      } catch (err) {
+        console.warn('My reviews fetch error:', err);
+      }
+      setMyReviews([]);
     };
 
     fetchReviews();
-  }, []);
+  }, [user?.id]);
+
+  // 2. 참여 중인 클럽 및 일정 조회 (로그인 회원 참여 여부 기준)
+  useEffect(() => {
+    const fetchClubs = async () => {
+      setLoadingClubs(true);
+      try {
+        const res = await fetch('/api/clubs');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.clubs && Array.isArray(data.clubs)) {
+            // 로그인 상태이면 본인이 방장이거나 멤버로 참여한 클럽 필터링
+            let filteredClubs = data.clubs;
+            if (user?.id) {
+              const myJoined = data.clubs.filter((club: any) => {
+                const isLeader = club.leader_id === user.id || club.leader?.id === user.id;
+                const isMember = (club.members || []).some(
+                  (m: any) => m.user_id === user.id || m.profile?.id === user.id
+                );
+                return isLeader || isMember;
+              });
+
+              // 참여 중인 클럽이 있으면 그것을 사용
+              if (myJoined.length > 0) {
+                filteredClubs = myJoined;
+              }
+            }
+
+            const formatted: UserClubView[] = filteredClubs.map((club: any) => {
+              const schedules: ClubScheduleItem[] = (club.schedules || []).map((s: any, idx: number) => {
+                // 해당 회원이 이 단원에 독후감을 썼는지 확인
+                const userReview = (s.reviews || []).find(
+                  (r: any) => r.user_id === user?.id || (myReviews || []).some((mr) => mr.schedule_id === s.id)
+                );
+
+                return {
+                  id: s.id || `sched-${idx + 1}`,
+                  seq: s.order_seq || s.sequence || idx + 1,
+                  title: s.title || `제${idx + 1}장`,
+                  pages: s.target_pages ? `p.${s.target_pages}` : `단원 ${idx + 1}`,
+                  targetDate: s.due_date || s.target_date || '일정 조율 중',
+                  submitted: !!userReview,
+                  reviewTitle: userReview?.title,
+                };
+              });
+
+              return {
+                clubId: club.id,
+                clubName: club.name || '코지 북클럽',
+                bookTitle: club.book?.title || club.name,
+                bookThumbnail:
+                  club.book?.thumbnail_url ||
+                  club.book?.cover_image_url ||
+                  'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5871383%3Ftimestamp%3D20240904121510',
+                leader: club.leader?.nickname || '방장',
+                membersCount: club.members ? club.members.length : 1,
+                schedules,
+              };
+            });
+
+            setUserClubs(formatted);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('My clubs fetch error:', err);
+      } finally {
+        setLoadingClubs(false);
+      }
+    };
+
+    fetchClubs();
+  }, [user?.id, myReviews]);
+
+  // 회원 레벨 및 프로필 정보 계산
+  const completedCount = user?.completed_count ?? 1;
+  const currentLevel = calculateUserLevel(completedCount);
+  const levelInfo = LEVEL_CONFIG[currentLevel] || LEVEL_CONFIG[1];
+  const mannerTemp = user?.manner_temperature != null ? Number(user.manner_temperature).toFixed(1) : '20.0';
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
@@ -201,21 +219,63 @@ export default function MyClubsPage() {
           {/* Top Banner / My Profile Status */}
           <section className="bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-sm border border-surface-container flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary text-2xl font-bold shadow-sm">
-                지
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <h1 className="font-headline-md text-xl sm:text-2xl font-bold text-on-surface">
-                    지우 님의 따뜻한 서재
-                  </h1>
-                  <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">
-                    책나무 레벨 3 🌿
-                  </span>
+              {/* Profile Avatar */}
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.nickname || '프로필 아바타'}
+                  className="w-16 h-16 rounded-full object-cover shadow-sm border-2 border-primary/20 shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary text-2xl font-bold shadow-sm shrink-0">
+                  {user?.nickname ? user.nickname.charAt(0) : '독'}
                 </div>
-                <p className="text-xs text-on-surface-variant mt-1">
-                  달빛서재 • "조용한 문장 속에서 하루의 피로를 씻어냅니다."
-                </p>
+              )}
+
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="font-headline-md text-xl sm:text-2xl font-bold text-on-surface">
+                    {user ? `${user.nickname} 님의 따뜻한 서재` : '로그인하고 나만의 서재를 만나보세요'}
+                  </h1>
+                  {user && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">
+                      {levelInfo.badge}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-1.5 flex-wrap">
+                  {user ? (
+                    <>
+                      <span className="inline-flex items-center gap-1 font-medium text-primary">
+                        <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+                        <span>매너온도 {mannerTemp}℃</span>
+                      </span>
+                      <span>•</span>
+                      <span className="text-on-surface-variant/80">{user.email}</span>
+                      <span>•</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsProfileOpen(true)}
+                        className="inline-flex items-center gap-0.5 text-xs text-secondary hover:underline font-medium"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">manage_accounts</span>
+                        <span>프로필 설정</span>
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span>로그인하시면 참여 중인 독서 클럽과 작성한 독후감을 모아볼 수 있습니다.</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsAuthOpen(true)}
+                        className="px-3 py-1 rounded-full bg-primary text-on-primary font-bold text-xs hover:bg-primary/90 transition-all"
+                      >
+                        로그인 / 회원가입
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -223,38 +283,42 @@ export default function MyClubsPage() {
             <div className="grid grid-cols-3 gap-3 border-t md:border-t-0 md:border-l border-surface-container pt-4 md:pt-0 md:pl-6 text-center">
               <div className="flex flex-col">
                 <span className="text-xs text-on-surface-variant">참여 클럽</span>
-                <span className="text-xl font-bold text-primary mt-0.5">2개</span>
+                <span className="text-xl font-bold text-primary mt-0.5">
+                  {user ? userClubs.length : 0}개
+                </span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-on-surface-variant">작성한 독후감</span>
                 <span className="text-xl font-bold text-secondary mt-0.5">
-                  {myReviews.length}편
+                  {user ? myReviews.length : 0}편
                 </span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-on-surface-variant">완독한 책</span>
-                <span className="text-xl font-bold text-on-surface mt-0.5">3권</span>
+                <span className="text-xl font-bold text-on-surface mt-0.5">
+                  {user ? (user.completed_count ?? 0) : 0}권
+                </span>
               </div>
             </div>
           </section>
 
           {/* Tab Navigation */}
-          <div className="flex items-center gap-2 border-b border-surface-container pb-2">
+          <div className="flex items-center gap-2 border-b border-surface-container pb-2 overflow-x-auto">
             <button
               type="button"
               onClick={() => setActiveTab('current')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+              className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
                 activeTab === 'current'
                   ? 'bg-primary text-on-primary shadow-sm'
                   : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
               }`}
             >
-              독서 진행 일정 & 독후감 체크리스트
+              독서 진행 일정 & 독후감 체크리스트 ({userClubs.length})
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('my-reviews')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+              className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
                 activeTab === 'my-reviews'
                   ? 'bg-primary text-on-primary shadow-sm'
                   : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
@@ -265,7 +329,7 @@ export default function MyClubsPage() {
             <button
               type="button"
               onClick={() => setActiveTab('completed')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+              className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
                 activeTab === 'completed'
                   ? 'bg-primary text-on-primary shadow-sm'
                   : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
@@ -278,137 +342,182 @@ export default function MyClubsPage() {
           {/* TAB 1: 독서 진행 일정 & 독후감 작성 여부 */}
           {activeTab === 'current' && (
             <div className="flex flex-col gap-6">
-              {readingScheduleStatus.map((club) => (
-                <section
-                  key={club.clubId}
-                  className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container flex flex-col gap-4"
-                >
-                  {/* Club Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-surface-container">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={club.bookThumbnail}
-                        alt={club.bookTitle}
-                        className="w-12 h-16 rounded object-cover shadow-sm shrink-0"
-                      />
-                      <div className="flex flex-col">
-                        <Link
-                          href={`/clubs/${club.clubId}`}
-                          className="font-headline-sm text-base font-bold text-on-surface hover:text-primary transition-colors"
-                        >
-                          {club.clubName}
-                        </Link>
-                        <p className="text-xs text-on-surface-variant mt-0.5">
-                          선정도서: 《{club.bookTitle}》 • 방장: {club.leader} • 멤버 {club.membersCount}명
-                        </p>
+              {userClubs.length > 0 ? (
+                userClubs.map((club) => (
+                  <section
+                    key={club.clubId}
+                    className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container flex flex-col gap-4"
+                  >
+                    {/* Club Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-surface-container">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={club.bookThumbnail}
+                          alt={club.bookTitle}
+                          className="w-12 h-16 rounded object-cover shadow-sm shrink-0"
+                        />
+                        <div className="flex flex-col">
+                          <Link
+                            href={`/clubs/${club.clubId}`}
+                            className="font-headline-sm text-base font-bold text-on-surface hover:text-primary transition-colors"
+                          >
+                            {club.clubName}
+                          </Link>
+                          <p className="text-xs text-on-surface-variant mt-0.5">
+                            선정도서: 《{club.bookTitle}》 • 방장: {club.leader} • 멤버 {club.membersCount}명
+                          </p>
+                        </div>
                       </div>
+
+                      <Link
+                        href={`/clubs/${club.clubId}`}
+                        className="px-3.5 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold transition-all self-start sm:self-auto flex items-center gap-1"
+                      >
+                        <span>클럽 서재 바로가기</span>
+                        <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                      </Link>
                     </div>
 
-                    <Link
-                      href={`/clubs/${club.clubId}`}
-                      className="px-3.5 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold transition-all self-start sm:self-auto flex items-center gap-1"
+                    {/* Schedule Check List */}
+                    <div className="flex flex-col gap-2">
+                      <h4 className="text-xs font-bold text-primary flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px]">task_alt</span>
+                        <span>단원별 독서 일정 및 나의 독후감 작성 현황</span>
+                      </h4>
+
+                      {club.schedules.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-2 pt-1">
+                          {club.schedules.map((s) => (
+                            <div
+                              key={s.id}
+                              className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span
+                                  className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${
+                                    s.submitted
+                                      ? 'bg-primary text-on-primary'
+                                      : 'bg-surface-container-high text-on-surface-variant'
+                                  }`}
+                                >
+                                  {s.submitted ? '✓' : s.seq}
+                                </span>
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs font-semibold text-on-surface">
+                                      {s.title}
+                                    </span>
+                                    <span className="text-[11px] text-on-surface-variant">
+                                      ({s.pages})
+                                    </span>
+                                  </div>
+                                  <span className="text-[11px] text-on-surface-variant mt-0.5">
+                                    목표일: {s.targetDate}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 self-end sm:self-auto">
+                                {s.submitted ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">
+                                    <span className="material-symbols-outlined text-[14px]">check</span>
+                                    <span>독후감 작성 완료</span>
+                                  </span>
+                                ) : (
+                                  <Link
+                                    href={`/clubs/${club.clubId}/reviews/new?scheduleId=${s.id}`}
+                                    className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-secondary text-on-secondary hover:bg-secondary-container text-xs font-semibold shadow-sm transition-all"
+                                  >
+                                    <span className="material-symbols-outlined text-[14px]">edit</span>
+                                    <span>독후감 쓰기</span>
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-on-surface-variant py-2">등록된 독서 일정이 없습니다.</p>
+                      )}
+                    </div>
+                  </section>
+                ))
+              ) : (
+                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary text-3xl">
+                    📚
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-lg font-bold text-on-surface">참여 중인 독서 클럽이 없습니다</h3>
+                    <p className="text-xs text-on-surface-variant">
+                      새로운 독서 클럽을 직접 만들거나, 취향에 맞는 클럽에 참여해보세요.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateOpen(true)}
+                      className="px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm hover:bg-primary/90 transition-all"
                     >
-                      <span>클럽 서재 바로가기</span>
-                      <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                      새 독서클럽 만들기
+                    </button>
+                    <Link
+                      href="/"
+                      className="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all"
+                    >
+                      독서클럽 탐색하기
                     </Link>
                   </div>
-
-                  {/* Schedule Check List */}
-                  <div className="flex flex-col gap-2">
-                    <h4 className="text-xs font-bold text-primary flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[16px]">task_alt</span>
-                      <span>단원별 독서 일정 및 나의 독후감 작성 현황</span>
-                    </h4>
-
-                    <div className="grid grid-cols-1 gap-2 pt-1">
-                      {club.schedules.map((s) => (
-                        <div
-                          key={s.id}
-                          className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${
-                                s.submitted
-                                  ? 'bg-primary text-on-primary'
-                                  : 'bg-surface-container-high text-on-surface-variant'
-                              }`}
-                            >
-                              {s.submitted ? '✓' : s.seq}
-                            </span>
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-semibold text-on-surface">
-                                  {s.title}
-                                </span>
-                                <span className="text-[11px] text-on-surface-variant">
-                                  ({s.pages})
-                                </span>
-                              </div>
-                              <span className="text-[11px] text-on-surface-variant mt-0.5">
-                                목표일: {s.targetDate}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2 self-end sm:self-auto">
-                            {s.submitted ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">
-                                <span className="material-symbols-outlined text-[14px]">check</span>
-                                <span>독후감 작성 완료</span>
-                              </span>
-                            ) : (
-                              <Link
-                                href={`/clubs/${club.clubId}/reviews/new?scheduleId=${s.id}`}
-                                className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-secondary text-on-secondary hover:bg-secondary-container text-xs font-semibold shadow-sm transition-all"
-                              >
-                                <span className="material-symbols-outlined text-[14px]">edit</span>
-                                <span>독후감 쓰기</span>
-                              </Link>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-              ))}
+                </div>
+              )}
             </div>
           )}
 
           {/* TAB 2: 내가 쓴 독후감 모아보기 */}
           {activeTab === 'my-reviews' && (
             <div className="flex flex-col gap-4">
-              {myReviews.map((rev) => (
-                <article
-                  key={rev.id}
-                  className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container flex flex-col gap-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-primary font-bold">
-                      {rev.created_at?.split('T')[0] || '2026-09-26'} 기록
-                    </span>
-                    <div className="flex items-center gap-1 text-secondary text-xs">
-                      <span>★</span>
-                      <span className="font-bold">{rev.rating || 5}.0</span>
+              {myReviews.length > 0 ? (
+                myReviews.map((rev) => (
+                  <article
+                    key={rev.id}
+                    className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container flex flex-col gap-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-primary font-bold">
+                        {rev.created_at?.split('T')[0]} 기록
+                      </span>
+                      <div className="flex items-center gap-1 text-secondary text-xs">
+                        <span>★</span>
+                        <span className="font-bold">{rev.rating || 5}.0</span>
+                      </div>
                     </div>
+
+                    <h3 className="font-headline-sm text-lg font-bold text-on-surface">
+                      {rev.title}
+                    </h3>
+
+                    {rev.quote && (
+                      <blockquote className="bg-surface-container-low p-3 rounded-lg border-l-4 border-primary text-xs italic text-on-surface leading-relaxed">
+                        {rev.quote}
+                      </blockquote>
+                    )}
+
+                    <p className="font-body-reading text-sm text-on-surface-variant leading-relaxed">
+                      {rev.content}
+                    </p>
+                  </article>
+                ))
+              ) : (
+                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-2xl">
+                    ✍️
                   </div>
-
-                  <h3 className="font-headline-sm text-lg font-bold text-on-surface">
-                    {rev.title}
-                  </h3>
-
-                  {rev.quote && (
-                    <blockquote className="bg-surface-container-low p-3 rounded-lg border-l-4 border-primary text-xs italic text-on-surface leading-relaxed">
-                      {rev.quote}
-                    </blockquote>
-                  )}
-
-                  <p className="font-body-reading text-sm text-on-surface-variant leading-relaxed">
-                    {rev.content}
+                  <h3 className="text-base font-bold text-on-surface">아직 작성된 독후감이 없습니다</h3>
+                  <p className="text-xs text-on-surface-variant">
+                    참여 중인 클럽의 단원별 일정에 맞춰 첫 번째 독서 기록을 남겨보세요.
                   </p>
-                </article>
-              ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -465,6 +574,10 @@ export default function MyClubsPage() {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         onSuccess={() => setIsAuthOpen(false)}
+      />
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
       />
     </div>
   );
