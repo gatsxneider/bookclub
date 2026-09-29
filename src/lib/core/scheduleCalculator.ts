@@ -89,6 +89,30 @@ export function isClubCompleted(club: {
   return totalReviews >= targetReviews;
 }
 
+/**
+ * 클럽의 최종 유효 종료일 계산
+ * - 세부 일정(schedules) 중 target_date가 설정된 항목이 있으면, 그 중 가장 마지막(최신) 날짜를 종료일로 간주
+ * - 세부 일정에 유효한 target_date가 없으면 처음 모임 개설 시 설정한 clubEndDate를 fallback으로 사용
+ */
+export function getEffectiveClubEndDate(
+  clubEndDate?: string | null,
+  schedules?: Array<{ target_date?: string | null }> | null
+): string | undefined {
+  if (schedules && schedules.length > 0) {
+    const validDates = schedules
+      .map((s) => s.target_date?.trim())
+      .filter((d): d is string => Boolean(d && !isNaN(new Date(d).getTime())));
+
+    if (validDates.length > 0) {
+      // 가장 늦은 날짜(최대 날짜)를 종료일로 반환
+      validDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      return validDates[0];
+    }
+  }
+
+  return clubEndDate || undefined;
+}
+
 export function calculateDday(targetDateStr?: string, baseDate: Date = new Date()): string {
   if (!targetDateStr) return '-';
   const target = new Date(targetDateStr);

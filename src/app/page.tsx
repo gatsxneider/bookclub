@@ -15,7 +15,7 @@ import CozyLogo from '@/components/CozyLogo';
 import { Book, Club } from '@/types/database';
 import { filterCuratedBooks } from '@/lib/core/bookSearch';
 import curatedBooksData from '@/lib/constants/curatedBooks.json';
-import { isUserClubMember, isClubCompleted, calculateClubTotalProgress } from '@/lib/core/scheduleCalculator';
+import { isUserClubMember, isClubCompleted, calculateClubTotalProgress, getEffectiveClubEndDate } from '@/lib/core/scheduleCalculator';
 import { useAuth } from '@/context/AuthContext';
 
 export default function HomePage() {
@@ -277,6 +277,8 @@ export default function HomePage() {
                       schedCount
                     );
 
+                    const effectiveEndDate = getEffectiveClubEndDate(club.end_date, club.schedules);
+
                     return (
                       <article
                         key={club.id}
@@ -294,7 +296,7 @@ export default function HomePage() {
                             <span>{isCompleted ? '완료' : '진행중'} · 정원 {club.max_members}명</span>
                           </span>
                           <span className="text-[11px] text-secondary font-medium">
-                            {club.end_date ? `완독 목표: ${club.end_date}` : '상시 모임'}
+                            {effectiveEndDate ? `완독 목표: ${effectiveEndDate}` : '상시 모임'}
                           </span>
                         </div>
 

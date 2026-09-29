@@ -15,6 +15,7 @@ import {
   calculateProgress,
   calculateClubTotalProgress,
   calculateDday,
+  getEffectiveClubEndDate,
 } from '@/lib/core/scheduleCalculator';
 import { useAuth } from '@/context/AuthContext';
 
@@ -332,7 +333,8 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
   const myCompletedChapters = schedules.filter((s) => Boolean(s.my_review_submitted)).length;
   const myProgress = calculateProgress(myCompletedChapters, totalSchedulesCount);
 
-  const dDay = calculateDday(club?.end_date);
+  const effectiveEndDate = getEffectiveClubEndDate(club?.end_date, schedules);
+  const dDay = calculateDday(effectiveEndDate);
 
   const leaderNickname =
     club?.leader?.nickname ||

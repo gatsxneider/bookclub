@@ -3,6 +3,7 @@ import {
   calculateProgress,
   calculateClubTotalProgress,
   calculateDday,
+  getEffectiveClubEndDate,
   formatPageRange,
   isUserClubMember,
   isClubCompleted,
@@ -107,6 +108,42 @@ describe('scheduleCalculator', () => {
     expect(calculateDday('2026-09-28', today)).toBe('D-2');
     expect(calculateDday('2026-09-20', today)).toBe('종료');
     expect(calculateDday(undefined, today)).toBe('-');
+  });
+
+  it('세부 일정이 수립되면 가장 마지막 일정 날짜를 종료일로 간주하고 D-day가 업데이트되어야 한다', () => {
+    const today = new Date('2026-09-26');
+    const initialClubEndDate = '2026-10-15'; // 개설 시 설정한 종료일
+
+    // 1) 세부 일정이 아직 없는 경우 -> 초기 모임 개설일 기준
+    const effectiveDate1 = getEffectiveClubEndDate(initialClubEndDate, []);
+    expect(effectiveDate1).toBe('2026-10-15');
+    expect(calculateDday(effectiveDate1, today)).toBe('D-19');
+
+    // 2) 세부 일정이 수립된 경우 -> 일정 중 가장 마지막 날짜가 종료일로 업데이트
+    const schedules = [
+      { target_date: '2026-10-05' },
+      { target_date: '2026-10-31' },
+      { target_date: '2026-10-20' },
+    ];
+    const effectiveDate2 = getEffectiveClubEndDate(initialClubEndDate, schedules);
+    expect(effectiveDate2).toBe('2026-10-31');
+    expect(calculateDday(effectiveDate2, today)).toBe('D-35');
+
+    // 3) 일정에 target_date가 없는 항목이 섞여있거나 null인 경우
+    const mixedSchedules = [
+      { target_date: '' },
+      { target_date: '2026-11-10' },
+      { target_date: null },
+    ];
+    const effectiveDate3 = getEffectiveClubEndDate(initialClubEndDate, mixedSchedules);
+    expect(effectiveDate3).toBe('2026-11-10');
+    expect(calculateDday(effectiveDate3, today)).toBe('D-45');
+
+    // 4) 일정의 모든 target_date가 비어있으면 초기 모임 종료일로 fallback
+    const emptyDateSchedules = [{ target_date: '' }, { target_date: undefined }];
+    const effectiveDate4 = getEffectiveClubEndDate(initialClubEndDate, emptyDateSchedules);
+    expect(effectiveDate4).toBe('2026-10-15');
+    expect(calculateDday(effectiveDate4, today)).toBe('D-19');
   });
 
   it('페이지 범위를 친절하고 일관된 형식으로 포맷팅해야 한다', () => {
