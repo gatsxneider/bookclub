@@ -222,6 +222,56 @@ describe('scheduleCalculator', () => {
     ];
     expect(getNearestUpcomingScheduleDday(pastClubs, today)).toBe('종료');
     expect(getNearestUpcomingSchedule(pastClubs, today).dDay).toBe('종료');
+
+    // 6) 독후감 작성 완료된 일정은 D-day 산정에서 제외되어 다음 미작성 일정을 기준으로 D-day가 계산되어야 함
+    const reviewClubs = [
+      {
+        id: 'club-reviewed',
+        schedules: [
+          {
+            id: 'sched-done',
+            target_date: '2026-10-02', // 더 빠른 날짜이지만 이미 독후감 작성 완료
+            reviews: [{ user_id: 'current-user-id' }],
+          },
+          {
+            id: 'sched-pending',
+            target_date: '2026-10-10', // 아직 작성하지 않은 다음 일정 (D-11)
+            reviews: [{ user_id: 'other-user-id' }],
+          },
+        ],
+      },
+    ];
+    // current-user-id 기준: sched-done(10-02)은 제외되고 sched-pending(10-10) 기준 D-11 반환
+    expect(getNearestUpcomingScheduleDday(reviewClubs, today, 'current-user-id')).toBe('D-11');
+    expect(getNearestUpcomingSchedule(reviewClubs, today, 'current-user-id')).toEqual({
+      dDay: 'D-11',
+      clubId: 'club-reviewed',
+      scheduleId: 'sched-pending',
+    });
+
+    // 모든 단원의 독후감을 작성 완료한 경우
+    const allReviewedClubs = [
+      {
+        id: 'club-all-done',
+        schedules: [
+          {
+            id: 'sched-all-1',
+            target_date: '2026-10-02',
+            my_review_submitted: true,
+          },
+          {
+            id: 'sched-all-2',
+            target_date: '2026-10-10',
+            my_review_submitted: true,
+          },
+        ],
+      },
+    ];
+    expect(getNearestUpcomingSchedule(allReviewedClubs, today, 'current-user-id')).toEqual({
+      dDay: '완독 완료',
+      clubId: 'club-all-done',
+      isAllCompleted: true,
+    });
   });
 
   it('페이지 범위를 친절하고 일관된 형식으로 포맷팅해야 한다', () => {
@@ -230,3 +280,4 @@ describe('scheduleCalculator', () => {
     expect(formatPageRange('')).toBe('');
   });
 });
+

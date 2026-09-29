@@ -110,8 +110,12 @@ export default function HomePage() {
   const activeClubs = myClubs.filter((c) => !isClubCompleted(c));
   const completedClubs = myClubs.filter((c) => isClubCompleted(c));
 
-  // 참여 중인 클럽의 단원별 일정 중 가장 빨리 도래하는 종료일 기준 D-day 및 해당 독서회 링크
-  const nearestSchedule = getNearestUpcomingSchedule(activeClubs.length > 0 ? activeClubs : myClubs);
+  // 참여 중인 클럽의 단원별 일정 중 (독후감 작성 완료된 일정 제외) 가장 빨리 도래하는 종료일 기준 D-day 및 해당 독서회 링크
+  const nearestSchedule = getNearestUpcomingSchedule(
+    activeClubs.length > 0 ? activeClubs : myClubs,
+    new Date(),
+    user?.id
+  );
   const targetClubUrl = nearestSchedule.clubId
     ? `/clubs/${nearestSchedule.clubId}`
     : (user && myClubs.length > 0 ? `/clubs/${myClubs[0].id}` : undefined);

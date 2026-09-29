@@ -133,20 +133,29 @@ export interface NearestScheduleResult {
   dDay: string;
   clubId?: string;
   scheduleId?: string;
+  isAllCompleted?: boolean;
 }
 
 /**
- * 참여 중인 클럽들의 각 단원별 일정 종료일(target_date) 중 가장 빨리 도래하는 일자를 기준으로 D-day 및 해당 독서회 ID 반환
+ * 참여 중인 클럽들의 각 단원별 일정 종료일(target_date) 중
+ * 독후감 작성이 완료된 일정은 제외하고, 가장 빨리 도래하는 일자를 기준으로 D-day 및 해당 독서회 ID 반환
  * @param clubs 참여 중인 클럽 목록
  * @param baseDate 기준 일자 (기본값: 오늘)
+ * @param userId 현재 사용자 ID (작성 여부 판별용)
  */
 export function getNearestUpcomingSchedule(
   clubs: Array<{
     id?: string;
     end_date?: string | null;
-    schedules?: Array<{ id?: string; target_date?: string | null }> | null;
+    schedules?: Array<{
+      id?: string;
+      target_date?: string | null;
+      my_review_submitted?: boolean;
+      reviews?: Array<{ user_id?: string }>;
+    }> | null;
   }>,
-  baseDate: Date = new Date()
+  baseDate: Date = new Date(),
+  userId?: string | null
 ): NearestScheduleResult {
   if (!clubs || clubs.length === 0) {
     return { dDay: '상시 토론' };
@@ -154,12 +163,28 @@ export function getNearestUpcomingSchedule(
 
   const baseDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate()).getTime();
 
-  // 1. 참여 클럽들의 모든 단원 일정 target_date와 club.id 수집
+  // 1. 참여 클럽들의 미작성 단원 일정 target_date와 club.id 수집 (작성 완료된 단원은 제외)
   const items: Array<{ dateStr: string; clubId?: string; scheduleId?: string; diffDays: number }> = [];
+  let totalScheduleCount = 0;
+  let completedScheduleCount = 0;
 
   for (const club of clubs) {
     if (club.schedules && club.schedules.length > 0) {
       for (const s of club.schedules) {
+        totalScheduleCount++;
+
+        // 본인이 독후감을 작성 완료했는지 판별
+        const isReviewed = Boolean(
+          s.my_review_submitted ||
+          (userId && s.reviews && s.reviews.some((r) => r.user_id === userId))
+        );
+
+        if (isReviewed) {
+          completedScheduleCount++;
+          // 독후감 작성 완료된 일정은 D-day 산정에서 제외
+          continue;
+        }
+
         if (s.target_date && s.target_date.trim() && !isNaN(new Date(s.target_date).getTime())) {
           const target = new Date(s.target_date.trim());
           const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
@@ -173,6 +198,11 @@ export function getNearestUpcomingSchedule(
         }
       }
     }
+  }
+
+  // 모든 등록된 단원의 독후감을 전부 작성 완료한 경우
+  if (totalScheduleCount > 0 && totalScheduleCount === completedScheduleCount) {
+    return { dDay: '완독 완료', clubId: clubs[0]?.id, isAllCompleted: true };
   }
 
   // 2. 단원 일정이 없으면 클럽별 end_date를 fallback으로 수집
@@ -207,7 +237,7 @@ export function getNearestUpcomingSchedule(
     };
   }
 
-  // 만약 모든 일정이 이미 지난 경우, 가장 최근에 지난 일정 기준 calculateDday 반환 ('종료')
+  // 만약 모든 미완료 일정이 이미 지난 경우, 가장 최근에 지난 일정 기준 calculateDday 반환 ('종료')
   items.sort((a, b) => b.diffDays - a.diffDays);
   const mostRecent = items[0];
   return {
@@ -221,16 +251,23 @@ export function getNearestUpcomingSchedule(
  * 참여 중인 클럽들의 각 단원별 일정 종료일(target_date) 중 가장 빨리 도래하는 일자를 기준으로 D-day 계산
  * @param clubs 참여 중인 클럽 목록
  * @param baseDate 기준 일자 (기본값: 오늘)
+ * @param userId 현재 사용자 ID (작성 여부 판별용)
  */
 export function getNearestUpcomingScheduleDday(
   clubs: Array<{
     id?: string;
     end_date?: string | null;
-    schedules?: Array<{ id?: string; target_date?: string | null }> | null;
+    schedules?: Array<{
+      id?: string;
+      target_date?: string | null;
+      my_review_submitted?: boolean;
+      reviews?: Array<{ user_id?: string }>;
+    }> | null;
   }>,
-  baseDate: Date = new Date()
+  baseDate: Date = new Date(),
+  userId?: string | null
 ): string {
-  return getNearestUpcomingSchedule(clubs, baseDate).dDay;
+  return getNearestUpcomingSchedule(clubs, baseDate, userId).dDay;
 }
 
 export function formatPageRange(rangeStr?: string): string {
