@@ -200,6 +200,7 @@ function BookReviewsFeedContent() {
               {reviews.map((rev) => {
                 const authorNickname = rev.author?.nickname || (rev.user_id === user?.id ? user.nickname : '독서가');
                 const authorInitial = authorNickname ? authorNickname.charAt(0) : '독';
+                const bookTitle = rev.book?.title || rev.club?.book?.title;
 
                 return (
                   <article
@@ -207,25 +208,36 @@ function BookReviewsFeedContent() {
                     className="bg-surface-container-lowest rounded-2xl p-6 sm:p-7 shadow-sm border border-surface-container flex flex-col gap-3.5 hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-2.5">
-                        {rev.author?.avatar_url ? (
-                          <img
-                            src={rev.author.avatar_url}
-                            alt={authorNickname}
-                            className="w-8 h-8 rounded-full object-cover shadow-sm border border-primary/20 shrink-0"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-primary text-xs shadow-sm shrink-0">
-                            {authorInitial}
-                          </div>
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        {rev.club && (
+                          <Link
+                            href={`/clubs/${rev.club_id || rev.club.id}`}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">eco</span>
+                            <span>{rev.club.name}</span>
+                          </Link>
                         )}
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-on-surface">
-                            {authorNickname}
-                          </span>
-                          <span className="text-[11px] text-on-surface-variant">
-                            {rev.created_at?.split('T')[0]}
-                          </span>
+                        <div className="flex items-center gap-2">
+                          {rev.author?.avatar_url ? (
+                            <img
+                              src={rev.author.avatar_url}
+                              alt={authorNickname}
+                              className="w-8 h-8 rounded-full object-cover shadow-sm border border-primary/20 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-primary text-xs shadow-sm shrink-0">
+                              {authorInitial}
+                            </div>
+                          )}
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-on-surface">
+                              {authorNickname}
+                            </span>
+                            <span className="text-[11px] text-on-surface-variant">
+                              {rev.created_at?.split('T')[0]}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -251,18 +263,15 @@ function BookReviewsFeedContent() {
 
                     <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant flex-wrap gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {rev.club && (
-                          <Link
-                            href={`/clubs/${rev.club_id || rev.club.id}`}
-                            className="flex items-center gap-1 font-semibold text-primary hover:underline"
-                          >
-                            <span className="material-symbols-outlined text-[15px]">eco</span>
-                            <span>{rev.club.name}</span>
-                          </Link>
+                        {bookTitle && (
+                          <span className="flex items-center gap-1 font-semibold text-on-surface">
+                            <span className="material-symbols-outlined text-[15px] text-primary">menu_book</span>
+                            <span>{bookTitle}</span>
+                          </span>
                         )}
                         {rev.schedule && (
                           <>
-                            <span className="text-on-surface-variant/40">•</span>
+                            {bookTitle && <span className="text-on-surface-variant/40">•</span>}
                             <span className="inline-flex items-center gap-1 text-[11px] text-secondary font-medium bg-secondary-fixed/30 px-2.5 py-0.5 rounded-full">
                               <span className="material-symbols-outlined text-[13px]">auto_stories</span>
                               <span>

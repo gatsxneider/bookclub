@@ -15,7 +15,13 @@ import CozyLogo from '@/components/CozyLogo';
 import { Book, Club } from '@/types/database';
 import { filterCuratedBooks } from '@/lib/core/bookSearch';
 import curatedBooksData from '@/lib/constants/curatedBooks.json';
-import { isUserClubMember, isClubCompleted, calculateClubTotalProgress, getEffectiveClubEndDate } from '@/lib/core/scheduleCalculator';
+import {
+  isUserClubMember,
+  isClubCompleted,
+  calculateClubTotalProgress,
+  getEffectiveClubEndDate,
+  getNearestUpcomingScheduleDday,
+} from '@/lib/core/scheduleCalculator';
 import { useAuth } from '@/context/AuthContext';
 
 export default function HomePage() {
@@ -102,6 +108,9 @@ export default function HomePage() {
   const myClubs = user ? clubs.filter((c) => isUserClubMember(c, user.id)) : [];
   const activeClubs = myClubs.filter((c) => !isClubCompleted(c));
   const completedClubs = myClubs.filter((c) => isClubCompleted(c));
+
+  // 참여 중인 클럽의 단원별 일정 중 가장 빨리 도래하는 종료일 기준 D-day
+  const readingScheduleDday = getNearestUpcomingScheduleDday(activeClubs.length > 0 ? activeClubs : myClubs);
 
   // 현재 활성화된 탭에 따른 클럽 목록
   const displayedClubs = activeClubTab === 'active' ? activeClubs : completedClubs;
@@ -191,14 +200,14 @@ export default function HomePage() {
                   <span className="text-sm font-bold text-secondary">{user?.manner_temperature ?? 20.0}℃</span>
                 </div>
 
-                {/* 3. 모임 일정 */}
+                {/* 3. 독서 일정 */}
                 <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-secondary-fixed/50 text-on-secondary-fixed shadow-[0_1px_3px_rgba(45,40,37,0.03)] border border-secondary-fixed hover:bg-secondary-fixed/80 transition-colors">
                   <div className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-secondary text-[16px]">schedule</span>
-                    <span className="text-xs font-medium">단원 일정</span>
+                    <span className="text-xs font-medium">독서 일정</span>
                   </div>
                   <span className="text-xs font-bold text-secondary px-2 py-0.5 rounded-full bg-surface/90 shadow-xs">
-                    상시 토론
+                    {readingScheduleDday}
                   </span>
                 </div>
               </div>

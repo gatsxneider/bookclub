@@ -4,6 +4,7 @@ import {
   calculateClubTotalProgress,
   calculateDday,
   getEffectiveClubEndDate,
+  getNearestUpcomingScheduleDday,
   formatPageRange,
   isUserClubMember,
   isClubCompleted,
@@ -144,6 +145,61 @@ describe('scheduleCalculator', () => {
     const effectiveDate4 = getEffectiveClubEndDate(initialClubEndDate, emptyDateSchedules);
     expect(effectiveDate4).toBe('2026-10-15');
     expect(calculateDday(effectiveDate4, today)).toBe('D-19');
+  });
+
+  it('참여 중인 클럽들의 단원 일정 중 가장 빨리 도래하는 종료일을 찾아 D-day를 계산해야 한다', () => {
+    const today = new Date('2026-09-29');
+
+    // 1) 클럽이 없는 경우 -> '상시 토론'
+    expect(getNearestUpcomingScheduleDday([], today)).toBe('상시 토론');
+
+    // 2) 참여 클럽이 여러 개이고 여러 단원 일정이 있을 때, 가장 빨리 도래하는(최소 diffDays >= 0) 날짜 선택
+    const clubs = [
+      {
+        end_date: '2026-10-20',
+        schedules: [
+          { target_date: '2026-10-05' },
+          { target_date: '2026-10-20' },
+        ],
+      },
+      {
+        end_date: '2026-10-15',
+        schedules: [
+          { target_date: '2026-10-02' }, // 가장 빠른 도래일 (D-3)
+          { target_date: '2026-10-10' },
+        ],
+      },
+    ];
+    expect(getNearestUpcomingScheduleDday(clubs, today)).toBe('D-3');
+
+    // 3) 오늘이 마감일인 일정이 있는 경우 -> 'D-Day'
+    const todayClub = [
+      {
+        schedules: [
+          { target_date: '2026-09-29' },
+          { target_date: '2026-10-05' },
+        ],
+      },
+    ];
+    expect(getNearestUpcomingScheduleDday(todayClub, today)).toBe('D-Day');
+
+    // 4) 단원 일정이 없고 클럽 end_date만 있는 경우 fallback
+    const fallbackClubs = [
+      { end_date: '2026-10-04', schedules: [] },
+      { end_date: '2026-10-10', schedules: [] },
+    ];
+    expect(getNearestUpcomingScheduleDday(fallbackClubs, today)).toBe('D-5');
+
+    // 5) 모든 일정이 이미 지난 경우 -> '종료'
+    const pastClubs = [
+      {
+        schedules: [
+          { target_date: '2026-09-20' },
+          { target_date: '2026-09-25' },
+        ],
+      },
+    ];
+    expect(getNearestUpcomingScheduleDday(pastClubs, today)).toBe('종료');
   });
 
   it('페이지 범위를 친절하고 일관된 형식으로 포맷팅해야 한다', () => {

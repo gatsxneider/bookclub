@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import CozyLogo from './CozyLogo';
 import UserProfileModal from './UserProfileModal';
 import { useAuth } from '@/context/AuthContext';
@@ -13,6 +13,79 @@ interface NavbarProps {
   onOpenAuth: () => void;
 }
 
+function NavLinksInner({ pathname }: { pathname: string }) {
+  const searchParams = useSearchParams();
+  const hasClubOrScheduleFilter = Boolean(
+    searchParams?.get('clubId') ||
+    searchParams?.get('club_id') ||
+    searchParams?.get('scheduleId') ||
+    searchParams?.get('schedule_id')
+  );
+
+  const navLinks = [
+    { label: '홈', href: '/' },
+    { label: '내 서재 & 클럽', href: '/my-clubs' },
+    { label: '내 독후감 피드', href: '/book-reviews' },
+    { label: '도서 탐색', href: '/explore' },
+  ];
+
+  return (
+    <nav className="hidden lg:flex items-center gap-1.5 shrink-0">
+      {navLinks.map((link) => {
+        let isActive = pathname === link.href;
+        // '클럽 독후감 전체 모아보기' 등 특정 클럽/단원 피드 조회 중일 때는 상단 '내 독후감 피드' 탭 하이라이트 제외
+        if (link.href === '/book-reviews' && hasClubOrScheduleFilter) {
+          isActive = false;
+        }
+
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`px-3.5 py-2 rounded-full font-title-sm text-sm whitespace-nowrap transition-all ${
+              isActive
+                ? 'bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_-2px_rgba(45,40,37,0.08)]'
+                : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+            }`}
+          >
+            {link.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function NavLinksFallback({ pathname }: { pathname: string }) {
+  const navLinks = [
+    { label: '홈', href: '/' },
+    { label: '내 서재 & 클럽', href: '/my-clubs' },
+    { label: '내 독후감 피드', href: '/book-reviews' },
+    { label: '도서 탐색', href: '/explore' },
+  ];
+
+  return (
+    <nav className="hidden lg:flex items-center gap-1.5 shrink-0">
+      {navLinks.map((link) => {
+        const isActive = pathname === link.href;
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`px-3.5 py-2 rounded-full font-title-sm text-sm whitespace-nowrap transition-all ${
+              isActive
+                ? 'bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_-2px_rgba(45,40,37,0.08)]'
+                : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+            }`}
+          >
+            {link.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export default function Navbar({
   onOpenSearch,
   onOpenNewClub,
@@ -21,13 +94,6 @@ export default function Navbar({
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  const navLinks = [
-    { label: '홈', href: '/' },
-    { label: '내 서재 & 클럽', href: '/my-clubs' },
-    { label: '내 독후감 피드', href: '/book-reviews' },
-    { label: '도서 탐색', href: '/explore' },
-  ];
 
   return (
     <>
@@ -41,24 +107,9 @@ export default function Navbar({
           </div>
 
           {/* Navigation Tabs */}
-          <nav className="hidden lg:flex items-center gap-1.5 shrink-0">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`px-3.5 py-2 rounded-full font-title-sm text-sm whitespace-nowrap transition-all ${
-                    isActive
-                      ? 'bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_-2px_rgba(45,40,37,0.08)]'
-                      : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <Suspense fallback={<NavLinksFallback pathname={pathname} />}>
+            <NavLinksInner pathname={pathname} />
+          </Suspense>
 
           {/* Search Trigger Bar */}
           <div className="hidden md:flex items-center flex-1 max-w-[240px] lg:max-w-[280px] xl:max-w-xs mx-space-xs">

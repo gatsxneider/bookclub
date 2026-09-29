@@ -41,7 +41,7 @@ describe('BookReviewsFeedPage Component', () => {
                 rating: 5,
                 created_at: '2026-09-29',
                 author: { nickname: '달빛독서가', avatar_url: '/avatars/avatar_female.png' },
-                club: { id: 'club-123', name: '고요한 숲속 북클럽' },
+                club: { id: 'club-123', name: '고요한 숲속 북클럽', book: { title: '불편한 편의점' } },
               },
               {
                 id: 'rev-2',
@@ -51,7 +51,7 @@ describe('BookReviewsFeedPage Component', () => {
                 rating: 4,
                 created_at: '2026-09-28',
                 author: { nickname: '별빛독서가', avatar_url: '/avatars/avatar_male.png' },
-                club: { id: 'club-123', name: '고요한 숲속 북클럽' },
+                club: { id: 'club-123', name: '고요한 숲속 북클럽', book: { title: '불편한 편의점' } },
               },
             ],
           }),
@@ -82,6 +82,8 @@ describe('BookReviewsFeedPage Component', () => {
       expect(screen.getByText('멤버2의 독후감')).toBeInTheDocument();
       expect(screen.getByText('달빛독서가')).toBeInTheDocument();
       expect(screen.getByText('별빛독서가')).toBeInTheDocument();
+      expect(screen.getAllByText('고요한 숲속 북클럽').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('불편한 편의점').length).toBeGreaterThanOrEqual(1);
     });
 
     // fetch 호출 시 user_id 없이 club_id만 전달되었는지 확인
