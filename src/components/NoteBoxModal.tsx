@@ -736,12 +736,28 @@ export default function NoteBoxModal({
                           {formatDate(msg.created_at)}
                         </span>
                       </div>
-                      <h4 className="text-xs sm:text-sm font-bold text-on-surface truncate">
-                        {msg.title}
-                      </h4>
-                      <p className="text-xs text-on-surface-variant/80 truncate mt-0.5">
-                        {msg.content}
-                      </p>
+                      <div className="flex items-start justify-between gap-2 mt-0.5">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-xs sm:text-sm font-bold text-on-surface truncate">
+                            {msg.title}
+                          </h4>
+                          <p className="text-xs text-on-surface-variant/80 truncate mt-0.5">
+                            {msg.content}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMessage(msg.id, 'inbox');
+                          }}
+                          className="p-1 rounded-md text-on-surface-variant/50 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 -mr-1"
+                          title="쪽지 삭제"
+                          aria-label="쪽지 삭제"
+                        >
+                          <span className="material-symbols-outlined text-[17px]">delete</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -794,12 +810,28 @@ export default function NoteBoxModal({
                           {formatDate(msg.created_at)}
                         </span>
                       </div>
-                      <h4 className="text-xs sm:text-sm font-bold text-on-surface truncate">
-                        {msg.title}
-                      </h4>
-                      <p className="text-xs text-on-surface-variant/80 truncate mt-0.5">
-                        {msg.content}
-                      </p>
+                      <div className="flex items-start justify-between gap-2 mt-0.5">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-xs sm:text-sm font-bold text-on-surface truncate">
+                            {msg.title}
+                          </h4>
+                          <p className="text-xs text-on-surface-variant/80 truncate mt-0.5">
+                            {msg.content}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMessage(msg.id, 'sent');
+                          }}
+                          className="p-1 rounded-md text-on-surface-variant/50 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 -mr-1"
+                          title="쪽지 삭제"
+                          aria-label="쪽지 삭제"
+                        >
+                          <span className="material-symbols-outlined text-[17px]">delete</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
