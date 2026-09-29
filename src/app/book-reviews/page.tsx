@@ -122,6 +122,13 @@ function BookReviewsFeedContent() {
               </p>
               <Link
                 href="/my-clubs"
+                onClick={(e) => {
+                  if (!user) {
+                    e.preventDefault();
+                    alert('로그인이 필요한 서비스입니다. 로그인 후 내 서재와 클럽을 이용해보세요! 📚');
+                    setIsAuthOpen(true);
+                  }
+                }}
                 className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold shadow-md hover:bg-primary-container transition-all"
               >
                 <span className="material-symbols-outlined text-[16px]">auto_stories</span>

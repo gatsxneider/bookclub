@@ -40,4 +40,27 @@ describe('Navbar Component', () => {
     fireEvent.click(btn);
     expect(handleNewClub).toHaveBeenCalled();
   });
+
+  it('비로그인 상태에서 내 서재 & 클럽 링크 클릭 시 로그인 안내 알림과 함께 onOpenAuth가 호출되어야 한다', () => {
+    const handleAuth = vi.fn();
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+    render(
+      <AuthProvider>
+        <Navbar
+          onOpenSearch={vi.fn()}
+          onOpenNewClub={vi.fn()}
+          onOpenAuth={handleAuth}
+        />
+      </AuthProvider>
+    );
+
+    const myClubsLink = screen.getByText('내 서재 & 클럽');
+    fireEvent.click(myClubsLink);
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      expect.stringContaining('로그인이 필요한 서비스입니다')
+    );
+    expect(handleAuth).toHaveBeenCalled();
+  });
 });

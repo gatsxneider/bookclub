@@ -48,6 +48,13 @@ export default function Navbar({
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={(e) => {
+                    if (link.href === '/my-clubs' && !user) {
+                      e.preventDefault();
+                      alert('로그인이 필요한 서비스입니다. 로그인 후 내 서재와 클럽을 이용해보세요! 📚');
+                      onOpenAuth();
+                    }
+                  }}
                   className={`px-3.5 py-2 rounded-full font-title-sm text-sm whitespace-nowrap transition-all ${
                     isActive
                       ? 'bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_-2px_rgba(45,40,37,0.08)]'

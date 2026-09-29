@@ -342,7 +342,34 @@ export default function MyClubsPage() {
           {/* TAB 1: 독서 진행 일정 & 독후감 작성 여부 */}
           {activeTab === 'current' && (
             <div className="flex flex-col gap-6">
-              {userClubs.length > 0 ? (
+              {!user ? (
+                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-primary-fixed/30 flex items-center justify-center text-primary text-3xl">
+                    🔒
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-lg font-bold text-on-surface">로그인이 필요한 서비스입니다</h3>
+                    <p className="text-xs text-on-surface-variant">
+                      로그인하시면 참여 중인 독서 클럽의 단원별 일정과 독후감 작성 현황을 확인하실 수 있습니다.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsAuthOpen(true)}
+                      className="px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm hover:bg-primary/90 transition-all"
+                    >
+                      로그인하고 내 클럽 확인하기
+                    </button>
+                    <Link
+                      href="/"
+                      className="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all"
+                    >
+                      홈으로 이동
+                    </Link>
+                  </div>
+                </div>
+              ) : userClubs.length > 0 ? (
                 userClubs.map((club) => (
                   <section
                     key={club.clubId}
@@ -476,7 +503,26 @@ export default function MyClubsPage() {
           {/* TAB 2: 내가 쓴 독후감 모아보기 */}
           {activeTab === 'my-reviews' && (
             <div className="flex flex-col gap-4">
-              {myReviews.length > 0 ? (
+              {!user ? (
+                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-primary-fixed/30 flex items-center justify-center text-primary text-3xl">
+                    🔒
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-lg font-bold text-on-surface">로그인이 필요한 서비스입니다</h3>
+                    <p className="text-xs text-on-surface-variant">
+                      로그인하시면 지금까지 작성하신 모든 독후감을 한곳에서 모아볼 수 있습니다.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsAuthOpen(true)}
+                    className="mt-2 px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm hover:bg-primary/90 transition-all"
+                  >
+                    로그인하고 독후감 모아보기
+                  </button>
+                </div>
+              ) : myReviews.length > 0 ? (
                 myReviews.map((rev) => (
                   <article
                     key={rev.id}

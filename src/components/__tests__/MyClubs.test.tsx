@@ -119,5 +119,7 @@ describe('MyClubsPage Component', () => {
 
     expect(screen.getByText('로그인하고 나만의 서재를 만나보세요')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '로그인 / 회원가입' })).toBeInTheDocument();
+    expect(screen.getByText('로그인이 필요한 서비스입니다')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '로그인하고 내 클럽 확인하기' })).toBeInTheDocument();
   });
 });
