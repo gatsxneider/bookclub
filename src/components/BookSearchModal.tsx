@@ -19,6 +19,25 @@ export default function BookSearchModal({
   const [results, setResults] = useState<Book[]>([]);
   const [searched, setSearched] = useState(false);
 
+  React.useEffect(() => {
+    if (!isOpen) {
+      setQuery('');
+      setResults([]);
+      setSearched(false);
+      return;
+    }
+    setQuery('');
+    setResults([]);
+    setSearched(false);
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setQuery('');
+    setResults([]);
+    setSearched(false);
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -56,7 +75,7 @@ export default function BookSearchModal({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="닫기"
             className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"
             type="button"
@@ -155,7 +174,7 @@ export default function BookSearchModal({
                   type="button"
                   onClick={() => {
                     onSelectBook(book);
-                    onClose();
+                    handleClose();
                   }}
                   className="px-3.5 py-1.5 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-semibold whitespace-nowrap shadow-sm transition-all"
                   aria-label="이 책으로 클럽 만들기"

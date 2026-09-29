@@ -117,4 +117,26 @@ describe('ClubSearchModal Component', () => {
       expect(handleClose).toHaveBeenCalled();
     }
   });
+
+  it('모달이 닫혔다가 다시 열렸을 때 검색어가 초기화되어야 한다', async () => {
+    const { rerender } = render(<ClubSearchModal isOpen={true} onClose={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('고요한 숲속 심야 독서회')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/클럽명, 도서명, 저자, 방장 닉네임으로 검색/) as HTMLInputElement;
+    fireEvent.change(searchInput, { target: { value: '린건' } });
+    expect(searchInput.value).toBe('린건');
+
+    // 모달 닫기
+    rerender(<ClubSearchModal isOpen={false} onClose={vi.fn()} />);
+
+    // 모달 다시 열기
+    rerender(<ClubSearchModal isOpen={true} onClose={vi.fn()} />);
+
+    const reopenedInput = screen.getByPlaceholderText(/클럽명, 도서명, 저자, 방장 닉네임으로 검색/) as HTMLInputElement;
+    expect(reopenedInput.value).toBe('');
+  });
 });
+

@@ -26,9 +26,21 @@ export default function ClubSearchModal({
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
 
-  // 모달 열릴 때 클럽 목록 불러오기
+  // 모달 열릴 때 상태 초기화 및 최신 클럽 목록 불러오기
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setSearchInput('');
+      setSearchKeyword('');
+      setCurrentPage(1);
+      setStatusFilter('all');
+      return;
+    }
+
+    // 모달이 열릴 때 검색어 및 필터 초기화
+    setSearchInput('');
+    setSearchKeyword('');
+    setCurrentPage(1);
+    setStatusFilter('all');
 
     const fetchAllClubs = async () => {
       setLoading(true);
@@ -63,6 +75,14 @@ export default function ClubSearchModal({
     setSearchInput('');
     setSearchKeyword('');
     setCurrentPage(1);
+  };
+
+  const handleClose = () => {
+    setSearchInput('');
+    setSearchKeyword('');
+    setCurrentPage(1);
+    setStatusFilter('all');
+    onClose();
   };
 
   // 필터링된 클럽 목록
@@ -114,7 +134,7 @@ export default function ClubSearchModal({
   };
 
   const handleClubClick = (club: Club) => {
-    onClose();
+    handleClose();
     if (onSelectClub) {
       onSelectClub(club);
     } else {
@@ -149,7 +169,7 @@ export default function ClubSearchModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="닫기"
             className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
           >
