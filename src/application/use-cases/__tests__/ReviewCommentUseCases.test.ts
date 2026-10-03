@@ -79,9 +79,9 @@ describe('ReviewCommentUseCases', () => {
     reviewRepo = new MockReviewRepo();
     profileRepo = new MockProfileRepo();
     useCases = new ReviewCommentUseCases(
-      commentRepo as IReviewCommentRepository,
-      reviewRepo as IReviewRepository,
-      profileRepo as IProfileRepository
+      commentRepo as unknown as IReviewCommentRepository,
+      reviewRepo as unknown as IReviewRepository,
+      profileRepo as unknown as IProfileRepository
     );
 
     // 샘플 독후감 생성

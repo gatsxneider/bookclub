@@ -208,4 +208,78 @@ describe('BookReviewsFeedPage Component', () => {
       expect(screen.getByText('공감 1/5')).toBeInTheDocument();
     });
   });
+
+  it('독후감에 댓글이 존재하는 경우 카드 하단에 댓글 섹션이 기본적으로 펼쳐져서 표시되어야 한다', async () => {
+    mockSearchParamsValue = { club_id: 'club-123' };
+
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/comments')) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              comments: [
+                {
+                  id: 'c-1',
+                  review_id: 'rev-with-comment',
+                  user_id: 'user-1',
+                  content: '노란색 부분에 표시되는 작성된 댓글 내용입니다.',
+                  created_at: '2026-10-04T12:00:00Z',
+                  author: {
+                    nickname: '댓글작성자',
+                    manner_temperature: 36.5,
+                  },
+                },
+              ],
+            }),
+        });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            reviews: [
+              {
+                id: 'rev-with-comment',
+                user_id: 'other-user',
+                title: '댓글이 달린 독후감',
+                content: '독후감 내용입니다.',
+                rating: 5,
+                comments_count: 1,
+                created_at: '2026-10-03',
+                author: { nickname: '모래고래' },
+                club: { id: 'club-123', name: '까다로운 독서회', book: { title: '파우스트 1' } },
+              },
+            ],
+          }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      user: {
+        id: 'current-user-id',
+        email: 'user@test.com',
+        nickname: '현재사용자',
+      },
+      loading: false,
+      signIn: vi.fn(),
+      signUp: vi.fn(),
+      quickLogin: vi.fn(),
+      signOut: vi.fn(),
+      updateProfile: vi.fn(),
+      refreshProfile: vi.fn(),
+    });
+
+    render(<BookReviewsFeedPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('댓글이 달린 독후감')).toBeInTheDocument();
+      expect(screen.getAllByText('댓글 1').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByTestId('review-comment-section')).toBeInTheDocument();
+      expect(screen.getByText('노란색 부분에 표시되는 작성된 댓글 내용입니다.')).toBeInTheDocument();
+    });
+  });
 });
+

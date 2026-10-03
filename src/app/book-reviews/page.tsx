@@ -33,10 +33,10 @@ function BookReviewsFeedContent() {
   const [empathizingReviewId, setEmpathizingReviewId] = useState<string | null>(null);
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
 
-  const toggleComments = (reviewId: string) => {
+  const toggleComments = (reviewId: string, currentIsOpen: boolean) => {
     setOpenComments((prev) => ({
       ...prev,
-      [reviewId]: !prev[reviewId],
+      [reviewId]: !currentIsOpen,
     }));
   };
 
@@ -406,29 +406,40 @@ function BookReviewsFeedContent() {
                           </button>
                         )}
 
-                        <button
-                          type="button"
-                          data-testid={`comment-btn-${rev.id}`}
-                          className={`flex items-center gap-1 transition-all px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            openComments[rev.id]
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-on-surface-variant hover:text-primary hover:bg-surface-container'
-                          }`}
-                          onClick={() => toggleComments(rev.id)}
-                          title="댓글 열기/닫기"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">
-                            {openComments[rev.id] ? 'chat_bubble' : 'chat_bubble_outline'}
-                          </span>
-                          <span>
-                            댓글{rev.comments_count ? ` ${rev.comments_count}` : ''}
-                          </span>
-                        </button>
+                        {(() => {
+                          const isCommentOpen =
+                            openComments[rev.id] !== undefined
+                              ? openComments[rev.id]
+                              : Boolean(rev.comments_count && rev.comments_count > 0);
+
+                          return (
+                            <button
+                              type="button"
+                              data-testid={`comment-btn-${rev.id}`}
+                              className={`flex items-center gap-1 transition-all px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                isCommentOpen
+                                  ? 'bg-primary/10 text-primary'
+                                  : 'text-on-surface-variant hover:text-primary hover:bg-surface-container'
+                              }`}
+                              onClick={() => toggleComments(rev.id, isCommentOpen)}
+                              title={isCommentOpen ? '댓글 접기' : '댓글 펼치기'}
+                            >
+                              <span className="material-symbols-outlined text-[16px]">
+                                {isCommentOpen ? 'chat_bubble' : 'chat_bubble_outline'}
+                              </span>
+                              <span>
+                                댓글{rev.comments_count ? ` ${rev.comments_count}` : ''}
+                              </span>
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
 
-                    {/* 댓글 섹션 */}
-                    {openComments[rev.id] && (
+                    {/* 댓글 섹션: 댓글이 있거나 펼쳐진 경우 노란색 영역에 표시 */}
+                    {(openComments[rev.id] !== undefined
+                      ? openComments[rev.id]
+                      : Boolean(rev.comments_count && rev.comments_count > 0)) && (
                       <ReviewCommentSection
                         reviewId={rev.id}
                         reviewAuthorId={rev.user_id}
@@ -436,7 +447,9 @@ function BookReviewsFeedContent() {
                         onCommentCountChange={(count) => {
                           setReviews((prev) =>
                             prev.map((r) =>
-                              r.id === rev.id ? { ...r, comments_count: count } : r
+                              r.id === rev.id && r.comments_count !== count
+                                ? { ...r, comments_count: count }
+                                : r
                             )
                           );
                         }}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ReviewComment } from '@/domain/entities';
 import { apiClient } from '@/presentation/lib/apiClient';
 import { useAuth } from '@/presentation/context/AuthContext';
@@ -26,6 +26,11 @@ export default function ReviewCommentSection({
   const [newComment, setNewComment] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const onCountChangeRef = useRef(onCommentCountChange);
+  useEffect(() => {
+    onCountChangeRef.current = onCommentCountChange;
+  }, [onCommentCountChange]);
+
   const fetchComments = useCallback(async () => {
     try {
       setLoading(true);
@@ -35,7 +40,7 @@ export default function ReviewCommentSection({
       );
       if (data && Array.isArray(data.comments)) {
         setComments(data.comments);
-        onCommentCountChange?.(data.comments.length);
+        onCountChangeRef.current?.(data.comments.length);
       }
     } catch (err: any) {
       console.error('Failed to fetch review comments:', err);
@@ -43,7 +48,7 @@ export default function ReviewCommentSection({
     } finally {
       setLoading(false);
     }
-  }, [reviewId, onCommentCountChange]);
+  }, [reviewId]);
 
   useEffect(() => {
     fetchComments();
@@ -131,7 +136,7 @@ export default function ReviewCommentSection({
   return (
     <div
       data-testid="review-comment-section"
-      className="mt-4 pt-4 border-t border-surface-container bg-surface-container-lowest/40 rounded-2xl p-4 sm:p-5"
+      className="mt-3 pt-3 border-t border-surface-container/60 bg-surface-container-low/30 rounded-2xl p-3.5 sm:p-4.5"
     >
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-xs font-bold text-on-surface flex items-center gap-1.5">
