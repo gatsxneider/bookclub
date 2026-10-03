@@ -104,3 +104,14 @@ export const updateProfileSchema = z.object({
   avatar_url: z.string().max(2000000).optional(), // base64 또는 URL
   bio: z.string().max(200).optional(),
 });
+
+export const createReviewCommentSchema = z.object({
+  review_id: z.string().uuid('올바른 독후감 ID가 아닙니다'),
+  content: z
+    .string()
+    .trim()
+    .min(1, '댓글 내용을 입력해주세요')
+    .max(500, '댓글은 최대 500자까지 작성할 수 있습니다')
+    .transform((val) => sanitizeHtml(val)),
+});
+

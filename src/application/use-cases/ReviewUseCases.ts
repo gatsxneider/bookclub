@@ -4,6 +4,7 @@ import {
   IMemberRepository,
   IProfileRepository,
   IReviewRepository,
+  IReviewCommentRepository,
   IScheduleRepository,
   IUserBookRatingRepository,
 } from '@/domain/repositories';
@@ -25,7 +26,8 @@ export class ReviewUseCases {
     private clubRepo: IClubRepository,
     private memberRepo: IMemberRepository,
     private empathyRepo: IEmpathyRepository,
-    private userBookRatingRepo: IUserBookRatingRepository
+    private userBookRatingRepo: IUserBookRatingRepository,
+    private commentRepo?: IReviewCommentRepository
   ) {}
 
   async getBookRatings(): Promise<Record<string, BookRatingSummary>> {
@@ -47,16 +49,23 @@ export class ReviewUseCases {
 
     if (visibleReviews.length === 0) return [];
 
+    const reviewIds = visibleReviews.map((r) => r.id);
+
     let userEmpathiesMap: Record<string, number> = {};
     if (viewerId) {
-      const reviewIds = visibleReviews.map((r) => r.id);
       userEmpathiesMap = await this.empathyRepo.findUserEmpathies(reviewIds, viewerId);
+    }
+
+    let commentCountsMap: Record<string, number> = {};
+    if (this.commentRepo) {
+      commentCountsMap = await this.commentRepo.getCommentCounts(reviewIds);
     }
 
     return visibleReviews.map((rev) => {
       const isMyReview = Boolean(viewerId && rev.user_id === viewerId);
       return {
         ...rev,
+        comments_count: commentCountsMap[rev.id] || 0,
         my_empathy_count: userEmpathiesMap[rev.id] || 0,
         likes_count: isMyReview ? rev.likes_count || 0 : undefined,
       };

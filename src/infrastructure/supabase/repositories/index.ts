@@ -6,6 +6,7 @@ import {
   Message,
   Profile,
   Review,
+  ReviewComment,
   ReviewEmpathy,
 } from '@/domain/entities';
 import {
@@ -17,6 +18,7 @@ import {
   IProfileRepository,
   IScheduleRepository,
   IReviewRepository,
+  IReviewCommentRepository,
   IUserBookRatingRepository,
 } from '@/domain/repositories';
 import { createAdminSupabaseClient } from '@/infrastructure/supabase/serverClient';
@@ -603,6 +605,81 @@ export class SupabaseEmpathyRepository implements IEmpathyRepository {
       .eq('id', reviewId);
 
     if (error) throw new Error(error.message);
+  }
+}
+
+export class SupabaseReviewCommentRepository implements IReviewCommentRepository {
+  private client = createAdminSupabaseClient();
+
+  async findByReviewId(reviewId: string): Promise<ReviewComment[]> {
+    const { data, error } = await this.client
+      .from('review_comments')
+      .select('id, review_id, user_id, content, created_at, updated_at, author:profiles(id, nickname, avatar_url, manner_temperature)')
+      .eq('review_id', reviewId)
+      .order('created_at', { ascending: true });
+
+    if (error || !data) return [];
+    return data as unknown as ReviewComment[];
+  }
+
+  async findById(id: string): Promise<ReviewComment | null> {
+    const { data, error } = await this.client
+      .from('review_comments')
+      .select('id, review_id, user_id, content, created_at, updated_at, author:profiles(id, nickname, avatar_url, manner_temperature)')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data as unknown as ReviewComment;
+  }
+
+  async create(commentData: { review_id: string; user_id: string; content: string }): Promise<ReviewComment> {
+    const { data, error } = await this.client
+      .from('review_comments')
+      .insert({
+        review_id: commentData.review_id,
+        user_id: commentData.user_id,
+        content: commentData.content,
+      })
+      .select('id, review_id, user_id, content, created_at, updated_at, author:profiles(id, nickname, avatar_url, manner_temperature)')
+      .single();
+
+    if (error) throw new Error(error.message);
+    return data as unknown as ReviewComment;
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await this.client
+      .from('review_comments')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+  }
+
+  async getCommentCounts(reviewIds: string[]): Promise<Record<string, number>> {
+    if (reviewIds.length === 0) return {};
+    const { data, error } = await this.client
+      .from('review_comments')
+      .select('review_id')
+      .in('review_id', reviewIds);
+
+    if (error || !data) return {};
+    const map: Record<string, number> = {};
+    data.forEach((c: any) => {
+      map[c.review_id] = (map[c.review_id] || 0) + 1;
+    });
+    return map;
+  }
+
+  async countByReviewId(reviewId: string): Promise<number> {
+    const { count, error } = await this.client
+      .from('review_comments')
+      .select('id', { count: 'exact', head: true })
+      .eq('review_id', reviewId);
+
+    if (error) return 0;
+    return count || 0;
   }
 }
 

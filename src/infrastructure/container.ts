@@ -6,6 +6,7 @@ import {
   SupabaseMessageRepository,
   SupabaseProfileRepository,
   SupabaseReviewRepository,
+  SupabaseReviewCommentRepository,
   SupabaseScheduleRepository,
   SupabaseUserBookRatingRepository,
 } from './supabase/repositories';
@@ -15,6 +16,7 @@ import { ClubUseCases } from '@/application/use-cases/ClubUseCases';
 import { MemberUseCases } from '@/application/use-cases/MemberUseCases';
 import { ScheduleUseCases } from '@/application/use-cases/ScheduleUseCases';
 import { ReviewUseCases } from '@/application/use-cases/ReviewUseCases';
+import { ReviewCommentUseCases } from '@/application/use-cases/ReviewCommentUseCases';
 import { MessageUseCases } from '@/application/use-cases/MessageUseCases';
 import { BookUseCases } from '@/application/use-cases/BookUseCases';
 
@@ -26,6 +28,7 @@ class Container {
   public scheduleRepo = new SupabaseScheduleRepository();
   public reviewRepo = new SupabaseReviewRepository();
   public empathyRepo = new SupabaseEmpathyRepository();
+  public commentRepo = new SupabaseReviewCommentRepository();
   public messageRepo = new SupabaseMessageRepository();
   public userBookRatingRepo = new SupabaseUserBookRatingRepository();
   public bookSearchGateway = new KakaoBookSearchGateway();
@@ -55,7 +58,13 @@ class Container {
     this.clubRepo,
     this.memberRepo,
     this.empathyRepo,
-    this.userBookRatingRepo
+    this.userBookRatingRepo,
+    this.commentRepo
+  );
+  public reviewCommentUseCases = new ReviewCommentUseCases(
+    this.commentRepo,
+    this.reviewRepo,
+    this.profileRepo
   );
   public messageUseCases = new MessageUseCases(
     this.messageRepo,

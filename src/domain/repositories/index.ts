@@ -6,6 +6,7 @@ import {
   Message,
   Profile,
   Review,
+  ReviewComment,
   ReviewEmpathy,
   UserBookRating,
 } from '../entities';
@@ -99,6 +100,15 @@ export interface IEmpathyRepository {
   getEmpathy(reviewId: string, userId: string): Promise<ReviewEmpathy | null>;
   setEmpathyCount(reviewId: string, userId: string, count: number): Promise<void>;
   incrementReviewLikes(reviewId: string, newTotal: number): Promise<void>;
+}
+
+export interface IReviewCommentRepository {
+  findByReviewId(reviewId: string): Promise<ReviewComment[]>;
+  findById(id: string): Promise<ReviewComment | null>;
+  create(data: { review_id: string; user_id: string; content: string }): Promise<ReviewComment>;
+  delete(id: string): Promise<void>;
+  getCommentCounts(reviewIds: string[]): Promise<Record<string, number>>;
+  countByReviewId(reviewId: string): Promise<number>;
 }
 
 export interface IMessageRepository {

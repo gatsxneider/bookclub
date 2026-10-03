@@ -101,10 +101,22 @@ export interface Review {
   is_public: boolean;
   created_at?: string;
   updated_at?: string;
+  comments_count?: number;
+  comments?: ReviewComment[];
   author?: Profile;
   schedule?: ClubSchedule;
   club?: Club;
   book?: Book;
+}
+
+export interface ReviewComment {
+  id: string;
+  review_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+  author?: Profile;
 }
 
 export interface ReviewEmpathy {

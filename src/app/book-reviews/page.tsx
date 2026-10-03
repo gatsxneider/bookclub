@@ -8,6 +8,7 @@ import BookSearchModal from '@/presentation/components/BookSearchModal';
 import CreateClubModal from '@/presentation/components/CreateClubModal';
 import AuthModal from '@/presentation/components/AuthModal';
 import Footer from '@/presentation/components/Footer';
+import ReviewCommentSection from '@/presentation/components/ReviewCommentSection';
 import { Review } from '@/domain/entities';
 
 import { useAuth } from '@/presentation/context/AuthContext';
@@ -30,6 +31,14 @@ function BookReviewsFeedContent() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [empathizingReviewId, setEmpathizingReviewId] = useState<string | null>(null);
+  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
+
+  const toggleComments = (reviewId: string) => {
+    setOpenComments((prev) => ({
+      ...prev,
+      [reviewId]: !prev[reviewId],
+    }));
+  };
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -399,14 +408,40 @@ function BookReviewsFeedContent() {
 
                         <button
                           type="button"
-                          className="flex items-center gap-1 hover:text-primary transition-colors"
-                          onClick={() => alert('댓글 기능이 준비 중입니다.')}
+                          data-testid={`comment-btn-${rev.id}`}
+                          className={`flex items-center gap-1 transition-all px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            openComments[rev.id]
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-on-surface-variant hover:text-primary hover:bg-surface-container'
+                          }`}
+                          onClick={() => toggleComments(rev.id)}
+                          title="댓글 열기/닫기"
                         >
-                          <span className="material-symbols-outlined text-[16px]">chat_bubble_outline</span>
-                          <span>댓글</span>
+                          <span className="material-symbols-outlined text-[16px]">
+                            {openComments[rev.id] ? 'chat_bubble' : 'chat_bubble_outline'}
+                          </span>
+                          <span>
+                            댓글{rev.comments_count ? ` ${rev.comments_count}` : ''}
+                          </span>
                         </button>
                       </div>
                     </div>
+
+                    {/* 댓글 섹션 */}
+                    {openComments[rev.id] && (
+                      <ReviewCommentSection
+                        reviewId={rev.id}
+                        reviewAuthorId={rev.user_id}
+                        onOpenAuth={() => setIsAuthOpen(true)}
+                        onCommentCountChange={(count) => {
+                          setReviews((prev) =>
+                            prev.map((r) =>
+                              r.id === rev.id ? { ...r, comments_count: count } : r
+                            )
+                          );
+                        }}
+                      />
+                    )}
                   </article>
                 );
               })}
