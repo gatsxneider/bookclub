@@ -20,6 +20,7 @@ import {
   getEffectiveClubEndDate,
 } from '@/domain/rules/scheduleCalculator';
 import { useAuth } from '@/presentation/context/AuthContext';
+import { apiClient } from '@/presentation/lib/apiClient';
 
 export default function ClubDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -73,33 +74,23 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
     setLoading(true);
     try {
       // 1. 클럽 상세 정보
-      const clubRes = await fetch(`/api/clubs/${clubId}`);
-      if (clubRes.ok) {
-        const clubData = await clubRes.json();
-        if (clubData.club) {
-          setClub(clubData.club);
-        } else {
-          setClub(defaultClub);
-        }
+      const clubData = await apiClient.get<{ club: Club }>(`/api/clubs/${clubId}`).catch(() => null);
+      if (clubData?.club) {
+        setClub(clubData.club);
       } else {
         setClub(defaultClub);
       }
 
       // 2. 단원 일정
-      const schedUrl = user?.id
-        ? `/api/clubs/${clubId}/schedules?userId=${user.id}`
-        : `/api/clubs/${clubId}/schedules`;
-      const schedRes = await fetch(schedUrl);
-      if (schedRes.ok) {
-        const schedData = await schedRes.json();
-        setSchedules(schedData.schedules || []);
+      const schedData = await apiClient.get<{ schedules: ClubSchedule[] }>(`/api/clubs/${clubId}/schedules`).catch(() => null);
+      if (schedData?.schedules) {
+        setSchedules(schedData.schedules);
       }
 
       // 3. 멤버 목록
-      const memRes = await fetch(`/api/clubs/${clubId}/members`);
-      if (memRes.ok) {
-        const memData = await memRes.json();
-        setMembers(memData.members || []);
+      const memData = await apiClient.get<{ members: ClubMember[] }>(`/api/clubs/${clubId}/members`).catch(() => null);
+      if (memData?.members) {
+        setMembers(memData.members);
       }
     } catch (err) {
       console.warn('데이터 로드 실패:', err);
@@ -128,22 +119,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
     target_date: string;
   }) => {
     try {
-      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
-      const res = await fetch(`/api/clubs/${clubId}/schedules`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...scheduleData,
-          user_id: currentUserId,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || '단원 추가 실패');
-      }
-
-      const data = await res.json();
+      const data = await apiClient.post<{ schedule: ClubSchedule }>(`/api/clubs/${clubId}/schedules`, scheduleData);
       if (data.schedule) {
         setSchedules((prev) => [...prev, { ...data.schedule, reviews_count: 0 }]);
       }
@@ -159,23 +135,11 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
     updatedData: { chapter_title: string; page_range: string; target_date: string }
   ) => {
     try {
-      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
-      const res = await fetch(`/api/clubs/${clubId}/schedules`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          schedule_id: scheduleId,
-          ...updatedData,
-          user_id: currentUserId,
-        }),
+      const data = await apiClient.patch<{ schedule: ClubSchedule }>(`/api/clubs/${clubId}/schedules`, {
+        schedule_id: scheduleId,
+        ...updatedData,
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || '단원 일정 수정 실패');
-      }
-
-      const data = await res.json();
       if (data.schedule) {
         setSchedules((prev) =>
           prev.map((s) => (s.id === scheduleId ? { ...s, ...data.schedule } : s))
@@ -190,19 +154,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
   // 방장의 단원 삭제
   const handleDeleteSchedule = async (scheduleId: string) => {
     try {
-      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
-      const res = await fetch(
-        `/api/clubs/${clubId}/schedules?scheduleId=${scheduleId}&userId=${currentUserId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || '단원 일정 삭제 실패');
-      }
-
+      await apiClient.delete(`/api/clubs/${clubId}/schedules`, { scheduleId });
       setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
       alert('단원 일정이 삭제되었습니다.');
     } catch (err: any) {
@@ -218,14 +170,10 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
   // 멤버 승인 처리
   const handleApproveMember = async (memberId: string) => {
     try {
-      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
-      const res = await fetch(`/api/clubs/${clubId}/members`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, status: 'approved', currentUserId }),
+      await apiClient.patch(`/api/clubs/${clubId}/members`, {
+        memberId,
+        status: 'approved',
       });
-
-      if (!res.ok) throw new Error('승인 실패');
 
       setMembers((prev) =>
         prev.map((m) => (m.id === memberId ? { ...m, status: 'approved' } : m))
@@ -240,16 +188,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
   const handleRemoveMember = async (memberId: string) => {
     if (!confirm('정말 이 멤버를 제외하시겠습니까?')) return;
     try {
-      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
-      const res = await fetch(
-        `/api/clubs/${clubId}/members?memberId=${memberId}&userId=${currentUserId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!res.ok) throw new Error('제외 실패');
-
+      await apiClient.delete(`/api/clubs/${clubId}/members`, { memberId });
       setMembers((prev) => prev.filter((m) => m.id !== memberId));
       alert('멤버를 클럽에서 제외했습니다.');
     } catch (err: any) {
@@ -260,20 +199,9 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
   // 멤버 초대 모달을 통한 닉네임 초대 처리
   const handleInviteMember = async (nickname: string): Promise<boolean> => {
     try {
-      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
-      const res = await fetch(`/api/clubs/${clubId}/members`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nickname: nickname.trim(),
-          currentUserId,
-        }),
+      await apiClient.post(`/api/clubs/${clubId}/members`, {
+        nickname: nickname.trim(),
       });
-
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || '멤버 초대에 실패했습니다.');
-      }
 
       alert(`'${nickname}' 님이 클럽 멤버로 등록되었습니다! 🌿`);
       await loadClubData();
@@ -290,19 +218,7 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
     memberNickname: string
   ): Promise<boolean> => {
     try {
-      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
-      const res = await fetch(
-        `/api/clubs/${clubId}/members?memberId=${memberId}&userId=${currentUserId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || '멤버 제외에 실패했습니다.');
-      }
-
+      await apiClient.delete(`/api/clubs/${clubId}/members`, { memberId });
       setMembers((prev) => prev.filter((m) => m.id !== memberId));
       alert(`'${memberNickname}' 님을 클럽 멤버에서 제외했습니다.`);
       return true;

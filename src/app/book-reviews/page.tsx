@@ -13,6 +13,8 @@ import { Review } from '@/domain/entities';
 import { useAuth } from '@/presentation/context/AuthContext';
 import { checkCanEmpathize, MAX_EMPATHY_COUNT } from '@/domain/rules/empathy';
 
+import { apiClient } from '@/presentation/lib/apiClient';
+
 function BookReviewsFeedContent() {
   const searchParams = useSearchParams();
   const clubId = searchParams.get('club_id') || searchParams.get('clubId');
@@ -33,11 +35,9 @@ function BookReviewsFeedContent() {
     const fetchReviews = async () => {
       setLoading(true);
       try {
-        let url = '/api/reviews';
-        const params = new URLSearchParams();
-
-        if (clubId) params.append('club_id', clubId);
-        if (scheduleId) params.append('schedule_id', scheduleId);
+        const query: Record<string, string> = {};
+        if (clubId) query.club_id = clubId;
+        if (scheduleId) query.schedule_id = scheduleId;
 
         // 상단 '내 독후감 피드' (clubId, scheduleId가 없는 경우)에는 본인 독후감만 조회
         if (!isClubOrScheduleFeed) {
@@ -46,28 +46,16 @@ function BookReviewsFeedContent() {
             setLoading(false);
             return;
           }
-          params.append('user_id', user.id);
+          query.user_id = user.id;
         }
 
-        if (user?.id) {
-          params.append('viewer_id', user.id);
-        }
-
-        const queryString = params.toString();
-        if (queryString) {
-          url += `?${queryString}`;
-        }
-
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.reviews && Array.isArray(data.reviews)) {
-            setReviews(data.reviews);
-            if (data.reviews.length > 0 && data.reviews[0].club?.name) {
-              setClubName(data.reviews[0].club.name);
-            }
-            return;
+        const data = await apiClient.get<{ reviews: Review[] }>('/api/reviews', query);
+        if (data.reviews && Array.isArray(data.reviews)) {
+          setReviews(data.reviews);
+          if (data.reviews.length > 0 && data.reviews[0].club?.name) {
+            setClubName(data.reviews[0].club.name);
           }
+          return;
         }
         setReviews([]);
       } catch (err) {
@@ -102,20 +90,9 @@ function BookReviewsFeedContent() {
 
     setEmpathizingReviewId(reviewId);
     try {
-      const res = await fetch('/api/reviews/empathy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          review_id: reviewId,
-          user_id: user.id,
-        }),
+      const data = await apiClient.post<{ success: boolean; my_empathy_count: number; total_likes: number }>('/api/reviews/empathy', {
+        review_id: reviewId,
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || '공감 반영에 실패했습니다.');
-        return;
-      }
 
       // 낙관적 업데이트
       setReviews((prev) =>
@@ -125,14 +102,15 @@ function BookReviewsFeedContent() {
             return {
               ...r,
               my_empathy_count: newCount,
+              likes_count: data.total_likes ?? ((r.likes_count || 0) + 1),
             };
           }
           return r;
         })
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Empathy error:', err);
-      alert('공감 처리 중 오류가 발생했습니다.');
+      alert(err.message || '공감 처리 중 오류가 발생했습니다.');
     } finally {
       setEmpathizingReviewId(null);
     }

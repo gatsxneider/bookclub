@@ -87,7 +87,7 @@ describe('BookReviewsFeedPage Component', () => {
     });
 
     // fetch 호출 시 user_id 없이 club_id만 전달되었는지 확인
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('club_id=club-123'));
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('club_id=club-123'), expect.anything());
   });
 
   it('club_id가 없는 경우 내 독후감 피드 모드로 동작하여 공감하기 버튼 위치에 총 공감 건수가 노출되어야 한다', async () => {
@@ -142,7 +142,7 @@ describe('BookReviewsFeedPage Component', () => {
     });
 
     // fetch 호출 시 본인 user_id 파라미터가 포함되었는지 확인
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('user_id=current-user-id'));
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('user_id=current-user-id'), expect.anything());
   });
 
   it('다른 사람의 독후감에 공감하기 클릭 시 최대 5회까지 반영되어야 한다', async () => {

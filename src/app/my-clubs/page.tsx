@@ -11,6 +11,7 @@ import Footer from '@/presentation/components/Footer';
 import { Review } from '@/domain/entities';
 
 import { useAuth, calculateUserLevel } from '@/presentation/context/AuthContext';
+import { apiClient } from '@/presentation/lib/apiClient';
 import curatedBooksData from '@/shared/data/curatedBooks.json';
 
 // 독서 레벨 정보 매핑
@@ -114,13 +115,10 @@ export default function MyClubsPage() {
         return;
       }
       try {
-        const res = await fetch(`/api/reviews?user_id=${user.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.reviews && Array.isArray(data.reviews)) {
-            setMyReviews(data.reviews);
-            return;
-          }
+        const data = await apiClient.get<{ reviews: Review[] }>('/api/reviews', { user_id: user.id });
+        if (data.reviews && Array.isArray(data.reviews)) {
+          setMyReviews(data.reviews);
+          return;
         }
       } catch (err) {
         console.warn('My reviews fetch error:', err);
@@ -136,27 +134,25 @@ export default function MyClubsPage() {
     const fetchClubs = async () => {
       setLoadingClubs(true);
       try {
-        const res = await fetch('/api/clubs');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.clubs && Array.isArray(data.clubs)) {
-            // 로그인 상태이면 본인이 방장이거나 멤버로 참여한 클럽 필터링
-            let filteredClubs = data.clubs;
-            if (user?.id) {
-              const myJoined = data.clubs.filter((club: any) => {
-                const isLeader = club.leader_id === user.id || club.leader?.id === user.id;
-                const isMember = (club.members || []).some(
-                  (m: any) => m.user_id === user.id || m.profile?.id === user.id
-                );
-                return isLeader || isMember;
-              });
+        const data = await apiClient.get<{ clubs: any[] }>('/api/clubs');
+        if (data.clubs && Array.isArray(data.clubs)) {
+          // 로그인 상태이면 본인이 방장이거나 멤버로 참여한 클럽 필터링
+          let filteredClubs = data.clubs;
+          if (user?.id) {
+            const myJoined = data.clubs.filter((club: any) => {
+              const isLeader = club.leader_id === user.id || club.leader?.id === user.id;
+              const isMember = (club.members || []).some(
+                (m: any) => m.user_id === user.id || m.profile?.id === user.id
+              );
+              return isLeader || isMember;
+            });
 
-              if (myJoined.length > 0) {
-                filteredClubs = myJoined;
-              }
+            if (myJoined.length > 0) {
+              filteredClubs = myJoined;
             }
+          }
 
-            const formatted: UserClubView[] = filteredClubs.map((club: any) => {
+          const formatted: UserClubView[] = filteredClubs.map((club: any) => {
               const schedules: ClubScheduleItem[] = (club.schedules || []).map((s: any, idx: number) => {
                 const userReview = (s.reviews || []).find(
                   (r: any) => r.user_id === user?.id || (myReviews || []).some((mr) => mr.schedule_id === s.id)
@@ -208,7 +204,6 @@ export default function MyClubsPage() {
             setUserClubs(formatted);
             return;
           }
-        }
       } catch (err) {
         console.warn('My clubs fetch error:', err);
       } finally {

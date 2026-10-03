@@ -7,12 +7,13 @@ import ReviewEditor from '@/presentation/components/ReviewEditor';
 import AuthModal from '@/presentation/components/AuthModal';
 import { ClubSchedule, Club, Review } from '@/domain/entities';
 import { useAuth } from '@/presentation/context/AuthContext';
+import { apiClient } from '@/presentation/lib/apiClient';
 
 function NewReviewContent({ clubId }: { clubId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialScheduleId = searchParams.get('scheduleId') || '';
-  const { user, updateProfile, refreshProfile } = useAuth();
+  const { user, refreshProfile } = useAuth();
 
   const [club, setClub] = useState<Club | null>(null);
   const [schedules, setSchedules] = useState<ClubSchedule[]>([]);
@@ -23,24 +24,18 @@ function NewReviewContent({ clubId }: { clubId: string }) {
   useEffect(() => {
     const fetchClubAndSchedules = async () => {
       try {
-        const clubRes = await fetch(`/api/clubs/${clubId}`);
-        if (clubRes.ok) {
-          const clubData = await clubRes.json();
-          if (clubData.club) {
-            setClub(clubData.club);
-            if (clubData.club.schedules) {
-              setSchedules(clubData.club.schedules);
-              return;
-            }
+        const clubData = await apiClient.get<{ club: Club }>(`/api/clubs/${clubId}`).catch(() => null);
+        if (clubData?.club) {
+          setClub(clubData.club);
+          if (clubData.club.schedules && clubData.club.schedules.length > 0) {
+            setSchedules(clubData.club.schedules);
+            return;
           }
         }
 
-        const res = await fetch(`/api/clubs/${clubId}/schedules`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.schedules && data.schedules.length > 0) {
-            setSchedules(data.schedules);
-          }
+        const schedData = await apiClient.get<{ schedules: ClubSchedule[] }>(`/api/clubs/${clubId}/schedules`).catch(() => null);
+        if (schedData?.schedules && schedData.schedules.length > 0) {
+          setSchedules(schedData.schedules);
         }
       } catch (err) {
         console.warn('Fetch error:', err);
@@ -53,24 +48,28 @@ function NewReviewContent({ clubId }: { clubId: string }) {
   // 기존에 작성한 독후감이 있는지 확인 (작성 완료 상태에서 수정 진입 시)
   useEffect(() => {
     const checkExistingReview = async () => {
-      const currentUserId = user?.id || '00000000-0000-0000-0000-000000000001';
+      if (!user?.id) {
+        setExistingReview(null);
+        return;
+      }
       setFetchingReview(true);
       try {
-        let url = `/api/reviews?club_id=${clubId}&user_id=${currentUserId}`;
+        const query: Record<string, string> = {
+          club_id: clubId,
+          user_id: user.id,
+        };
         if (initialScheduleId) {
-          url += `&schedule_id=${initialScheduleId}`;
+          query.schedule_id = initialScheduleId;
         }
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.reviews && data.reviews.length > 0) {
-            // 해당 스케줄의 가장 최근 리뷰
-            const myReview = initialScheduleId
-              ? data.reviews.find((r: Review) => r.schedule_id === initialScheduleId) || data.reviews[0]
-              : data.reviews[0];
-            setExistingReview(myReview);
-            return;
-          }
+
+        const data = await apiClient.get<{ reviews: Review[] }>('/api/reviews', query);
+        if (data.reviews && data.reviews.length > 0) {
+          // 해당 스케줄의 가장 최근 리뷰
+          const myReview = initialScheduleId
+            ? data.reviews.find((r: Review) => r.schedule_id === initialScheduleId) || data.reviews[0]
+            : data.reviews[0];
+          setExistingReview(myReview);
+          return;
         }
         setExistingReview(null);
       } catch (err) {
@@ -100,52 +99,32 @@ function NewReviewContent({ clubId }: { clubId: string }) {
 
     try {
       if (existingReview?.id) {
-        // 기존 독후감 수정 (PATCH)
-        const res = await fetch('/api/reviews', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: existingReview.id,
-            ...reviewData,
-            user_id: user.id,
-          }),
+        // 기존 독후감 수정 (PATCH) - JWT 자동 첨부
+        await apiClient.patch<{
+          success: boolean;
+          review: Review;
+          book_rating?: number;
+        }>('/api/reviews', {
+          id: existingReview.id,
+          ...reviewData,
         });
-
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          throw new Error(data.error || '독후감 수정 실패');
-        }
 
         alert('독후감이 성공적으로 수정되었습니다! 🌿');
       } else {
-        // 신규 독후감 등록 (POST)
-        const res = await fetch('/api/reviews', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...reviewData,
-            club_id: clubId,
-            user_id: user.id,
-            nickname: user.nickname,
-          }),
+        // 신규 독후감 등록 (POST) - JWT 자동 첨부
+        const data = await apiClient.post<{
+          success: boolean;
+          review: Review;
+          manner_temperature: number;
+          temp_change: number;
+          is_club_completed: boolean;
+          level?: number;
+        }>('/api/reviews', {
+          ...reviewData,
+          club_id: clubId,
         });
 
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          throw new Error(data.error || '독후감 저장 실패');
-        }
-
         // 매너 온도 및 완독 레벨 상태 즉시 동기화
-        const profileUpdates: any = {};
-        if (data.manner_temperature != null) {
-          profileUpdates.manner_temperature = Number(data.manner_temperature);
-        }
-        if (data.completed_count != null) {
-          profileUpdates.completed_count = Number(data.completed_count);
-        }
-        if (Object.keys(profileUpdates).length > 0) {
-          await updateProfile(profileUpdates);
-        }
         await refreshProfile();
 
         const tempNotice = data.temp_change
@@ -173,7 +152,7 @@ function NewReviewContent({ clubId }: { clubId: string }) {
         onOpenAuth={() => setIsAuthOpen(true)}
       />
 
-      <main className="w-full pt-24 pb-16 flex-1">
+      <main id="main-content" tabIndex={-1} className="w-full pt-20 sm:pt-24 pb-20 sm:pb-16 flex-1 pb-mobile-nav">
         <div className="max-w-4xl mx-auto px-gutter">
           {fetchingReview ? (
             <div className="py-20 text-center text-primary flex items-center justify-center gap-2">
