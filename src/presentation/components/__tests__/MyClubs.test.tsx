@@ -90,17 +90,16 @@ describe('MyClubsPage Component', () => {
     // 닉네임 반영 확인
     expect(screen.getByText('밤하늘독서가 님의 따뜻한 서재')).toBeInTheDocument();
 
-    // 레벨 배지 확인 (완독 3회 -> 나무 독서가 Lv.3)
-    expect(screen.getByText(/나무 독서가 🌳 \(Lv.3\)/)).toBeInTheDocument();
-
     // 매너온도 및 이메일 반영 확인 (Navbar 및 페이지 배너에 정상 반영)
     expect(screen.getAllByText(/42.5/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('reader@cozybook.com')).toBeInTheDocument();
 
-    // 통계 지표 및 탭 확인
+    // 통계 지표 및 탭 확인 (완독 1권)
     await waitFor(() => {
       expect(screen.getByText(/테스트 독서 모임/)).toBeInTheDocument();
-      expect(screen.getByAltText('불편한 편의점')).toHaveAttribute('src', 'https://example.com/thumb.jpg');
+      expect(screen.getByText('완독한 책')).toBeInTheDocument();
+      expect(screen.getByText('1권')).toBeInTheDocument();
+      expect(screen.getByText('완독 기념서가 (1권)')).toBeInTheDocument();
     });
   });
 

@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const profile = await authService.fetchCurrentProfile();
       if (profile) {
-        const completedCount = profile.completed_count != null ? Number(profile.completed_count) : 1;
+        const completedCount = profile.completed_count != null ? Number(profile.completed_count) : 0;
         const mannerTemp = profile.manner_temperature != null ? Number(profile.manner_temperature) : INITIAL_MANNER_TEMPERATURE;
         const level = calculateUserLevel(completedCount);
 
@@ -151,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         bio: updates.bio,
       });
 
-      const completedCount = updated.completed_count != null ? Number(updated.completed_count) : (user?.completed_count ?? 1);
+      const completedCount = updated.completed_count != null ? Number(updated.completed_count) : (user?.completed_count ?? 0);
       const mannerTemp = updated.manner_temperature != null ? Number(updated.manner_temperature) : (user?.manner_temperature ?? INITIAL_MANNER_TEMPERATURE);
       const level = calculateUserLevel(completedCount);
 

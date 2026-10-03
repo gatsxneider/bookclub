@@ -132,7 +132,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               </span>
             </div>
             <p className="text-xs text-primary font-semibold mt-0.5">
-              감성 온도 {user?.manner_temperature ?? 20.0}℃ · 완독 {user?.completed_count ?? 1}회 달성
+              감성 온도 {user?.manner_temperature ?? 20.0}℃ · 완독 {user?.completed_count ?? 0}회 달성
             </p>
             <p className="text-[11px] text-on-surface-variant mt-1">
               기한 내에 독후감을 작성하면 감성 온도가 올라갑니다 (+2.0℃).

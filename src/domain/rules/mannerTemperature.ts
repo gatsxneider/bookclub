@@ -69,13 +69,15 @@ export function applyMissedDeadlinePenalty(
 
 /**
  * 완독 횟수에 따른 독서 레벨 계산 (1~5)
- * - 1회: Lv.1 씨앗 독서가
+ * - 0~1회: Lv.1 씨앗 독서가
  * - 2회: Lv.2 새싹 독서가
  * - 3회: Lv.3 나무 독서가
  * - 4회: Lv.4 숲속 독서가
  * - 5회 이상: Lv.5 마스터 독서가 (최고 레벨 👑)
  */
-export function calculateUserLevel(completedCount: number = 1): number {
-  return Math.min(5, Math.max(1, completedCount || 1));
+export function calculateUserLevel(completedCount: number = 0): number {
+  const count = Math.max(0, completedCount || 0);
+  if (count <= 1) return 1;
+  return Math.min(5, count);
 }
 

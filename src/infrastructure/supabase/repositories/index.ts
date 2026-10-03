@@ -79,7 +79,7 @@ export class SupabaseProfileRepository implements IProfileRepository {
       .from('profiles')
       .insert({
         manner_temperature: INITIAL_MANNER_TEMPERATURE,
-        completed_count: 1,
+        completed_count: 0,
         avatar_url: '/avatars/avatar_cat.png',
         ...profile,
       })
@@ -108,7 +108,7 @@ export class SupabaseProfileRepository implements IProfileRepository {
       .from('profiles')
       .upsert({
         manner_temperature: INITIAL_MANNER_TEMPERATURE,
-        completed_count: 1,
+        completed_count: 0,
         avatar_url: '/avatars/avatar_cat.png',
         ...profile,
       })

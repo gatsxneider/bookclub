@@ -69,7 +69,7 @@ export class ClubUseCases {
         id: leaderId,
         nickname: '달빛책방지기',
         manner_temperature: INITIAL_MANNER_TEMPERATURE,
-        completed_count: 1,
+        completed_count: 0,
       });
     }
 

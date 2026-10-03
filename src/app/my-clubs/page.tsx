@@ -57,6 +57,7 @@ interface UserClubView {
   clubId: string;
   clubName: string;
   bookTitle: string;
+  bookAuthor: string;
   bookThumbnail: string;
   leader: string;
   membersCount: number;
@@ -75,37 +76,6 @@ export default function MyClubsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  // 기본 완독 기념 책 목록
-  const completedBooks = [
-    {
-      title: '어린 왕자',
-      author: '생텍쥐페리',
-      cover:
-        'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F543598%3Ftimestamp%3D20240904120800',
-      completedDate: '2026년 8월 20일',
-      reviewsWritten: 5,
-      clubName: '어린왕자 완독 챌린지',
-    },
-    {
-      title: '데미안',
-      author: '헤르만 헤세',
-      cover:
-        'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F543600%3Ftimestamp%3D20240904120800',
-      completedDate: '2026년 7월 15일',
-      reviewsWritten: 8,
-      clubName: '고전문학 산책회',
-    },
-    {
-      title: '달러구트 꿈 백화점',
-      author: '이미예',
-      cover:
-        'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5389650%3Ftimestamp%3D20240904121010',
-      completedDate: '2026년 6월 10일',
-      reviewsWritten: 6,
-      clubName: '포근한 판타지 서재',
-    },
-  ];
 
   // 1. 내 독후감 목록 조회 (로그인 회원 ID 기준)
   useEffect(() => {
@@ -174,12 +144,23 @@ export default function MyClubsPage() {
                 club.book?.thumbnail_url ||
                 club.book?.cover_image_url;
 
-              if (!bookThumbnail && (club.isbn || club.book?.isbn)) {
+              let bookAuthor =
+                (Array.isArray(club.book?.authors) ? club.book.authors.join(', ') : (club.book?.author || club.book?.publisher)) ||
+                '';
+
+              if ((!bookThumbnail || !bookAuthor) && (club.isbn || club.book?.isbn)) {
                 const targetIsbn = club.isbn || club.book?.isbn;
                 for (const list of Object.values(curatedBooksData)) {
                   const found = (list as any[]).find((b: any) => (b.isbn || '').includes(targetIsbn));
-                  if (found?.thumbnail) {
-                    bookThumbnail = found.thumbnail;
+                  if (found) {
+                    if (!bookThumbnail && found.thumbnail) {
+                      bookThumbnail = found.thumbnail;
+                    }
+                    if (!bookAuthor) {
+                      bookAuthor = Array.isArray(found.authors)
+                        ? found.authors.join(', ')
+                        : (found.author || found.publisher || '');
+                    }
                     break;
                   }
                 }
@@ -194,6 +175,7 @@ export default function MyClubsPage() {
                 clubId: club.id,
                 clubName: club.name || '코지 북클럽',
                 bookTitle: club.book?.title || club.name,
+                bookAuthor: bookAuthor || '저자 미상',
                 bookThumbnail,
                 leader: club.leader?.nickname || '방장',
                 membersCount: club.members ? club.members.length : 1,
@@ -214,8 +196,37 @@ export default function MyClubsPage() {
     fetchClubs();
   }, [user?.id, myReviews]);
 
-  // 회원 레벨 및 프로필 정보 계산
-  const completedCount = user?.completed_count ?? 1;
+  // 실제 완독한 클럽 목록 계산 (단원 일정이 1개 이상 등록되어 있고 모든 일정에 독후감을 작성한 클럽)
+  const completedBooks = userClubs
+    .filter((club) => club.schedules.length > 0 && club.schedules.every((s) => s.submitted))
+    .map((club) => {
+      const clubReviews = myReviews.filter(
+        (mr) => mr.club_id === club.clubId || club.schedules.some((s) => s.id === mr.schedule_id)
+      );
+      const latestReview = [...clubReviews].sort(
+        (a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+      )[0];
+
+      let completedDate = '완독 완료';
+      if (latestReview?.created_at) {
+        const d = new Date(latestReview.created_at);
+        completedDate = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+      }
+
+      return {
+        id: club.clubId,
+        title: club.bookTitle,
+        author: club.bookAuthor || '저자 미상',
+        cover: club.bookThumbnail,
+        completedDate,
+        reviewsWritten: club.schedules.filter((s) => s.submitted).length,
+        clubName: club.clubName,
+        clubId: club.clubId,
+      };
+    });
+
+  // 회원 레벨 및 프로필 정보 계산 (실제 완독한 책 권수 기반)
+  const completedCount = completedBooks.length;
   const currentLevel = calculateUserLevel(completedCount);
   const levelInfo = LEVEL_CONFIG[currentLevel] || LEVEL_CONFIG[1];
   const mannerTemp = user?.manner_temperature != null ? Number(user.manner_temperature).toFixed(1) : '20.0';
@@ -228,7 +239,7 @@ export default function MyClubsPage() {
         onOpenAuth={() => setIsAuthOpen(true)}
       />
 
-      <main className="w-full pt-24 pb-16 flex-1">
+      <main id="main-content" tabIndex={-1} className="w-full pt-20 sm:pt-24 pb-20 sm:pb-16 flex-1 pb-mobile-nav">
         {authLoading ? (
           <div className="max-w-4xl mx-auto px-gutter py-24 text-center text-primary flex flex-col items-center justify-center gap-3">
             <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
@@ -336,7 +347,7 @@ export default function MyClubsPage() {
                 <div className="flex flex-col">
                   <span className="text-xs text-on-surface-variant">완독한 책</span>
                   <span className="text-xl font-bold text-on-surface mt-0.5">
-                    {user.completed_count ?? 0}권
+                    {completedCount}권
                   </span>
                 </div>
               </div>
@@ -569,37 +580,64 @@ export default function MyClubsPage() {
 
             {/* TAB 3: 완독 기념서가 */}
             {activeTab === 'completed' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {completedBooks.map((b, idx) => (
-                  <article
-                    key={idx}
-                    className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-surface-container flex flex-col justify-between gap-3"
-                  >
-                    <div className="flex gap-4">
-                      <img
-                        src={b.cover}
-                        alt={b.title}
-                        className="w-16 h-24 rounded-lg object-cover shadow-sm shrink-0"
-                      />
-                      <div className="flex flex-col">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-semibold self-start mb-1">
-                          <span className="material-symbols-outlined text-[12px]">verified</span>
-                          <span>완독 완료</span>
-                        </span>
-                        <h4 className="font-headline-sm text-sm font-bold text-on-surface">
-                          『{b.title}』
-                        </h4>
-                        <p className="text-xs text-on-surface-variant">{b.author} 저</p>
-                        <p className="text-[11px] text-on-surface-variant/80 mt-1">{b.clubName}</p>
-                      </div>
-                    </div>
+              <div>
+                {completedBooks.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {completedBooks.map((b) => (
+                      <article
+                        key={b.id}
+                        className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-surface-container flex flex-col justify-between gap-3 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex gap-4">
+                          <img
+                            src={b.cover}
+                            alt={`${b.title} 표지`}
+                            className="w-16 h-24 rounded-lg object-cover shadow-sm shrink-0"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (
+                                target.src !==
+                                'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5871383%3Ftimestamp%3D20240904121510'
+                              ) {
+                                target.src =
+                                  'https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5871383%3Ftimestamp%3D20240904121510';
+                              }
+                            }}
+                          />
+                          <div className="flex flex-col min-w-0">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-semibold self-start mb-1">
+                              <span className="material-symbols-outlined text-[12px]">verified</span>
+                              <span>완독 완료</span>
+                            </span>
+                            <Link
+                              href={`/clubs/${b.clubId}`}
+                              className="font-headline-sm text-sm font-bold text-on-surface hover:text-primary transition-colors truncate"
+                            >
+                              『{b.title}』
+                            </Link>
+                            <p className="text-xs text-on-surface-variant truncate">{b.author} 저</p>
+                            <p className="text-[11px] text-on-surface-variant/80 mt-1 truncate">{b.clubName}</p>
+                          </div>
+                        </div>
 
-                    <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
-                      <span>{b.completedDate}</span>
-                      <span className="font-medium text-primary">총 {b.reviewsWritten}편의 기록</span>
+                        <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
+                          <span>{b.completedDate}</span>
+                          <span className="font-medium text-primary">총 {b.reviewsWritten}편의 기록</span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-surface-container flex flex-col items-center gap-3 shadow-sm">
+                    <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-2xl">
+                      📖
                     </div>
-                  </article>
-                ))}
+                    <h3 className="text-base font-bold text-on-surface">아직 완독한 책이 없습니다</h3>
+                    <p className="text-xs text-on-surface-variant max-w-sm">
+                      참여 중인 클럽의 모든 단원 독서와 독후감을 완료하면 이곳에 나만의 완독 서가가 완성됩니다.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

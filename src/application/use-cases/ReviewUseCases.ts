@@ -84,7 +84,7 @@ export class ReviewUseCases {
         id: userId,
         nickname: '독서가',
         manner_temperature: INITIAL_MANNER_TEMPERATURE,
-        completed_count: 1,
+        completed_count: 0,
       });
     }
 
@@ -123,7 +123,7 @@ export class ReviewUseCases {
 
     // 4. 클럽 완독 여부 및 평점 집계
     let isClubCompleted = false;
-    let newCompletedCount = profile.completed_count != null ? Number(profile.completed_count) : 1;
+    let newCompletedCount = profile.completed_count != null ? Number(profile.completed_count) : 0;
     let newLevel = calculateUserLevel(newCompletedCount);
     let bookRating: number | null = null;
 
@@ -142,12 +142,16 @@ export class ReviewUseCases {
         const allFinished = allSchedules.every((s) => reviewedScheduleIds.has(s.id));
         if (allFinished) {
           isClubCompleted = true;
-          newCompletedCount = Math.max(newCompletedCount + 1, 2);
-          newLevel = calculateUserLevel(newCompletedCount);
+          const currentMember = await this.memberRepo.findMember(params.club_id, userId);
+          const wasAlreadyCompleted = currentMember?.is_completed;
+          if (!wasAlreadyCompleted) {
+            newCompletedCount = (profile.completed_count != null ? Number(profile.completed_count) : 0) + 1;
+            newLevel = calculateUserLevel(newCompletedCount);
 
-          await this.profileRepo.update(userId, {
-            completed_count: newCompletedCount,
-          });
+            await this.profileRepo.update(userId, {
+              completed_count: newCompletedCount,
+            });
+          }
 
           // 개인별 평점 집계
           const validRatings: number[] = [];

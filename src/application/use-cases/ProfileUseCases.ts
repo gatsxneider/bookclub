@@ -19,7 +19,7 @@ export class ProfileUseCases {
         nickname: nick,
         avatar_url: '/avatars/avatar_cat.png',
         manner_temperature: INITIAL_MANNER_TEMPERATURE,
-        completed_count: 1,
+        completed_count: 0,
       });
     }
     return profile;

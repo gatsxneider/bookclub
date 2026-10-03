@@ -48,6 +48,7 @@ describe('mannerTemperature Core Module', () => {
   });
 
   it('calculateUserLevel 함수는 완독 횟수에 따라 1~5 레벨을 정확히 계산해야 한다', () => {
+    expect(calculateUserLevel(0)).toBe(1);
     expect(calculateUserLevel(1)).toBe(1);
     expect(calculateUserLevel(2)).toBe(2);
     expect(calculateUserLevel(3)).toBe(3);
