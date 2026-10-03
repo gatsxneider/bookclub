@@ -573,14 +573,11 @@ export default function ClubDetailPage({ params }: { params: { id: string } }) {
           {/* 4. Tab Content */}
           {activeTab === 'schedules' ? (
             <ScheduleManager
+              clubId={clubId}
               schedules={schedules}
               isLeader={isLeader}
-              onAddSchedule={handleAddSchedule}
-              onUpdateSchedule={handleUpdateSchedule}
-              onDeleteSchedule={handleDeleteSchedule}
+              onSchedulesUpdated={loadClubData}
               onWriteReview={handleWriteReview}
-              onViewReviews={(s) => router.push(`/book-reviews?schedule_id=${s.id}`)}
-              onRequireAuth={() => setIsAuthOpen(true)}
             />
           ) : (
             /* Member Management Tab (방장 전용) */

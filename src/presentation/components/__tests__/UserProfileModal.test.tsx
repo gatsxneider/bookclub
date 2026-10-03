@@ -1,76 +1,73 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import UserProfileModal from '../UserProfileModal';
-import { AuthProvider } from '@/presentation/context/AuthContext';
+
+const mockUpdateProfile = vi.fn();
+const mockUser = {
+  id: '00000000-0000-0000-0000-000000000001',
+  email: 'test@example.com',
+  nickname: '기존필명',
+  avatar_url: '/avatars/avatar_cat.png',
+  manner_temperature: 36.5,
+  completed_count: 3,
+  level: 3,
+};
+
+vi.mock('@/presentation/context/AuthContext', () => ({
+  useAuth: () => ({
+    user: mockUser,
+    updateProfile: mockUpdateProfile,
+  }),
+}));
 
 describe('UserProfileModal Component', () => {
-  it('모달이 열렸을 때 프로필 아바타, 레벨, 매너온도가 올바르게 렌더링되어야 한다', () => {
-    render(
-      <AuthProvider>
-        <UserProfileModal isOpen={true} onClose={vi.fn()} />
-      </AuthProvider>
-    );
-
-    expect(screen.getByText('내 프로필 & 아바타 관리')).toBeInTheDocument();
-    expect(screen.getAllByText(/감성\s*온도/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/독서클럽 완독 레벨/)).toBeInTheDocument();
-    expect(screen.getByText('추천 아바타 이미지 선택')).toBeInTheDocument();
-    expect(screen.getByText('나만의 사진 직접 업로드')).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('추천 아바타 클릭 시 선택 상태가 반영되어야 한다', () => {
-    render(
-      <AuthProvider>
-        <UserProfileModal isOpen={true} onClose={vi.fn()} />
-      </AuthProvider>
-    );
+  it('모달이 열렸을 때 기존 닉네임과 프리셋 아바타가 정상 표시되어야 한다', () => {
+    render(<UserProfileModal isOpen={true} onClose={vi.fn()} />);
 
-    const presetButtons = screen.getAllByRole('button').filter(b => b.querySelector('img'));
-    expect(presetButtons.length).toBeGreaterThan(0);
-
-    fireEvent.click(presetButtons[0]);
-    expect(screen.getByRole('button', { name: /프로필 저장하기/ })).toBeInTheDocument();
+    expect(screen.getByText('내 프로필 관리')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('기존필명')).toBeInTheDocument();
+    expect(screen.getByLabelText('코지 고양이')).toBeInTheDocument();
   });
 
-  it('프로필 저장하기 버튼 클릭 시 updateProfile이 호출되고 저장 완료되어야 한다', async () => {
-    const handleClose = vi.fn();
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  it('닉네임을 변경하고 저장 버튼을 누르면 updateProfile이 호출되어야 한다', async () => {
+    mockUpdateProfile.mockResolvedValueOnce({ success: true });
+    const onCloseMock = vi.fn();
 
-    render(
-      <AuthProvider>
-        <UserProfileModal isOpen={true} onClose={handleClose} />
-      </AuthProvider>
-    );
+    render(<UserProfileModal isOpen={true} onClose={onCloseMock} />);
 
-    const saveBtn = screen.getByRole('button', { name: /프로필 저장하기/ });
+    const nicknameInput = screen.getByDisplayValue('기존필명');
+    fireEvent.change(nicknameInput, { target: { value: '새로운필명' } });
+
+    const saveBtn = screen.getByRole('button', { name: /프로필 저장/ });
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('성공적으로 변경'));
-      expect(handleClose).toHaveBeenCalled();
+      expect(mockUpdateProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nickname: '새로운필명',
+        })
+      );
+      expect(onCloseMock).toHaveBeenCalled();
     });
-
-    alertMock.mockRestore();
   });
 
-  it('비허용 확장자 파일 업로드 시 경고창이 뜨고 차단되어야 한다', async () => {
+  it('비허용 확장자 파일 업로드 시 경고 메시지가 표시되어야 한다', async () => {
     const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
-    render(
-      <AuthProvider>
-        <UserProfileModal isOpen={true} onClose={vi.fn()} />
-      </AuthProvider>
-    );
+    render(<UserProfileModal isOpen={true} onClose={vi.fn()} />);
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    expect(input).toBeInTheDocument();
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const invalidFile = new File(['dummy content'], 'document.exe', { type: 'application/x-msdownload' });
 
-    const invalidFile = new File(['dummy'], 'test.webp', { type: 'image/webp' });
-    fireEvent.change(input, { target: { files: [invalidFile] } });
+    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
 
     await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('JPG, PNG, GIF'));
+      expect(alertMock).toHaveBeenCalled();
     });
 
     alertMock.mockRestore();

@@ -1,132 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/infrastructure/supabase/serverClient';
+import { container } from '@/infrastructure/container';
+import { requireUserId } from '@/infrastructure/http/auth';
+import { withErrorHandling } from '@/infrastructure/http/handler';
 import { createClubSchema } from '@/application/validation/schemas';
-import curatedData from '@/shared/data/curatedBooks.json';
-import { normalizeKakaoBook } from '@/domain/rules/bookSearch';
 
-export async function GET(req: NextRequest) {
-  try {
-    const supabase = createServerSupabaseClient();
-    const { data: clubs, error } = await supabase
-      .from('clubs')
-      .select(`
-        *,
-        book:books (*),
-        leader:profiles!clubs_leader_id_fkey (*),
-        members:club_members (*, profile:profiles (*)),
-        schedules:club_schedules (*, reviews (*))
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.warn('Supabase clubs fetch error:', error);
-      return NextResponse.json({ clubs: [] });
-    }
-
-    const formattedClubs = (clubs || []).map((club: any) => {
-      const schedules = (club.schedules || []).map((s: any) => ({
-        ...s,
-        reviews_count: (s.reviews || []).length,
-        reviews: s.reviews || [],
-      }));
-      return {
-        ...club,
-        schedules,
-      };
-    });
-
-    return NextResponse.json({ clubs: formattedClubs });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+export async function GET() {
+  return withErrorHandling(async () => {
+    const clubs = await container.clubUseCases.getAllClubs();
+    return NextResponse.json({ clubs });
+  });
 }
 
 export async function POST(req: NextRequest) {
-  try {
+  return withErrorHandling(async () => {
+    const leaderId = await requireUserId(req);
     const body = await req.json();
     const validated = createClubSchema.parse(body);
 
-    const supabase = createServerSupabaseClient();
-
-    // 1. 도서 정보가 books 테이블에 없으면 upsert
-    let bookData = body.book;
-    if (!bookData) {
-      // 큐레이션 데이터에서 조회
-      Object.values(curatedData).forEach((list: any[]) => {
-        const found = list.find((b: any) => (b.isbn || '').includes(validated.isbn));
-        if (found) bookData = normalizeKakaoBook(found);
-      });
-    }
-
-    if (bookData) {
-      const authorsArray = Array.isArray(bookData.authors)
-        ? bookData.authors
-        : typeof bookData.authors === 'string'
-        ? bookData.authors.split(',').map((a: string) => a.trim())
-        : [];
-
-      await supabase.from('books').upsert({
-        isbn: validated.isbn,
-        title: bookData.title || validated.name,
-        authors: authorsArray,
-        publisher: bookData.publisher || '',
-        thumbnail: bookData.thumbnail || bookData.thumbnail_url || '',
-        contents: bookData.contents || '',
-        price: bookData.price || 0,
-        sale_price: bookData.sale_price || 0,
-        category: bookData.category || '',
-        url: bookData.url || '',
-      });
-    }
-
-    // 2. 현재 로그인 사용자 또는 기본 데모 사용자 ID 확인
-    const leaderId = body.user_id || '00000000-0000-0000-0000-000000000001';
-
-    // 3. profiles 테이블에 해당 유저가 없으면 기본 생성
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', leaderId)
-      .maybeSingle();
-
-    if (!profile) {
-      await supabase.from('profiles').insert({
-        id: leaderId,
-        nickname: body.nickname || '달빛책방지기',
-        manner_temperature: 20.0,
-      });
-    }
-
-    // 4. 클럽 생성
-    const { data: newClub, error: clubError } = await supabase
-      .from('clubs')
-      .insert({
-        leader_id: leaderId,
-        isbn: validated.isbn,
-        name: validated.name,
-        description: validated.description || '',
-        status: 'active',
-        max_members: validated.max_members,
-        start_date: validated.start_date || new Date().toISOString().split('T')[0],
-        end_date: validated.end_date || null,
-      })
-      .select()
-      .single();
-
-    if (clubError) {
-      return NextResponse.json({ error: clubError.message }, { status: 400 });
-    }
-
-    // 5. 방장을 club_members에 승인 상태로 등록
-    await supabase.from('club_members').insert({
-      club_id: newClub.id,
-      user_id: leaderId,
-      role: 'leader',
-      status: 'approved',
-    });
-
-    return NextResponse.json({ success: true, club: newClub });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
+    const newClub = await container.clubUseCases.createClub(leaderId, validated);
+    return NextResponse.json({ success: true, club: newClub }, { status: 201 });
+  });
 }

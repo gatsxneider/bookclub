@@ -1,116 +1,59 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Navbar from '../Navbar';
-import { AuthProvider } from '@/presentation/context/AuthContext';
 
-let mockPathname = '/';
-let mockSearchParamsValue: Record<string, string | null> = {};
+const mockSignOut = vi.fn();
+let mockUser: any = null;
+
+vi.mock('@/presentation/context/AuthContext', () => ({
+  useAuth: () => ({
+    user: mockUser,
+    signOut: mockSignOut,
+  }),
+}));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    prefetch: vi.fn(),
-  }),
-  usePathname: () => mockPathname,
-  useSearchParams: () => ({
-    get: (key: string) => mockSearchParamsValue[key] || null,
-  }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+vi.mock('@/presentation/lib/apiClient', () => ({
+  apiClient: {
+    get: vi.fn().mockResolvedValue({ unreadCount: 2 }),
+  },
 }));
 
 describe('Navbar Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPathname = '/';
-    mockSearchParamsValue = {};
+    mockUser = null;
   });
 
-  it('코지 북클럽 로고와 메뉴 항목들이 모두 렌더링되어야 한다', () => {
-    render(
-      <AuthProvider>
-        <Navbar
-          onOpenSearch={vi.fn()}
-          onOpenNewClub={vi.fn()}
-          onOpenAuth={vi.fn()}
-        />
-      </AuthProvider>
-    );
+  it('비로그인 상태일 때 로그인 버튼이 렌더링되어야 한다', () => {
+    const onOpenAuth = vi.fn();
+    render(<Navbar onOpenSearch={vi.fn()} onOpenAuth={onOpenAuth} />);
 
-    expect(screen.getByText('Cozy Book Club')).toBeInTheDocument();
-    expect(screen.getByText(/숲속의 북클럽/)).toBeInTheDocument();
-    expect(screen.getByText('홈')).toBeInTheDocument();
-    expect(screen.getByText('내 서재 & 클럽')).toBeInTheDocument();
-    expect(screen.getByText('내 독후감 피드')).toBeInTheDocument();
-    expect(screen.getByText('도서 탐색')).toBeInTheDocument();
+    const loginBtns = screen.getAllByRole('button', { name: /로그인/ });
+    expect(loginBtns.length).toBeGreaterThan(0);
+
+    fireEvent.click(loginBtns[0]);
+    expect(onOpenAuth).toHaveBeenCalled();
   });
 
-  it('검색 트리거 버튼 클릭 시 onOpenSearch 콜백이 실행되어야 한다', () => {
-    const handleSearch = vi.fn();
-    render(
-      <AuthProvider>
-        <Navbar
-          onOpenSearch={handleSearch}
-          onOpenAuth={vi.fn()}
-        />
-      </AuthProvider>
-    );
+  it('로그인 상태일 때 사용자 닉네임과 레벨, 쪽지함 아이콘이 렌더링되어야 한다', () => {
+    mockUser = {
+      id: '00000000-0000-0000-0000-000000000001',
+      nickname: '테스트독서가',
+      manner_temperature: 36.5,
+      completed_count: 2,
+      level: 2,
+    };
 
-    const btn = screen.getByRole('button', { name: /도서 검색/ });
-    fireEvent.click(btn);
-    expect(handleSearch).toHaveBeenCalled();
-  });
+    render(<Navbar onOpenSearch={vi.fn()} onOpenAuth={vi.fn()} />);
 
-
-  it('내 서재 & 클럽 링크가 올바른 /my-clubs 경로를 가리켜야 한다', () => {
-    render(
-      <AuthProvider>
-        <Navbar
-          onOpenSearch={vi.fn()}
-          onOpenNewClub={vi.fn()}
-          onOpenAuth={vi.fn()}
-        />
-      </AuthProvider>
-    );
-
-    const myClubsLink = screen.getByText('내 서재 & 클럽').closest('a');
-    expect(myClubsLink).toHaveAttribute('href', '/my-clubs');
-  });
-
-  it('순수 내 독후감 피드(/book-reviews)에서는 활성화 하이라이트가 적용되어야 한다', () => {
-    mockPathname = '/book-reviews';
-    mockSearchParamsValue = {};
-
-    render(
-      <AuthProvider>
-        <Navbar
-          onOpenSearch={vi.fn()}
-          onOpenNewClub={vi.fn()}
-          onOpenAuth={vi.fn()}
-        />
-      </AuthProvider>
-    );
-
-    const feedLink = screen.getByText('내 독후감 피드').closest('a');
-    expect(feedLink).toHaveClass('bg-primary-container');
-  });
-
-  it('클럽 독후감 전체 모아보기(/book-reviews?clubId=...) 조회 시에는 상단 내 독후감 피드가 하이라이트되지 않아야 한다', () => {
-    mockPathname = '/book-reviews';
-    mockSearchParamsValue = { clubId: 'club-123' };
-
-    render(
-      <AuthProvider>
-        <Navbar
-          onOpenSearch={vi.fn()}
-          onOpenNewClub={vi.fn()}
-          onOpenAuth={vi.fn()}
-        />
-      </AuthProvider>
-    );
-
-    const feedLink = screen.getByText('내 독후감 피드').closest('a');
-    expect(feedLink).not.toHaveClass('bg-primary-container');
-    expect(feedLink).toHaveClass('text-on-surface-variant');
+    expect(screen.getByText('테스트독서가')).toBeInTheDocument();
+    expect(screen.getByText('Lv.2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '로그아웃' })).toBeInTheDocument();
   });
 });

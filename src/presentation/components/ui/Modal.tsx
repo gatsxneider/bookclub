@@ -18,6 +18,7 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  maxWidth?: string;
   /** 처음 포커스를 받을 요소 */
   initialFocusRef?: React.RefObject<HTMLElement>;
   /** 배경 클릭으로 닫기 허용 여부 */
@@ -51,6 +52,7 @@ export function Modal({
   children,
   footer,
   size = 'md',
+  maxWidth,
   initialFocusRef,
   closeOnBackdrop = true,
   icon,
@@ -135,7 +137,7 @@ export function Modal({
           'relative w-full bg-surface-container-lowest text-on-surface shadow-2xl flex flex-col',
           'rounded-t-3xl sm:rounded-2xl max-h-[92dvh] sm:max-h-[90dvh] outline-none',
           'pb-[env(safe-area-inset-bottom)] motion-safe:animate-cozy-sheet-up sm:motion-safe:animate-cozy-pop',
-          sizeClass[size],
+          maxWidth ? maxWidth : sizeClass[size],
           className
         )}
       >

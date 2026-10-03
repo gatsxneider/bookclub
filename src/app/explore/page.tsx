@@ -10,9 +10,9 @@ import CreateClubModal from '@/presentation/components/CreateClubModal';
 import AuthModal from '@/presentation/components/AuthModal';
 import Footer from '@/presentation/components/Footer';
 import { Book } from '@/domain/entities';
-
 import { filterCuratedBooks } from '@/domain/rules/bookSearch';
 import curatedBooksData from '@/shared/data/curatedBooks.json';
+import { Button } from '@/presentation/components/ui/Button';
 
 export default function ExplorePage() {
   const [selectedCategory, setSelectedCategory] = useState('01. 소설 / 문학');
@@ -30,7 +30,7 @@ export default function ExplorePage() {
     setIsCreateOpen(true);
   };
 
-  const handleViewDetail = (b: Book) => {
+  const handleOpenDetail = (b: Book) => {
     setSelectedBookForDetail(b);
     setIsDetailOpen(true);
   };
@@ -43,8 +43,8 @@ export default function ExplorePage() {
         onOpenAuth={() => setIsAuthOpen(true)}
       />
 
-      <main className="w-full pt-24 pb-16 flex-1">
-        <div className="max-w-7xl mx-auto px-gutter flex flex-col gap-6">
+      <main id="main-content" tabIndex={-1} className="w-full pt-20 lg:pt-24 pb-mobile-nav flex-1 outline-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col gap-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h1 className="font-headline-md text-2xl font-bold text-on-surface">
@@ -55,14 +55,16 @@ export default function ExplorePage() {
               </p>
             </div>
 
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
+              icon="search"
               onClick={() => setIsSearchOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-semibold shadow-sm transition-all self-start sm:self-auto"
+              className="self-start sm:self-auto"
             >
-              <span className="material-symbols-outlined text-[16px]">search</span>
-              <span>도서 직접 검색하기</span>
-            </button>
+              도서 직접 검색하기
+            </Button>
           </div>
 
           <CategoryFilter
@@ -70,13 +72,13 @@ export default function ExplorePage() {
             onSelectCategory={setSelectedCategory}
           />
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-5">
             {books.map((book) => (
               <BookCard
                 key={book.isbn}
                 book={book}
                 onSelectBook={handleSelectBook}
-                onViewDetail={handleViewDetail}
+                onOpenDetail={handleOpenDetail}
               />
             ))}
           </div>
@@ -86,11 +88,10 @@ export default function ExplorePage() {
       <Footer />
 
       <BookDetailModal
-
         isOpen={isDetailOpen}
         book={selectedBookForDetail}
         onClose={() => setIsDetailOpen(false)}
-        onSelectForClub={handleSelectBook}
+        onOpenCreateClub={handleSelectBook}
       />
       <BookSearchModal
         isOpen={isSearchOpen}
@@ -99,7 +100,7 @@ export default function ExplorePage() {
       />
       <CreateClubModal
         isOpen={isCreateOpen}
-        book={selectedBook}
+        selectedBook={selectedBook}
         onClose={() => setIsCreateOpen(false)}
         onSuccess={() => {}}
       />

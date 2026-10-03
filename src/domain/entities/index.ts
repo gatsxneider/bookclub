@@ -27,6 +27,8 @@ export interface Profile {
   updated_at?: string;
 }
 
+export type UserProfile = Profile;
+
 export type ClubMemberRole = 'leader' | 'member';
 export type ClubMemberStatus = 'pending' | 'approved' | 'rejected';
 

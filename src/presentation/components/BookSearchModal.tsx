@@ -2,6 +2,11 @@
 
 import React, { useState } from 'react';
 import { Book } from '@/domain/entities';
+import { useBookSearch } from '@/presentation/hooks/useBookSearch';
+import { Modal } from './ui/Modal';
+import { Button } from './ui/Button';
+import { Icon } from './ui/Icon';
+import { inputClass } from './ui/FormField';
 
 interface BookSearchModalProps {
   isOpen: boolean;
@@ -15,176 +20,121 @@ export default function BookSearchModal({
   onSelectBook,
 }: BookSearchModalProps) {
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<Book[]>([]);
-  const [searched, setSearched] = useState(false);
+  const { results, loading, totalCount, searchBooks, clear } = useBookSearch();
 
-  React.useEffect(() => {
-    if (!isOpen) {
-      setQuery('');
-      setResults([]);
-      setSearched(false);
-      return;
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      searchBooks(query);
     }
-    setQuery('');
-    setResults([]);
-    setSearched(false);
-  }, [isOpen]);
+  };
 
   const handleClose = () => {
     setQuery('');
-    setResults([]);
-    setSearched(false);
+    clear();
     onClose();
   };
 
-  if (!isOpen) return null;
-
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!query.trim()) return;
-
-    setLoading(true);
-    setSearched(true);
-    try {
-      const res = await fetch(`/api/books/search?query=${encodeURIComponent(query.trim())}`);
-      const data = await res.json();
-      setResults(data.documents || []);
-    } catch (err) {
-      console.error('도서 검색 오류:', err);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/40 backdrop-blur-sm animate-fade-in"
-      role="dialog"
-      aria-modal="true"
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="도서 검색"
+      description="책 제목, 작가, 출판사명으로 책을 찾고 새로운 독서 모임을 시작해보세요."
+      icon="search"
+      size="lg"
     >
-      <div className="bg-surface rounded-2xl w-full max-w-2xl max-h-[85vh] shadow-2xl flex flex-col overflow-hidden border border-outline-variant">
-        {/* Header */}
-        <div className="p-5 border-b border-surface-container flex items-center justify-between bg-surface-container-low">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[24px]">search</span>
-            <div>
-              <h2 className="font-headline-sm text-lg font-semibold text-on-surface">도서 직접 검색</h2>
-              <p className="text-xs text-on-surface-variant">원하는 책을 찾아 새로운 독서클럽을 시작해보세요</p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            aria-label="닫기"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"
-            type="button"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="p-4 bg-surface-container-lowest border-b border-surface-container flex gap-2">
+      <div className="flex flex-col gap-4">
+        {/* 검색 폼 */}
+        <form onSubmit={handleSearch} role="search" className="flex gap-2">
           <div className="relative flex-1">
             <input
-              type="text"
+              type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="도서명, 작가, 출판사를 입력하세요..."
-              className="w-full bg-surface-container-low text-on-surface pl-10 pr-4 py-2.5 rounded-full text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface transition-all"
-              autoFocus
+              placeholder="도서명 또는 작가명을 입력하세요"
+              aria-label="도서 검색어"
+              className={inputClass}
             />
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">
-              search
-            </span>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-5 py-2.5 bg-primary text-on-primary rounded-full text-sm font-semibold hover:bg-primary-container transition-all disabled:opacity-50 whitespace-nowrap shadow-sm"
-          >
-            {loading ? '검색 중...' : '검색'}
-          </button>
+          <Button type="submit" variant="primary" loading={loading} icon="search">
+            검색
+          </Button>
         </form>
 
-        {/* Results List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {loading && (
-            <div className="py-12 text-center text-on-surface-variant flex flex-col items-center gap-2">
-              <span className="material-symbols-outlined text-[32px] text-primary animate-spin">
-                progress_activity
-              </span>
-              <p className="text-sm">카카오 도서 서고에서 책을 찾고 있습니다...</p>
-            </div>
-          )}
+        {/* 결과 건수 알림 */}
+        <div aria-live="polite" className="text-xs text-on-surface-variant px-1 font-medium">
+          {loading
+            ? '검색 중...'
+            : results.length > 0
+            ? `총 ${totalCount.toLocaleString()}건의 도서가 검색되었습니다.`
+            : query && !loading
+            ? '검색 결과가 없습니다.'
+            : ''}
+        </div>
 
-          {!loading && searched && results.length === 0 && (
-            <div className="py-12 text-center text-on-surface-variant">
-              <span className="material-symbols-outlined text-[40px] text-outline mb-2">
-                sentiment_dissatisfied
-              </span>
-              <p className="text-sm">검색 결과가 없습니다. 도서명을 다시 확인해주세요.</p>
-            </div>
-          )}
+        {/* 검색 결과 목록 */}
+        <div className="max-h-[360px] overflow-y-auto divide-y divide-surface-container rounded-2xl border border-surface-container bg-surface-container-lowest">
+          {results.length > 0 ? (
+            <ul role="list" className="divide-y divide-surface-container">
+              {results.map((book) => {
+                const authorText = Array.isArray(book.authors)
+                  ? book.authors.join(', ')
+                  : book.authors;
 
-          {!loading && !searched && (
-            <div className="py-10 text-center text-on-surface-variant">
-              <span className="material-symbols-outlined text-[36px] text-primary/60 mb-2">
-                menu_book
-              </span>
-              <p className="text-sm">읽고 싶은 책의 제목이나 저자를 검색해보세요.</p>
-            </div>
-          )}
-
-          {!loading &&
-            results.map((book, idx) => (
-              <div
-                key={`${book.isbn}-${idx}`}
-                className="flex gap-4 p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors items-center justify-between border border-surface-container-high"
-              >
-                <div className="flex gap-3 items-center min-w-0 flex-1">
-                  <div className="w-12 h-16 rounded overflow-hidden bg-surface-container shrink-0 shadow-sm">
-                    {book.thumbnail ? (
-                      <img
-                        src={book.thumbnail}
-                        alt={book.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-outline">
-                        <span className="material-symbols-outlined text-[18px]">book</span>
+                return (
+                  <li key={book.isbn} className="flex items-center justify-between p-3.5 sm:p-4 gap-4 hover:bg-surface-container-low transition-colors">
+                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                      <div className="w-12 h-16 rounded-lg overflow-hidden bg-surface-container shrink-0 shadow-xs">
+                        <img
+                          src={book.thumbnail || '/images/book-placeholder.png'}
+                          alt={`${book.title} 표지`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/images/book-placeholder.png';
+                          }}
+                        />
                       </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-sm font-semibold text-on-surface truncate">{book.title}</h4>
-                    <p className="text-xs text-on-surface-variant truncate mt-0.5">
-                      {book.authors?.join(', ')} · {book.publisher}
-                    </p>
-                    {book.contents && (
-                      <p className="text-xs text-on-surface-variant/70 line-clamp-1 mt-1">
-                        {book.contents}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-sm text-on-surface truncate">
+                          {book.title}
+                        </h4>
+                        <p className="text-xs text-on-surface-variant truncate mt-0.5">
+                          {authorText} {book.publisher ? `· ${book.publisher}` : ''}
+                        </p>
+                        {book.price ? (
+                          <span className="text-xs font-bold text-secondary mt-1 inline-block">
+                            {book.price.toLocaleString()}원
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelectBook(book);
-                    handleClose();
-                  }}
-                  className="px-3.5 py-1.5 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-semibold whitespace-nowrap shadow-sm transition-all"
-                  aria-label="이 책으로 클럽 만들기"
-                >
-                  이 책으로 클럽 만들기
-                </button>
-              </div>
-            ))}
+                    <Button
+                      type="button"
+                      variant="tonal"
+                      size="sm"
+                      icon="group_add"
+                      onClick={() => {
+                        onSelectBook(book);
+                        handleClose();
+                      }}
+                      aria-label={`'${book.title}' 도서로 클럽 만들기`}
+                      className="shrink-0 text-xs font-bold"
+                    >
+                      선택
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : !loading && (
+            <div className="p-8 text-center text-xs text-on-surface-variant">
+              {query ? '일치하는 도서를 찾지 못했습니다.' : '도서명을 검색하여 모임을 만들 책을 찾아보세요.'}
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

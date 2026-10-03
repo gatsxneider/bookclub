@@ -146,9 +146,11 @@ export interface NearestScheduleResult {
 export function getNearestUpcomingSchedule(
   clubs: Array<{
     id?: string;
+    name?: string;
     end_date?: string | null;
     schedules?: Array<{
       id?: string;
+      chapter_title?: string;
       target_date?: string | null;
       my_review_submitted?: boolean;
       reviews?: Array<{ user_id?: string }>;
@@ -164,7 +166,12 @@ export function getNearestUpcomingSchedule(
   const baseDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate()).getTime();
 
   // 1. 참여 클럽들의 미작성 단원 일정 target_date와 club.id 수집 (작성 완료된 단원은 제외)
-  const items: Array<{ dateStr: string; clubId?: string; scheduleId?: string; diffDays: number }> = [];
+  const items: Array<{
+    dateStr: string;
+    clubId?: string;
+    scheduleId?: string;
+    diffDays: number;
+  }> = [];
   let totalScheduleCount = 0;
   let completedScheduleCount = 0;
 
@@ -222,7 +229,7 @@ export function getNearestUpcomingSchedule(
   }
 
   if (items.length === 0) {
-    return { dDay: '상시 토론', clubId: clubs[0]?.id };
+    return { dDay: '상시 토론' };
   }
 
   // 오늘 이후(diffDays >= 0)인 날짜 중 가장 작은 diffDays(가장 빨리 도래하는 일자) 찾기

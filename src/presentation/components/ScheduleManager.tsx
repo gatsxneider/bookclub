@@ -2,477 +2,383 @@
 
 import React, { useState } from 'react';
 import { ClubSchedule } from '@/domain/entities';
+import { Button, IconButton } from './ui/Button';
+import { Modal } from './ui/Modal';
+import { FormField, inputClass } from './ui/FormField';
+import { Icon } from './ui/Icon';
+import { useToast } from './ui/Toast';
+import { apiClient } from '@/presentation/lib/apiClient';
 
 interface ScheduleManagerProps {
+  clubId?: string;
   schedules: ClubSchedule[];
   isLeader: boolean;
-  onAddSchedule: (scheduleData: {
+  onSchedulesUpdated?: () => void;
+  onAddSchedule?: (scheduleData: {
     sequence: number;
     chapter_title: string;
-    page_range: string;
-    target_date: string;
-  }) => Promise<void>;
-  onUpdateSchedule?: (
-    scheduleId: string,
-    updatedData: {
-      chapter_title: string;
-      page_range: string;
-      target_date: string;
-    }
-  ) => Promise<void>;
-  onDeleteSchedule?: (scheduleId: string) => Promise<void>;
-  onWriteReview: (schedule: ClubSchedule) => void;
-  onViewReviews?: (schedule: ClubSchedule) => void;
-  onRequireAuth?: () => void;
+    page_range?: string;
+    target_date?: string;
+  }) => Promise<boolean | void>;
+  onWriteReview?: (schedule: ClubSchedule) => void;
+  onOpenReviewEditor?: (schedule: ClubSchedule) => void;
 }
 
 export default function ScheduleManager({
+  clubId,
   schedules,
   isLeader,
+  onSchedulesUpdated,
   onAddSchedule,
-  onUpdateSchedule,
-  onDeleteSchedule,
   onWriteReview,
-  onViewReviews,
-  onRequireAuth,
+  onOpenReviewEditor,
 }: ScheduleManagerProps) {
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
+  const { notify } = useToast();
 
-  // 추가 폼 상태
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<ClubSchedule | null>(null);
+  const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null);
+
+  const [sequence, setSequence] = useState<number>(schedules.length + 1);
   const [chapterTitle, setChapterTitle] = useState('');
   const [pageRange, setPageRange] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 수정 폼 상태
-  const [editTitle, setEditTitle] = useState('');
-  const [editPages, setEditPages] = useState('');
-  const [editDate, setEditDate] = useState('');
-  const [editLoading, setEditLoading] = useState(false);
+  const resetForm = () => {
+    setSequence(schedules.length + 1);
+    setChapterTitle('');
+    setPageRange('');
+    setTargetDate('');
+    setEditingSchedule(null);
+  };
 
-  // 독서일정 추가 폼 토글 (방장 전용)
-  const handleToggleAddForm = () => {
+  const handleAddClick = () => {
     if (!isLeader) {
       alert('독서일정 추가는 모임의 방장만 가능합니다.');
       return;
     }
-    setShowAddForm(!showAddForm);
-    if (!showAddForm) {
-      setEditingScheduleId(null);
-    }
+    resetForm();
+    setSequence(schedules.length + 1);
+    setIsAddOpen(true);
   };
 
-  // 독서일정 수정 모드 토글 (방장 전용)
-  const handleToggleEditMode = () => {
+  const handleEditModeToggle = () => {
     if (!isLeader) {
       alert('독서일정 수정은 모임의 방장만 가능합니다.');
       return;
     }
     setIsEditMode(!isEditMode);
-    setEditingScheduleId(null);
   };
 
-  // 새 일정 생성 제출
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleOpenEdit = (sched: ClubSchedule) => {
+    setEditingSchedule(sched);
+    setSequence(sched.sequence);
+    setChapterTitle(sched.chapter_title);
+    setPageRange(sched.page_range || '');
+    setTargetDate(sched.target_date || '');
+    setIsAddOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chapterTitle.trim()) return;
+    if (!chapterTitle.trim()) {
+      notify('단원 제목을 입력해주세요.', 'error');
+      return;
+    }
 
     setLoading(true);
     try {
-      await onAddSchedule({
-        sequence: schedules.length + 1,
-        chapter_title: chapterTitle.trim(),
-        page_range: pageRange.trim(),
-        target_date: targetDate,
-      });
-      setChapterTitle('');
-      setPageRange('');
-      setTargetDate('');
-      setShowAddForm(false);
-    } catch (err) {
-      console.error(err);
+      if (editingSchedule) {
+        if (clubId) {
+          await apiClient.patch(`/api/clubs/${clubId}/schedules`, {
+            schedule_id: editingSchedule.id,
+            sequence,
+            chapter_title: chapterTitle.trim(),
+            page_range: pageRange.trim() || undefined,
+            target_date: targetDate || undefined,
+          });
+        }
+        notify('단원 일정이 수정되었습니다.', 'success');
+      } else {
+        if (onAddSchedule) {
+          await onAddSchedule({
+            sequence,
+            chapter_title: chapterTitle.trim(),
+            page_range: pageRange.trim() || undefined,
+            target_date: targetDate || undefined,
+          });
+        } else if (clubId) {
+          await apiClient.post(`/api/clubs/${clubId}/schedules`, {
+            sequence,
+            chapter_title: chapterTitle.trim(),
+            page_range: pageRange.trim() || undefined,
+            target_date: targetDate || undefined,
+          });
+        }
+        notify('새 단원 일정이 등록되었습니다.', 'success');
+      }
+
+      setIsAddOpen(false);
+      resetForm();
+      onSchedulesUpdated?.();
+    } catch (err: any) {
+      notify(err.message || '일정 저장에 실패했습니다.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // 개별 일정 수정 시작
-  const handleStartEdit = (schedule: ClubSchedule) => {
-    setEditingScheduleId(schedule.id);
-    setEditTitle(schedule.chapter_title || '');
-    setEditPages(schedule.page_range || '');
-    setEditDate(schedule.target_date || '');
-  };
-
-  // 개별 일정 수정 저장
-  const handleSaveEdit = async (scheduleId: string) => {
-    if (!editTitle.trim()) {
-      alert('단원 제목을 입력해주세요.');
-      return;
-    }
-
-    setEditLoading(true);
+  const handleDeleteConfirm = async () => {
+    if (!deletingScheduleId) return;
+    setLoading(true);
     try {
-      if (onUpdateSchedule) {
-        await onUpdateSchedule(scheduleId, {
-          chapter_title: editTitle.trim(),
-          page_range: editPages.trim(),
-          target_date: editDate,
+      if (clubId) {
+        await apiClient.delete(`/api/clubs/${clubId}/schedules`, {
+          scheduleId: deletingScheduleId,
         });
       }
-      setEditingScheduleId(null);
-    } catch (err) {
-      console.error(err);
+      notify('단원 일정이 삭제되었습니다.', 'info');
+      setDeletingScheduleId(null);
+      onSchedulesUpdated?.();
+    } catch (err: any) {
+      notify(err.message || '일정 삭제에 실패했습니다.', 'error');
     } finally {
-      setEditLoading(false);
+      setLoading(false);
     }
   };
 
-  // 개별 일정 삭제
-  const handleDelete = async (scheduleId: string, title: string) => {
-    if (!confirm(`'${title}' 일정을 정말 삭제하시겠습니까?`)) return;
-
-    try {
-      if (onDeleteSchedule) {
-        await onDeleteSchedule(scheduleId);
-      }
-    } catch (err) {
-      console.error(err);
+  const handleReviewAction = (sched: ClubSchedule) => {
+    if (onWriteReview) {
+      onWriteReview(sched);
+    } else if (onOpenReviewEditor) {
+      onOpenReviewEditor(sched);
     }
   };
 
   return (
-    <section className="bg-surface-container-lowest rounded-2xl p-space-md sm:p-space-lg shadow-sm border border-surface-container flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-surface-container">
+    <section aria-labelledby="schedule-heading" className="flex flex-col gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-surface-container">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[22px]">
-              format_list_bulleted
-            </span>
-            <h3 className="font-headline-sm text-lg font-semibold text-on-surface">
-              도서 단원별 독서 일정 & 진척도
-            </h3>
-          </div>
+          <h2 id="schedule-heading" className="font-headline-sm text-lg sm:text-xl font-bold text-on-surface flex items-center gap-2">
+            <Icon name="calendar_month" className="text-primary text-[22px]" />
+            함께 읽는 단원별 일정
+          </h2>
           <p className="text-xs text-on-surface-variant mt-0.5">
-            단원을 클릭하면 해당 구간에 대한 독후감을 작성하거나 멤버들의 기록을 볼 수 있습니다.
+            단원별 목표일까지 읽고 독후감을 기록해보세요.
           </p>
         </div>
 
-        {/* Buttons: 독서일정 수정 & 새 독서일정 추가 */}
-        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-          <button
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <Button
             type="button"
-            onClick={handleToggleEditMode}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold shadow-sm transition-all ${
-              isEditMode && isLeader
-                ? 'bg-secondary text-on-secondary hover:bg-secondary/90'
-                : 'bg-surface-container hover:bg-surface-container-high text-on-surface'
-            }`}
+            variant="outline"
+            size="sm"
+            icon="tune"
+            onClick={handleEditModeToggle}
             aria-label="독서일정 수정"
           >
-            <span className="material-symbols-outlined text-[16px]">
-              {isEditMode && isLeader ? 'check' : 'edit'}
-            </span>
-            <span>{isEditMode && isLeader ? '수정 완료' : '독서일정 수정'}</span>
-          </button>
-
-          <button
+            독서일정 수정
+          </Button>
+          <Button
             type="button"
-            onClick={handleToggleAddForm}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary text-xs font-semibold shadow-sm transition-all"
+            variant="primary"
+            size="sm"
+            icon="add"
+            onClick={handleAddClick}
             aria-label="독서일정 추가"
           >
-            <span className="material-symbols-outlined text-[16px]">
-              {showAddForm && isLeader ? 'close' : 'add'}
-            </span>
-            <span>{showAddForm && isLeader ? '작성 취소' : '새 독서일정 추가'}</span>
-          </button>
+            독서일정 추가
+          </Button>
         </div>
       </div>
 
-      {/* Leader Add Form */}
-      {showAddForm && isLeader && (
-        <form
-          onSubmit={handleCreate}
-          className="p-4 rounded-xl bg-surface-container-low border border-primary/20 space-y-3 animate-fade-in"
-        >
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-            <span className="material-symbols-outlined text-[16px]">shield_person</span>
-            <span>방장 전용: {schedules.length + 1}번째 단원 일정 등록</span>
-          </div>
+      {/* 일정 리스트 (ol 구조) */}
+      {schedules.length > 0 ? (
+        <ol className="divide-y divide-surface-container rounded-2xl border border-surface-container bg-surface-container-lowest overflow-hidden shadow-xs">
+          {schedules.map((sched) => {
+            const isSubmitted = sched.my_review_submitted;
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-on-surface-variant mb-1">
-                단원/챕터 제목 *
-              </label>
+            return (
+              <li
+                key={sched.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3.5 hover:bg-surface-container-low transition-colors"
+              >
+                <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                    {sched.sequence}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-sm text-on-surface break-keep">
+                        {sched.chapter_title}
+                      </h3>
+                      {isSubmitted ? (
+                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold inline-flex items-center gap-1">
+                          <Icon name="check" className="text-[12px]" />
+                          작성 완료
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-1 flex-wrap">
+                      {sched.page_range && <span>{sched.page_range}</span>}
+                      {sched.target_date && <span>목표일: {sched.target_date}</span>}
+                      <span>독후감 {sched.reviews_count || 0}편</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  {(onWriteReview || onOpenReviewEditor) && (
+                    <Button
+                      type="button"
+                      variant={isSubmitted ? 'outline' : 'primary'}
+                      size="sm"
+                      icon="edit"
+                      onClick={() => handleReviewAction(sched)}
+                      aria-label={isSubmitted ? '독후감 수정' : '독후감 작성'}
+                      className="text-xs"
+                    >
+                      {isSubmitted ? '독후감 수정' : '독후감 작성'}
+                    </Button>
+                  )}
+
+                  {(isLeader || isEditMode) && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        icon="edit"
+                        aria-label="단원 수정"
+                        onClick={() => handleOpenEdit(sched)}
+                        className="text-xs px-2.5 h-8 text-on-surface-variant hover:text-on-surface"
+                      >
+                        단원 수정
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        icon="delete"
+                        aria-label="단원 삭제"
+                        onClick={() => setDeletingScheduleId(sched.id)}
+                        className="text-xs px-2.5 h-8 text-on-surface-variant hover:text-error"
+                      >
+                        단원 삭제
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <div className="p-8 rounded-2xl bg-surface-container-low border border-surface-container text-center text-xs text-on-surface-variant flex flex-col items-center gap-2">
+          <Icon name="event_busy" className="text-3xl text-on-surface-variant/40" />
+          <span>아직 등록된 단원 일정이 없습니다. {isLeader ? '새 일정을 추가해보세요!' : ''}</span>
+        </div>
+      )}
+
+      {/* 일정 추가/수정 모달 */}
+      <Modal
+        isOpen={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        title={editingSchedule ? '단원 일정 수정' : `방장 전용: ${sequence}번째 단원 일정 등록`}
+        description="멤버들과 함께 읽을 챕터와 목표 날짜를 설정하세요."
+        icon="event_note"
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormField label="단원 순번" required>
+            {(fieldProps) => (
               <input
+                {...fieldProps}
+                type="number"
+                min={1}
+                value={sequence}
+                onChange={(e) => setSequence(Number(e.target.value))}
+                className={inputClass}
+              />
+            )}
+          </FormField>
+
+          <FormField label="단원 제목 / 범위" required hint="예: 1단원: 어린 새, 1장~3장">
+            {(fieldProps) => (
+              <input
+                {...fieldProps}
                 type="text"
                 value={chapterTitle}
                 onChange={(e) => setChapterTitle(e.target.value)}
-                placeholder="예: 제1장. 2020 가을, 산해진미 도시락"
-                required
-                className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="단원 명칭을 입력하세요"
+                maxLength={100}
+                className={inputClass}
               />
-            </div>
+            )}
+          </FormField>
 
-            <div>
-              <label className="block text-xs font-medium text-on-surface-variant mb-1">
-                페이지 범위
-              </label>
+          <FormField label="페이지 범위 (선택)" hint="예: p.15 ~ p.84">
+            {(fieldProps) => (
               <input
+                {...fieldProps}
                 type="text"
                 value={pageRange}
                 onChange={(e) => setPageRange(e.target.value)}
-                placeholder="예: p.1 ~ p.65"
-                className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="예: p.1 ~ p.50"
+                maxLength={50}
+                className={inputClass}
               />
-            </div>
-          </div>
+            )}
+          </FormField>
 
-          <div className="flex items-center justify-between gap-3 pt-1">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium text-on-surface-variant">독서 마감일:</label>
+          <FormField label="목표 완독일 (선택)">
+            {(fieldProps) => (
               <input
+                {...fieldProps}
                 type="date"
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
-                className="bg-surface-container-lowest text-on-surface px-2.5 py-1.5 rounded-lg text-xs outline-none"
+                className={inputClass}
               />
-            </div>
+            )}
+          </FormField>
 
-            <button
-              type="submit"
-              disabled={loading || !chapterTitle.trim()}
-              className="px-4 py-2 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
-            >
-              {loading ? '추가 중...' : '일정 확정'}
-            </button>
+          <div className="flex justify-end gap-2 pt-2 border-t border-surface-container">
+            <Button type="button" variant="ghost" onClick={() => setIsAddOpen(false)}>
+              취소
+            </Button>
+            <Button type="submit" variant="primary" loading={loading}>
+              {editingSchedule ? '일정 수정 저장' : '일정 등록'}
+            </Button>
           </div>
         </form>
-      )}
+      </Modal>
 
-      {/* Schedules List */}
-      {schedules.length === 0 ? (
-        <div className="py-10 text-center text-on-surface-variant flex flex-col items-center">
-          <span className="material-symbols-outlined text-[36px] text-outline mb-1">
-            calendar_today
-          </span>
-          <p className="text-sm font-medium">아직 등록된 독서 일정이 없습니다.</p>
-          <button
-            type="button"
-            onClick={handleToggleAddForm}
-            className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1 font-semibold"
-          >
-            <span>상단의 '새 독서일정 추가'를 눌러 독서 계획을 세워보세요!</span>
-          </button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {schedules.map((schedule, idx) => {
-            const isSubmitted = Boolean(schedule.my_review_submitted);
-            const isEditing = editingScheduleId === schedule.id;
-
-            if (isEditing && isLeader) {
-              /* Inline Edit Form */
-              return (
-                <div
-                  key={schedule.id || idx}
-                  className="p-4 rounded-xl bg-surface-container-low border-2 border-primary/30 space-y-3 animate-fade-in"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-primary flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[15px]">edit</span>
-                      <span>제{schedule.sequence || idx + 1}단원 일정 수정</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setEditingScheduleId(null)}
-                      className="text-xs text-on-surface-variant hover:text-on-surface"
-                    >
-                      취소
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-medium text-on-surface-variant mb-1">
-                        단원 제목 *
-                      </label>
-                      <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-medium text-on-surface-variant mb-1">
-                        페이지 범위
-                      </label>
-                      <input
-                        type="text"
-                        value={editPages}
-                        onChange={(e) => setEditPages(e.target.value)}
-                        placeholder="예: p.1 ~ p.65"
-                        className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3 pt-1">
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-medium text-on-surface-variant">독서 마감일:</label>
-                      <input
-                        type="date"
-                        value={editDate}
-                        onChange={(e) => setEditDate(e.target.value)}
-                        className="bg-surface-container-lowest text-on-surface px-2.5 py-1.5 rounded-lg text-xs outline-none"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditingScheduleId(null)}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high transition-all"
-                      >
-                        취소
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSaveEdit(schedule.id)}
-                        disabled={editLoading || !editTitle.trim()}
-                        className="px-4 py-1.5 rounded-full bg-primary text-on-primary hover:bg-primary-container text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
-                      >
-                        {editLoading ? '저장 중...' : '저장하기'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div
-                key={schedule.id || idx}
-                className={`group p-4 rounded-xl transition-all border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                  isSubmitted
-                    ? 'bg-surface-container-lowest border-secondary-fixed-dim/60 shadow-sm'
-                    : 'bg-surface-container-low hover:bg-surface-container border-surface-container-high'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {isSubmitted ? (
-                    <span
-                      className="w-8 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed font-bold text-xs flex items-center justify-center shrink-0 shadow-sm"
-                      title="독후감 작성 완료"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">check</span>
-                    </span>
-                  ) : (
-                    <span className="w-8 h-8 rounded-full bg-surface-container-high text-primary font-bold text-xs flex items-center justify-center shrink-0">
-                      {schedule.sequence || idx + 1}
-                    </span>
-                  )}
-
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-title-sm text-sm font-semibold text-on-surface">
-                        {schedule.chapter_title}
-                      </h4>
-                      {schedule.page_range && (
-                        <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[11px]">
-                          {schedule.page_range}
-                        </span>
-                      )}
-                      {isSubmitted && (
-                        <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[10px] font-semibold flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[12px]">task_alt</span>
-                          <span>작성 완료</span>
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-on-surface-variant mt-1">
-                      {schedule.target_date && (
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px] text-secondary">
-                            event
-                          </span>
-                          <span>목표일: {schedule.target_date}</span>
-                        </span>
-                      )}
-                      <span>•</span>
-                      <span className="text-primary font-medium">
-                        독후감 {schedule.reviews_count || 0}편 작성됨
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
-                  {/* 방장 수정 모드일 때: 수정 및 삭제 버튼 표시 */}
-                  {isEditMode && isLeader ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleStartEdit(schedule)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary text-xs font-semibold shadow-xs transition-all"
-                        aria-label="단원 수정"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">edit</span>
-                        <span>수정</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(schedule.id, schedule.chapter_title)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-error-container text-on-error-container hover:bg-error hover:text-on-error text-xs font-semibold shadow-xs transition-all"
-                        aria-label="단원 삭제"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">delete</span>
-                        <span>삭제</span>
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {onViewReviews && (
-                        <button
-                          type="button"
-                          onClick={() => onViewReviews(schedule)}
-                          className="px-3 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-medium transition-all"
-                        >
-                          독후감 보기
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => onWriteReview(schedule)}
-                        className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-all ${
-                          isSubmitted
-                            ? 'bg-secondary-fixed text-on-secondary-fixed hover:bg-secondary hover:text-on-secondary'
-                            : 'bg-primary text-on-primary hover:bg-primary-container'
-                        }`}
-                        title={isSubmitted ? '클릭하여 작성한 독후감을 수정합니다' : '단원 독후감을 작성합니다'}
-                        aria-label={isSubmitted ? '독후감 수정' : '독후감 작성'}
-                      >
-                        <span className="material-symbols-outlined text-[14px]">
-                          {isSubmitted ? 'edit' : 'edit_note'}
-                        </span>
-                        <span>{isSubmitted ? '독후감 작성 완료' : '독후감 작성'}</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* 일정 삭제 확인 모달 */}
+      <Modal
+        isOpen={Boolean(deletingScheduleId)}
+        onClose={() => setDeletingScheduleId(null)}
+        title="단원 일정 삭제"
+        icon="warning"
+        maxWidth="max-w-md"
+        footer={
+          <div className="flex justify-end gap-2 w-full">
+            <Button variant="ghost" onClick={() => setDeletingScheduleId(null)}>
+              취소
+            </Button>
+            <Button variant="danger" loading={loading} onClick={handleDeleteConfirm}>
+              일정 삭제
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-on-surface">
+          해당 단원 일정을 삭제하시겠습니까? 등록된 독후감 데이터가 영향을 받을 수 있습니다.
+        </p>
+      </Modal>
     </section>
   );
 }
