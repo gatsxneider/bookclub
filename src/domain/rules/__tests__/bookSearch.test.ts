@@ -42,4 +42,14 @@ describe('bookSearch', () => {
       expect(recommended?.isbn).not.toBe(firstIsbn);
     }
   });
+
+  it('pickRandomUnreadBook은 사용자가 읽은/진행중인 카테고리와 동일한 카테고리의 미독서 도서를 우선 추천해야 한다', () => {
+    const targetCategory = '02. 시 / 에세이';
+    const readIsbn = '9788954682152';
+
+    const recommended = pickRandomUnreadBook(curatedData, [readIsbn], [targetCategory]);
+    expect(recommended).toBeDefined();
+    expect(recommended?.category).toBe(targetCategory);
+    expect(recommended?.isbn).not.toBe(readIsbn);
+  });
 });

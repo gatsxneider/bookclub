@@ -6,9 +6,11 @@ import { Modal } from './ui/Modal';
 import { FormField, inputClass } from './ui/FormField';
 import { Button } from './ui/Button';
 import { useToast } from './ui/Toast';
+import { useContext } from 'react';
+import { AuthContext } from '@/presentation/context/AuthContext';
 import { apiClient } from '@/presentation/lib/apiClient';
 import curatedBooksData from '@/shared/data/curatedBooks.json';
-import { pickRandomUnreadBook } from '@/domain/rules/bookSearch';
+import { pickRandomUnreadBook, getAllCuratedBooks } from '@/domain/rules/bookSearch';
 
 interface CreateClubModalProps {
   isOpen: boolean;
@@ -25,11 +27,14 @@ export default function CreateClubModal({
   book,
   onSuccess,
 }: CreateClubModalProps) {
+  const auth = useContext(AuthContext);
+  const user = auth?.user ?? null;
   const { notify } = useToast();
 
   const [activeBook, setActiveBook] = useState<Book | null>(null);
   const [isRecommended, setIsRecommended] = useState(false);
   const [readIsbns, setReadIsbns] = useState<Set<string>>(new Set());
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -39,27 +44,53 @@ export default function CreateClubModal({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // 사용자가 참여/개설한 클럽의 도서 ISBN 조회하여 읽은 도서 목록 구성
+  // 사용자가 참여/개설(완독 및 독서 진행 중)한 클럽의 도서 및 카테고리 정보 조회
   useEffect(() => {
-    const fetchUserReadIsbns = async () => {
+    const fetchUserReadData = async () => {
       try {
         const data = await apiClient.get<{ clubs: any[] }>('/api/clubs');
         if (data.clubs && Array.isArray(data.clubs)) {
           const isbns = new Set<string>();
-          data.clubs.forEach((club: any) => {
-            if (club.isbn) isbns.add(club.isbn);
-            if (club.book?.isbn) isbns.add(club.book.isbn);
+          const categories: string[] = [];
+
+          // 전체 큐레이션 데이터에서 isbn -> category 매핑 구축
+          const allCurated = getAllCuratedBooks(curatedBooksData);
+          const isbnToCategory = new Map<string, string>();
+          allCurated.forEach((b) => {
+            if (b.isbn && b.category) {
+              isbnToCategory.set(b.isbn, b.category);
+            }
           });
+
+          data.clubs.forEach((club: any) => {
+            const isLeader = user?.id && (club.leader_id === user.id || club.leader?.id === user.id);
+            const isMember = user?.id && (club.members || []).some(
+              (m: any) => m.user_id === user.id || m.profile?.id === user.id
+            );
+
+            if (!user?.id || isLeader || isMember) {
+              const targetIsbn = club.isbn || club.book?.isbn;
+              if (targetIsbn) {
+                isbns.add(targetIsbn);
+                const cat = club.book?.category || isbnToCategory.get(targetIsbn);
+                if (cat && !categories.includes(cat)) {
+                  categories.push(cat);
+                }
+              }
+            }
+          });
+
           setReadIsbns(isbns);
+          setPreferredCategories(categories);
         }
       } catch {
         // ignore
       }
     };
-    fetchUserReadIsbns();
-  }, []);
+    fetchUserReadData();
+  }, [user?.id]);
 
-  // 모달이 열릴 때 도서 지정 또는 랜덤 미독서 추천
+  // 모달이 열릴 때 도서 지정 또는 랜덤 미독서(동일 카테고리 우선) 추천
   useEffect(() => {
     if (!isOpen) return;
 
@@ -69,8 +100,8 @@ export default function CreateClubModal({
       setIsRecommended(false);
       setName(`[함께 읽기] ${propBook.title}`);
     } else {
-      // 선택된 도서가 없는 경우: 읽지 않은 추천 도서 중 랜덤 1권 선정
-      const recommended = pickRandomUnreadBook(curatedBooksData, readIsbns);
+      // 선택된 도서가 없는 경우: 완독/진행중 도서 제외 및 동일 카테고리 우선 추천
+      const recommended = pickRandomUnreadBook(curatedBooksData, readIsbns, preferredCategories);
       if (recommended) {
         setActiveBook(recommended);
         setIsRecommended(true);
@@ -84,11 +115,11 @@ export default function CreateClubModal({
     future.setDate(future.getDate() + 28);
     setEndDate(future.toISOString().split('T')[0]);
     setErrorMsg(null);
-  }, [isOpen, selectedBook, book]);
+  }, [isOpen, selectedBook, book, readIsbns, preferredCategories]);
 
-  // 다른 추천 도서로 다시 뽑기
+  // 다른 추천 도서로 다시 뽑기 (동일 카테고리 우선 유지)
   const handleRerollRecommendation = () => {
-    const nextBook = pickRandomUnreadBook(curatedBooksData, readIsbns);
+    const nextBook = pickRandomUnreadBook(curatedBooksData, readIsbns, preferredCategories);
     if (nextBook) {
       setActiveBook(nextBook);
       setName(`[함께 읽기] ${nextBook.title}`);
@@ -167,7 +198,7 @@ export default function CreateClubModal({
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 mb-0.5">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
                       isRecommended
@@ -180,6 +211,11 @@ export default function CreateClubModal({
                     </span>
                     <span>{isRecommended ? '추천 도서' : '선택된 도서'}</span>
                   </span>
+                  {activeBook.category && (
+                    <span className="text-[11px] font-medium text-on-surface-variant">
+                      {activeBook.category}
+                    </span>
+                  )}
                 </div>
                 <h4 className="font-bold text-sm text-on-surface truncate">{activeBook.title}</h4>
                 <p className="text-xs text-on-surface-variant truncate">

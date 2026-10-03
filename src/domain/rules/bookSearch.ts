@@ -63,11 +63,14 @@ export function getAllCuratedBooks(curatedData: Record<string, any[]>): Book[] {
 }
 
 /**
- * 회원이 읽지 않은(참여/완독하지 않은) 도서 중 랜덤으로 1권 추천
+ * 회원이 읽지 않은(완독 또는 진행 중인 클럽 도서 제외) 도서 중 추천
+ * - preferredCategories가 지정된 경우 동일 카테고리의 미독서 도서를 최우선 추천
+ * - 동일 카테고리 미독서 도서가 없으면 전체 미독서 도서 중 랜덤 추천
  */
 export function pickRandomUnreadBook(
   curatedData: Record<string, any[]>,
-  readIsbns: Set<string> | string[] = new Set()
+  readIsbns: Set<string> | string[] = new Set(),
+  preferredCategories: string[] = []
 ): Book | null {
   const allBooks = getAllCuratedBooks(curatedData);
   if (allBooks.length === 0) return null;
@@ -75,7 +78,26 @@ export function pickRandomUnreadBook(
   const isbnSet = readIsbns instanceof Set ? readIsbns : new Set(readIsbns);
   const unreadBooks = allBooks.filter((b) => !isbnSet.has(b.isbn));
 
-  const candidatePool = unreadBooks.length > 0 ? unreadBooks : allBooks;
+  // 1. 참여/완독 도서와 같은 카테고리의 읽지 않은 도서 풀 우선 추천
+  if (preferredCategories.length > 0) {
+    const validCats = new Set(preferredCategories.filter(Boolean));
+    const sameCategoryUnread = unreadBooks.filter(
+      (b) => b.category && validCats.has(b.category)
+    );
+    if (sameCategoryUnread.length > 0) {
+      const randomIndex = Math.floor(Math.random() * sameCategoryUnread.length);
+      return sameCategoryUnread[randomIndex];
+    }
+  }
+
+  // 2. 동일 카테고리 미독서 도서가 없거나 선호 카테고리가 없으면 전체 미독서 도서 풀에서 추천
+  if (unreadBooks.length > 0) {
+    const randomIndex = Math.floor(Math.random() * unreadBooks.length);
+    return unreadBooks[randomIndex];
+  }
+
+  // 3. 모든 도서를 완독/참여한 경우 전체 도서 풀에서 추천
+  const candidatePool = allBooks;
   const randomIndex = Math.floor(Math.random() * candidatePool.length);
   return candidatePool[randomIndex] || allBooks[0];
 }
