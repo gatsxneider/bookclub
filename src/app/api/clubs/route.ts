@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { createClubSchema } from '@/lib/server/validations';
-import curatedData from '@/lib/constants/curatedBooks.json';
-import { normalizeKakaoBook } from '@/lib/core/bookSearch';
+import { createServerSupabaseClient } from '@/infrastructure/supabase/serverClient';
+import { createClubSchema } from '@/application/validation/schemas';
+import curatedData from '@/shared/data/curatedBooks.json';
+import { normalizeKakaoBook } from '@/domain/rules/bookSearch';
 
 export async function GET(req: NextRequest) {
   try {

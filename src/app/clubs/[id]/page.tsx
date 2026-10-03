@@ -3,23 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import ScheduleManager from '@/components/ScheduleManager';
-import BookSearchModal from '@/components/BookSearchModal';
-import CreateClubModal from '@/components/CreateClubModal';
-import AuthModal from '@/components/AuthModal';
-import InviteMemberModal from '@/components/InviteMemberModal';
-import RemoveMemberModal from '@/components/RemoveMemberModal';
-import Footer from '@/components/Footer';
-import { Club, ClubSchedule, ClubMember } from '@/types/database';
+import Navbar from '@/presentation/components/Navbar';
+import ScheduleManager from '@/presentation/components/ScheduleManager';
+import BookSearchModal from '@/presentation/components/BookSearchModal';
+import CreateClubModal from '@/presentation/components/CreateClubModal';
+import AuthModal from '@/presentation/components/AuthModal';
+import InviteMemberModal from '@/presentation/components/InviteMemberModal';
+import RemoveMemberModal from '@/presentation/components/RemoveMemberModal';
+import Footer from '@/presentation/components/Footer';
+import { Club, ClubSchedule, ClubMember } from '@/domain/entities';
 
 import {
   calculateProgress,
   calculateClubTotalProgress,
   calculateDday,
   getEffectiveClubEndDate,
-} from '@/lib/core/scheduleCalculator';
-import { useAuth } from '@/context/AuthContext';
+} from '@/domain/rules/scheduleCalculator';
+import { useAuth } from '@/presentation/context/AuthContext';
 
 export default function ClubDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();

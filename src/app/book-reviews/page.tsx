@@ -3,15 +3,15 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
-import BookSearchModal from '@/components/BookSearchModal';
-import CreateClubModal from '@/components/CreateClubModal';
-import AuthModal from '@/components/AuthModal';
-import Footer from '@/components/Footer';
-import { Review } from '@/types/database';
+import Navbar from '@/presentation/components/Navbar';
+import BookSearchModal from '@/presentation/components/BookSearchModal';
+import CreateClubModal from '@/presentation/components/CreateClubModal';
+import AuthModal from '@/presentation/components/AuthModal';
+import Footer from '@/presentation/components/Footer';
+import { Review } from '@/domain/entities';
 
-import { useAuth } from '@/context/AuthContext';
-import { checkCanEmpathize, MAX_EMPATHY_COUNT } from '@/lib/core/empathy';
+import { useAuth } from '@/presentation/context/AuthContext';
+import { checkCanEmpathize, MAX_EMPATHY_COUNT } from '@/domain/rules/empathy';
 
 function BookReviewsFeedContent() {
   const searchParams = useSearchParams();

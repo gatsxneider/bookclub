@@ -2,9 +2,8 @@
 module.exports = {
   darkMode: 'class',
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/presentation/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -97,6 +96,22 @@ module.exports = {
         'body-md': ['var(--font-jakarta)', 'Plus Jakarta Sans', 'sans-serif'],
         'label-md': ['var(--font-jakarta)', 'Plus Jakarta Sans', 'sans-serif'],
         'label-sm': ['var(--font-jakarta)', 'Plus Jakarta Sans', 'sans-serif'],
+      },
+      keyframes: {
+        'cozy-fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'cozy-sheet-up': {
+          from: { transform: 'translateY(24px)', opacity: '0' },
+          to: { transform: 'translateY(0)', opacity: '1' },
+        },
+        'cozy-pop': {
+          from: { transform: 'translateY(6px) scale(0.98)', opacity: '0' },
+          to: { transform: 'translateY(0) scale(1)', opacity: '1' },
+        },
+      },
+      animation: {
+        'cozy-fade-in': 'cozy-fade-in 0.2s ease-out both',
+        'cozy-sheet-up': 'cozy-sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'cozy-pop': 'cozy-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1) both',
       },
     },
   },

@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import Navbar from '@/components/Navbar';
-import CategoryFilter from '@/components/CategoryFilter';
-import BookCard from '@/components/BookCard';
-import BookSearchModal from '@/components/BookSearchModal';
-import BookDetailModal from '@/components/BookDetailModal';
-import CreateClubModal from '@/components/CreateClubModal';
-import AuthModal from '@/components/AuthModal';
-import Footer from '@/components/Footer';
-import { Book } from '@/types/database';
+import Navbar from '@/presentation/components/Navbar';
+import CategoryFilter from '@/presentation/components/CategoryFilter';
+import BookCard from '@/presentation/components/BookCard';
+import BookSearchModal from '@/presentation/components/BookSearchModal';
+import BookDetailModal from '@/presentation/components/BookDetailModal';
+import CreateClubModal from '@/presentation/components/CreateClubModal';
+import AuthModal from '@/presentation/components/AuthModal';
+import Footer from '@/presentation/components/Footer';
+import { Book } from '@/domain/entities';
 
-import { filterCuratedBooks } from '@/lib/core/bookSearch';
-import curatedBooksData from '@/lib/constants/curatedBooks.json';
+import { filterCuratedBooks } from '@/domain/rules/bookSearch';
+import curatedBooksData from '@/shared/data/curatedBooks.json';
 
 export default function ExplorePage() {
   const [selectedCategory, setSelectedCategory] = useState('01. 소설 / 문학');

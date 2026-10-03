@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminSupabaseClient } from '@/lib/supabase/server';
+import { createAdminSupabaseClient } from '@/infrastructure/supabase/serverClient';
 
 // Vercel Serverless Function 실행 옵션
 export const maxDuration = 60; // 최대 60초 허용

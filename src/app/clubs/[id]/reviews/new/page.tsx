@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import ReviewEditor from '@/components/ReviewEditor';
-import AuthModal from '@/components/AuthModal';
-import { ClubSchedule, Club, Review } from '@/types/database';
-import { useAuth } from '@/context/AuthContext';
+import Navbar from '@/presentation/components/Navbar';
+import ReviewEditor from '@/presentation/components/ReviewEditor';
+import AuthModal from '@/presentation/components/AuthModal';
+import { ClubSchedule, Club, Review } from '@/domain/entities';
+import { useAuth } from '@/presentation/context/AuthContext';
 
 function NewReviewContent({ clubId }: { clubId: string }) {
   const router = useRouter();

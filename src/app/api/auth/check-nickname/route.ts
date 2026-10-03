@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { sanitizeHtml } from '@/lib/server/validations';
+import { createServerSupabaseClient } from '@/infrastructure/supabase/serverClient';
+import { sanitizeHtml } from '@/application/validation/schemas';
 
 export async function GET(req: NextRequest) {
   try {

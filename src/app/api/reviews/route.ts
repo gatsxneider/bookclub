@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { createReviewSchema, updateReviewSchema } from '@/lib/server/validations';
+import { createServerSupabaseClient } from '@/infrastructure/supabase/serverClient';
+import { createReviewSchema, updateReviewSchema } from '@/application/validation/schemas';
 import {
   INITIAL_MANNER_TEMPERATURE,
   calculateNewMannerTemperature,
   calculateUserLevel,
-} from '@/lib/core/mannerTemperature';
+} from '@/domain/rules/mannerTemperature';
 
 export async function GET(req: NextRequest) {
   try {

@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
-import BookSearchModal from '@/components/BookSearchModal';
-import CreateClubModal from '@/components/CreateClubModal';
-import AuthModal from '@/components/AuthModal';
-import UserProfileModal from '@/components/UserProfileModal';
-import Footer from '@/components/Footer';
-import { Review } from '@/types/database';
+import Navbar from '@/presentation/components/Navbar';
+import BookSearchModal from '@/presentation/components/BookSearchModal';
+import CreateClubModal from '@/presentation/components/CreateClubModal';
+import AuthModal from '@/presentation/components/AuthModal';
+import UserProfileModal from '@/presentation/components/UserProfileModal';
+import Footer from '@/presentation/components/Footer';
+import { Review } from '@/domain/entities';
 
-import { useAuth, calculateUserLevel } from '@/context/AuthContext';
-import curatedBooksData from '@/lib/constants/curatedBooks.json';
+import { useAuth, calculateUserLevel } from '@/presentation/context/AuthContext';
+import curatedBooksData from '@/shared/data/curatedBooks.json';
 
 // 독서 레벨 정보 매핑
 const LEVEL_CONFIG: Record<number, { title: string; badge: string; desc: string }> = {

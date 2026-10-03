@@ -3,20 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import CategoryFilter from '@/components/CategoryFilter';
-import BookCard from '@/components/BookCard';
-import BookSearchModal from '@/components/BookSearchModal';
-import CreateClubModal from '@/components/CreateClubModal';
-import BookDetailModal from '@/components/BookDetailModal';
-import ClubSearchModal from '@/components/ClubSearchModal';
-import AuthModal from '@/components/AuthModal';
-import CozyLogo from '@/components/CozyLogo';
-import Footer from '@/components/Footer';
-import { Book, Club } from '@/types/database';
+import Navbar from '@/presentation/components/Navbar';
+import CategoryFilter from '@/presentation/components/CategoryFilter';
+import BookCard from '@/presentation/components/BookCard';
+import BookSearchModal from '@/presentation/components/BookSearchModal';
+import CreateClubModal from '@/presentation/components/CreateClubModal';
+import BookDetailModal from '@/presentation/components/BookDetailModal';
+import ClubSearchModal from '@/presentation/components/ClubSearchModal';
+import AuthModal from '@/presentation/components/AuthModal';
+import CozyLogo from '@/presentation/components/CozyLogo';
+import Footer from '@/presentation/components/Footer';
+import { Book, Club } from '@/domain/entities';
 
-import { filterCuratedBooks } from '@/lib/core/bookSearch';
-import curatedBooksData from '@/lib/constants/curatedBooks.json';
+import { filterCuratedBooks } from '@/domain/rules/bookSearch';
+import curatedBooksData from '@/shared/data/curatedBooks.json';
 import {
   isUserClubMember,
   isClubCompleted,
@@ -24,8 +24,8 @@ import {
   getEffectiveClubEndDate,
   getNearestUpcomingSchedule,
   getNearestUpcomingScheduleDday,
-} from '@/lib/core/scheduleCalculator';
-import { useAuth } from '@/context/AuthContext';
+} from '@/domain/rules/scheduleCalculator';
+import { useAuth } from '@/presentation/context/AuthContext';
 
 export default function HomePage() {
   const router = useRouter();

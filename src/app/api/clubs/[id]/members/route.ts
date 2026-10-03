@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { updateMemberStatusSchema } from '@/lib/server/validations';
+import { createServerSupabaseClient } from '@/infrastructure/supabase/serverClient';
+import { updateMemberStatusSchema } from '@/application/validation/schemas';
 
 export async function GET(
   req: NextRequest,

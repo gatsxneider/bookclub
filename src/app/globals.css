@@ -9,6 +9,54 @@
     background-color: #fcf9f4;
     color: #1c1c19;
   }
+
+  html {
+    /* 사용자의 브라우저 글꼴 크기 설정을 존중 (rem 기반) */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-padding-top: 6rem; /* 고정 헤더에 앵커 대상이 가려지지 않도록 */
+  }
+
+  body {
+    word-break: keep-all; /* 한국어 어절 단위 줄바꿈 */
+    overflow-wrap: anywhere;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 키보드 포커스 표시 (WCAG 2.4.7) — 마우스 클릭 시에는 표시하지 않음 */
+  :focus-visible {
+    outline: 3px solid #99462a;
+    outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* 본문 바로가기 대상은 포커스 링을 숨김 */
+  #main-content:focus {
+    outline: none;
+  }
+}
+
+@layer components {
+  /* 최소 44x44px 터치 영역 (WCAG 2.5.5 / 모바일 가이드) */
+  .tap-target {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* 모바일 하단 탭바 높이만큼 본문 하단 여백 확보 */
+  .pb-mobile-nav {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 1024px) {
+    .pb-mobile-nav {
+      padding-bottom: 4rem;
+    }
+  }
 }
 
 /* Material Symbols Icon Font Support */
@@ -160,6 +208,21 @@
 
 .animate-note-glow {
   animation: note-glow-ring 2s infinite;
+}
+
+/* 움직임 줄이기 설정 사용자 배려 (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-cozy-draw {
+    stroke-dashoffset: 0;
+  }
 }
 
 

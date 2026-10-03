@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { checkCanEmpathize, MAX_EMPATHY_COUNT } from '@/lib/core/empathy';
+import { createServerSupabaseClient } from '@/infrastructure/supabase/serverClient';
+import { checkCanEmpathize, MAX_EMPATHY_COUNT } from '@/domain/rules/empathy';
 
 export async function POST(req: NextRequest) {
   try {

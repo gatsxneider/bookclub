@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { normalizeKakaoBook } from '@/lib/core/bookSearch';
-import curatedData from '@/lib/constants/curatedBooks.json';
+import { normalizeKakaoBook } from '@/domain/rules/bookSearch';
+import curatedData from '@/shared/data/curatedBooks.json';
 
 export async function GET(req: NextRequest) {
   try {
