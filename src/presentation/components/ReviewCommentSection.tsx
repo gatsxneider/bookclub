@@ -204,12 +204,6 @@ export default function ReviewCommentSection({
                       <span className="text-xs font-bold text-on-surface">
                         {authorName}
                       </span>
-                      {author?.manner_temperature != null && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md">
-                          <span className="material-symbols-outlined text-[11px]">thermostat</span>
-                          <span>{Number(author.manner_temperature).toFixed(1)}°C</span>
-                        </span>
-                      )}
                       <span className="text-[11px] text-on-surface-variant">
                         {formatCommentDate(comment.created_at)}
                       </span>

@@ -68,10 +68,10 @@ describe('ReviewCommentSection Component', () => {
       />
     );
 
-    // 댓글 내용 및 작성자 정보 확인
+    // 댓글 내용 및 작성자 정보 확인 (감성 온도는 표시되지 않아야 함)
     await waitFor(() => {
       expect(screen.getByText('책벌레린')).toBeInTheDocument();
-      expect(screen.getByText('38.2°C')).toBeInTheDocument();
+      expect(screen.queryByText('38.2°C')).not.toBeInTheDocument();
       expect(screen.getByText('정말 인상 깊은 독후감이네요!')).toBeInTheDocument();
     });
 
