@@ -39,7 +39,10 @@ export default function ExplorePage() {
     <div className="flex flex-col min-h-screen bg-surface">
       <Navbar
         onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenNewClub={() => setIsCreateOpen(true)}
+        onOpenNewClub={() => {
+          setSelectedBook(null);
+          setIsCreateOpen(true);
+        }}
         onOpenAuth={() => setIsAuthOpen(true)}
       />
 

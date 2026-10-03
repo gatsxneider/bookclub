@@ -54,8 +54,7 @@ export default function HomePage() {
   }, [selectedCategory]);
 
   const handleOpenCreateClub = (book?: Book | null) => {
-    const targetBook = book || selectedBookForClub || displayedBooks[0] || null;
-    setSelectedBookForClub(targetBook);
+    setSelectedBookForClub(book ?? null);
 
     if (!user) {
       setPendingAction('create_club');

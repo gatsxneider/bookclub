@@ -23,7 +23,7 @@ describe('CreateClubModal Component', () => {
     vi.clearAllMocks();
   });
 
-  it('선택된 도서의 정보와 폼 입력란이 화면에 렌더링되어야 한다', () => {
+  it('선택된 도서가 있을 때는 "선택된 도서" 배지가 노출되어야 한다', () => {
     render(
       <CreateClubModal
         isOpen={true}
@@ -32,9 +32,23 @@ describe('CreateClubModal Component', () => {
       />
     );
 
+    expect(screen.getByText('선택된 도서')).toBeInTheDocument();
     expect(screen.getByText('불편한 편의점')).toBeInTheDocument();
     expect(screen.getByLabelText(/클럽 이름/)).toBeInTheDocument();
     expect(screen.getByLabelText(/최대 인원/)).toBeInTheDocument();
+  });
+
+  it('선택된 도서가 없을 때는 "추천 도서" 모드로 동작하여 추천 도서 배지가 노출되어야 한다', () => {
+    render(
+      <CreateClubModal
+        isOpen={true}
+        onClose={vi.fn()}
+        selectedBook={null}
+      />
+    );
+
+    expect(screen.getByText('추천 도서')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /다른 추천/ })).toBeInTheDocument();
   });
 
   it('클럽 이름이 비어있으면 생성을 막아야 한다', async () => {

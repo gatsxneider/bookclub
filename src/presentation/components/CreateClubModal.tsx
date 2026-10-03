@@ -7,6 +7,8 @@ import { FormField, inputClass } from './ui/FormField';
 import { Button } from './ui/Button';
 import { useToast } from './ui/Toast';
 import { apiClient } from '@/presentation/lib/apiClient';
+import curatedBooksData from '@/shared/data/curatedBooks.json';
+import { pickRandomUnreadBook } from '@/domain/rules/bookSearch';
 
 interface CreateClubModalProps {
   isOpen: boolean;
@@ -24,7 +26,10 @@ export default function CreateClubModal({
   onSuccess,
 }: CreateClubModalProps) {
   const { notify } = useToast();
-  const currentBook = selectedBook ?? book ?? null;
+
+  const [activeBook, setActiveBook] = useState<Book | null>(null);
+  const [isRecommended, setIsRecommended] = useState(false);
+  const [readIsbns, setReadIsbns] = useState<Set<string>>(new Set());
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -34,22 +39,67 @@ export default function CreateClubModal({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // 사용자가 참여/개설한 클럽의 도서 ISBN 조회하여 읽은 도서 목록 구성
   useEffect(() => {
-    if (currentBook) {
-      setName(`[함께 읽기] ${currentBook.title}`);
-      const today = new Date().toISOString().split('T')[0];
-      setStartDate(today);
-      // 기본 4주 뒤 종료일
-      const future = new Date();
-      future.setDate(future.getDate() + 28);
-      setEndDate(future.toISOString().split('T')[0]);
+    const fetchUserReadIsbns = async () => {
+      try {
+        const data = await apiClient.get<{ clubs: any[] }>('/api/clubs');
+        if (data.clubs && Array.isArray(data.clubs)) {
+          const isbns = new Set<string>();
+          data.clubs.forEach((club: any) => {
+            if (club.isbn) isbns.add(club.isbn);
+            if (club.book?.isbn) isbns.add(club.book.isbn);
+          });
+          setReadIsbns(isbns);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    fetchUserReadIsbns();
+  }, []);
+
+  // 모달이 열릴 때 도서 지정 또는 랜덤 미독서 추천
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const propBook = selectedBook ?? book ?? null;
+    if (propBook) {
+      setActiveBook(propBook);
+      setIsRecommended(false);
+      setName(`[함께 읽기] ${propBook.title}`);
+    } else {
+      // 선택된 도서가 없는 경우: 읽지 않은 추천 도서 중 랜덤 1권 선정
+      const recommended = pickRandomUnreadBook(curatedBooksData, readIsbns);
+      if (recommended) {
+        setActiveBook(recommended);
+        setIsRecommended(true);
+        setName(`[함께 읽기] ${recommended.title}`);
+      }
     }
-  }, [currentBook, isOpen]);
+
+    const today = new Date().toISOString().split('T')[0];
+    setStartDate(today);
+    const future = new Date();
+    future.setDate(future.getDate() + 28);
+    setEndDate(future.toISOString().split('T')[0]);
+    setErrorMsg(null);
+  }, [isOpen, selectedBook, book]);
+
+  // 다른 추천 도서로 다시 뽑기
+  const handleRerollRecommendation = () => {
+    const nextBook = pickRandomUnreadBook(curatedBooksData, readIsbns);
+    if (nextBook) {
+      setActiveBook(nextBook);
+      setName(`[함께 읽기] ${nextBook.title}`);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedBook) {
-      setErrorMsg('선택된 도서가 없습니다.');
+    const targetBook = activeBook || selectedBook || book;
+    if (!targetBook) {
+      setErrorMsg('도서 정보가 없습니다.');
       return;
     }
     if (!name.trim()) {
@@ -62,13 +112,13 @@ export default function CreateClubModal({
 
     try {
       const res = await apiClient.post<{ success: boolean; club: { id: string } }>('/api/clubs', {
-        isbn: selectedBook.isbn,
+        isbn: targetBook.isbn,
         name: name.trim(),
         description: description.trim() || undefined,
         max_members: Number(maxMembers) || 10,
         start_date: startDate || undefined,
         end_date: endDate || undefined,
-        book: selectedBook,
+        book: targetBook,
       });
 
       if (res.success && res.club) {
@@ -82,8 +132,6 @@ export default function CreateClubModal({
       setLoading(false);
     }
   };
-
-  if (!selectedBook) return null;
 
   return (
     <Modal
@@ -104,26 +152,55 @@ export default function CreateClubModal({
           </div>
         )}
 
-        {/* 선택된 도서 요약 카드 */}
-        <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-surface-container-low border border-surface-container">
-          <div className="w-12 h-16 rounded-lg overflow-hidden bg-surface-container shrink-0 shadow-xs">
-            <img
-              src={selectedBook.thumbnail || '/images/book-placeholder.png'}
-              alt={`${selectedBook.title} 표지`}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = '/images/book-placeholder.png';
-              }}
-            />
+        {/* 선택된 도서 / 추천 도서 요약 카드 */}
+        {activeBook && (
+          <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-surface-container-low border border-surface-container">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-12 h-16 rounded-lg overflow-hidden bg-surface-container shrink-0 shadow-xs">
+                <img
+                  src={activeBook.thumbnail || '/images/book-placeholder.png'}
+                  alt={`${activeBook.title} 표지`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = '/images/book-placeholder.png';
+                  }}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                      isRecommended
+                        ? 'bg-secondary-container text-on-secondary-container'
+                        : 'bg-primary-fixed text-on-primary-fixed'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[13px]">
+                      {isRecommended ? 'auto_awesome' : 'bookmark'}
+                    </span>
+                    <span>{isRecommended ? '추천 도서' : '선택된 도서'}</span>
+                  </span>
+                </div>
+                <h4 className="font-bold text-sm text-on-surface truncate">{activeBook.title}</h4>
+                <p className="text-xs text-on-surface-variant truncate">
+                  {Array.isArray(activeBook.authors) ? activeBook.authors.join(', ') : activeBook.authors || '저자 미상'}
+                </p>
+              </div>
+            </div>
+
+            {isRecommended && (
+              <button
+                type="button"
+                onClick={handleRerollRecommendation}
+                title="다른 추천 도서 뽑기"
+                className="shrink-0 px-2.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-all flex items-center gap-1 text-xs font-semibold"
+              >
+                <span className="material-symbols-outlined text-[15px]">refresh</span>
+                <span className="hidden sm:inline">다른 추천</span>
+              </button>
+            )}
           </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-bold text-primary block">선택된 도서</span>
-            <h4 className="font-bold text-sm text-on-surface truncate">{selectedBook.title}</h4>
-            <p className="text-xs text-on-surface-variant truncate">
-              {Array.isArray(selectedBook.authors) ? selectedBook.authors.join(', ') : selectedBook.authors}
-            </p>
-          </div>
-        </div>
+        )}
 
         <FormField label="클럽 이름" required>
           {(fieldProps) => (

@@ -1,5 +1,5 @@
-﻿import { describe, it, expect } from 'vitest';
-import { normalizeKakaoBook, filterCuratedBooks } from '../bookSearch';
+import { describe, it, expect } from 'vitest';
+import { normalizeKakaoBook, filterCuratedBooks, getAllCuratedBooks, pickRandomUnreadBook } from '../bookSearch';
 import curatedData from '@/shared/data/curatedBooks.json';
 
 describe('bookSearch', () => {
@@ -29,5 +29,17 @@ describe('bookSearch', () => {
 
     const allBooks = filterCuratedBooks(curatedData, '전체');
     expect(allBooks.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('getAllCuratedBooks 및 pickRandomUnreadBook은 읽지 않은 도서를 정상 추천해야 한다', () => {
+    const all = getAllCuratedBooks(curatedData);
+    expect(all.length).toBeGreaterThan(0);
+
+    const firstIsbn = all[0].isbn;
+    const recommended = pickRandomUnreadBook(curatedData, new Set([firstIsbn]));
+    expect(recommended).toBeDefined();
+    if (all.length > 1) {
+      expect(recommended?.isbn).not.toBe(firstIsbn);
+    }
   });
 });

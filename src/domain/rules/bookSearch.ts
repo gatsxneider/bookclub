@@ -41,3 +41,41 @@ export function filterCuratedBooks(
   const categoryList = curatedData[selectedCategory] || [];
   return categoryList.map((item) => normalizeKakaoBook(item, selectedCategory));
 }
+
+/**
+ * 큐레이션 데이터 전체에서 중복 없는 도서 목록 추출
+ */
+export function getAllCuratedBooks(curatedData: Record<string, any[]>): Book[] {
+  const allBooks: Book[] = [];
+  const seenIsbns = new Set<string>();
+
+  Object.entries(curatedData).forEach(([cat, list]) => {
+    (list || []).forEach((item) => {
+      const normalized = normalizeKakaoBook(item, cat);
+      if (normalized.isbn && !seenIsbns.has(normalized.isbn)) {
+        seenIsbns.add(normalized.isbn);
+        allBooks.push(normalized);
+      }
+    });
+  });
+
+  return allBooks;
+}
+
+/**
+ * 회원이 읽지 않은(참여/완독하지 않은) 도서 중 랜덤으로 1권 추천
+ */
+export function pickRandomUnreadBook(
+  curatedData: Record<string, any[]>,
+  readIsbns: Set<string> | string[] = new Set()
+): Book | null {
+  const allBooks = getAllCuratedBooks(curatedData);
+  if (allBooks.length === 0) return null;
+
+  const isbnSet = readIsbns instanceof Set ? readIsbns : new Set(readIsbns);
+  const unreadBooks = allBooks.filter((b) => !isbnSet.has(b.isbn));
+
+  const candidatePool = unreadBooks.length > 0 ? unreadBooks : allBooks;
+  const randomIndex = Math.floor(Math.random() * candidatePool.length);
+  return candidatePool[randomIndex] || allBooks[0];
+}
