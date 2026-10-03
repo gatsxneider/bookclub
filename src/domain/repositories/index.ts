@@ -91,6 +91,7 @@ export interface IReviewRepository {
   update(id: string, updates: Partial<Review>): Promise<Review>;
   delete(id: string): Promise<void>;
   getUserReviewsForClub(clubId: string, userId: string): Promise<Review[]>;
+  getAllBookRatings(): Promise<Array<{ isbn?: string | null; rating: number }>>;
 }
 
 export interface IEmpathyRepository {

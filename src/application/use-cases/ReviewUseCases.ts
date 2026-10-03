@@ -14,6 +14,7 @@ import {
   INITIAL_MANNER_TEMPERATURE,
 } from '@/domain/rules/mannerTemperature';
 import { checkCanEmpathize, MAX_EMPATHY_COUNT } from '@/domain/rules/empathy';
+import { calculateBookRatings, BookRatingSummary } from '@/domain/rules/bookRating';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/application/errors';
 
 export class ReviewUseCases {
@@ -26,6 +27,11 @@ export class ReviewUseCases {
     private empathyRepo: IEmpathyRepository,
     private userBookRatingRepo: IUserBookRatingRepository
   ) {}
+
+  async getBookRatings(): Promise<Record<string, BookRatingSummary>> {
+    const rawRatings = await this.reviewRepo.getAllBookRatings();
+    return calculateBookRatings(rawRatings);
+  }
 
   async getReviews(
     filters: { club_id?: string; schedule_id?: string; user_id?: string },

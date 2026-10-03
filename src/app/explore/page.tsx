@@ -13,6 +13,7 @@ import { Book } from '@/domain/entities';
 import { filterCuratedBooks } from '@/domain/rules/bookSearch';
 import curatedBooksData from '@/shared/data/curatedBooks.json';
 import { Button } from '@/presentation/components/ui/Button';
+import { useBookRatings } from '@/presentation/hooks/useBookRatings';
 
 export default function ExplorePage() {
   const [selectedCategory, setSelectedCategory] = useState('01. 소설 / 문학');
@@ -22,6 +23,7 @@ export default function ExplorePage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedBookForDetail, setSelectedBookForDetail] = useState<Book | null>(null);
+  const { ratings: bookRatings } = useBookRatings();
 
   const books = filterCuratedBooks(curatedBooksData, selectedCategory);
 
@@ -80,6 +82,7 @@ export default function ExplorePage() {
               <BookCard
                 key={book.isbn}
                 book={book}
+                ratingInfo={book.isbn ? bookRatings[book.isbn] : null}
                 onSelectBook={handleSelectBook}
                 onOpenDetail={handleOpenDetail}
               />

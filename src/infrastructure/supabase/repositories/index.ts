@@ -507,6 +507,49 @@ export class SupabaseReviewRepository implements IReviewRepository {
     if (error || !data) return [];
     return data as Review[];
   }
+
+  async getAllBookRatings(): Promise<Array<{ isbn?: string | null; rating: number }>> {
+    const results: Array<{ isbn?: string | null; rating: number }> = [];
+
+    try {
+      // 1. reviews 테이블에서 클럽 조인 후 ISBN 및 평점 조회
+      const { data: reviewsData } = await this.client
+        .from('reviews')
+        .select('rating, club:clubs(isbn)');
+
+      if (reviewsData && Array.isArray(reviewsData)) {
+        reviewsData.forEach((r: any) => {
+          if (typeof r.rating === 'number' && r.rating >= 1 && r.rating <= 5) {
+            const isbn = r.club?.isbn;
+            if (isbn) {
+              results.push({ isbn, rating: r.rating });
+            }
+          }
+        });
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      // 2. user_book_ratings 테이블의 완독/도서 평점 데이터도 병합
+      const { data: userRatingsData } = await this.client
+        .from('user_book_ratings')
+        .select('isbn, rating');
+
+      if (userRatingsData && Array.isArray(userRatingsData)) {
+        userRatingsData.forEach((ur: any) => {
+          if (typeof ur.rating === 'number' && ur.rating >= 1 && ur.rating <= 5 && ur.isbn) {
+            results.push({ isbn: ur.isbn, rating: ur.rating });
+          }
+        });
+      }
+    } catch {
+      // ignore
+    }
+
+    return results;
+  }
 }
 
 export class SupabaseEmpathyRepository implements IEmpathyRepository {

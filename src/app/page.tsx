@@ -17,6 +17,7 @@ import { filterCuratedBooks } from '@/domain/rules/bookSearch';
 import curatedBooksData from '@/shared/data/curatedBooks.json';
 import { useAuth } from '@/presentation/context/AuthContext';
 import { useClubs } from '@/presentation/hooks/useClubs';
+import { useBookRatings } from '@/presentation/hooks/useBookRatings';
 import {
   isUserClubMember,
   isClubCompleted,
@@ -30,6 +31,7 @@ export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { clubs, refetch: refetchClubs } = useClubs();
+  const { ratings: bookRatings } = useBookRatings();
 
   // 상태 관리
   const [selectedCategory, setSelectedCategory] = useState('01. 소설 / 문학');
@@ -277,6 +279,7 @@ export default function HomePage() {
                 <BookCard
                   key={book.isbn}
                   book={book}
+                  ratingInfo={book.isbn ? bookRatings[book.isbn] : null}
                   onSelectBook={(b) => handleOpenCreateClub(b)}
                   onOpenDetail={(b) => {
                     setSelectedBookForDetail(b);

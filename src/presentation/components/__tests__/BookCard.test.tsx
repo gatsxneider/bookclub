@@ -32,4 +32,21 @@ describe('BookCard Component', () => {
 
     expect(handleSelectBook).toHaveBeenCalledWith(mockBook);
   });
+
+  it('평점 정보가 주어지면 별점과 평균 점수가 올바르게 렌더링되어야 한다', () => {
+    const ratingInfo = { average: 4.8, count: 5 };
+    render(<BookCard book={mockBook} ratingInfo={ratingInfo} />);
+
+    expect(screen.getByText('4.8')).toBeInTheDocument();
+    expect(screen.getByText('star')).toBeInTheDocument();
+    expect(screen.getByLabelText('평균 평점 4.8점 (리뷰 5개)')).toBeInTheDocument();
+  });
+
+  it('평점 정보가 없거나 리뷰 수가 0이면 평점이 표시되지 않아야 한다', () => {
+    const { rerender } = render(<BookCard book={mockBook} />);
+    expect(screen.queryByText('star')).not.toBeInTheDocument();
+
+    rerender(<BookCard book={mockBook} ratingInfo={{ average: 0, count: 0 }} />);
+    expect(screen.queryByText('star')).not.toBeInTheDocument();
+  });
 });

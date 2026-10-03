@@ -3,15 +3,19 @@
 import React from 'react';
 import { Book } from '@/domain/entities';
 import { Button } from './ui/Button';
+import { Icon } from './ui/Icon';
+import { BookRatingSummary } from '@/domain/rules/bookRating';
 
 interface BookCardProps {
   book: Book;
+  ratingInfo?: BookRatingSummary | null;
   onSelectBook?: (book: Book) => void;
   onOpenDetail?: (book: Book) => void;
 }
 
 export default function BookCard({
   book,
+  ratingInfo,
   onSelectBook,
   onOpenDetail,
 }: BookCardProps) {
@@ -27,7 +31,11 @@ export default function BookCard({
       <button
         type="button"
         onClick={() => onOpenDetail?.(book)}
-        aria-label={`${book.title} 도서 상세 정보 보기`}
+        aria-label={`${book.title} 도서 상세 정보 보기${
+          ratingInfo && ratingInfo.count > 0
+            ? `, 평균 평점 ${ratingInfo.average.toFixed(1)}점`
+            : ''
+        }`}
         className="flex flex-col text-left w-full p-3 sm:p-4 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
       >
         <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-surface-container mb-3 shadow-xs group-hover:shadow-md transition-shadow">
@@ -49,11 +57,25 @@ export default function BookCard({
           {authorText} {book.publisher ? `· ${book.publisher}` : ''}
         </p>
 
-        {book.price ? (
-          <p className="text-xs font-bold text-secondary mt-1">
-            {book.price.toLocaleString()}원
-          </p>
-        ) : null}
+        {/* 가격 및 회원 평균 평점 (평점 없을 시 미표시) */}
+        <div className="flex items-center justify-between mt-1.5 min-h-[20px] text-xs">
+          {book.price ? (
+            <p className="font-bold text-secondary">
+              {book.price.toLocaleString()}원
+            </p>
+          ) : <span />}
+
+          {ratingInfo && ratingInfo.count > 0 ? (
+            <div
+              className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold"
+              aria-label={`평균 평점 ${ratingInfo.average.toFixed(1)}점 (리뷰 ${ratingInfo.count}개)`}
+              title={`평균 평점 ${ratingInfo.average.toFixed(1)}점 (총 ${ratingInfo.count}개의 회원 평가)`}
+            >
+              <Icon name="star" className="text-[15px] text-amber-500 fill-current shrink-0" />
+              <span>{ratingInfo.average.toFixed(1)}</span>
+            </div>
+          ) : null}
+        </div>
       </button>
 
       {/* 2. 클럽 개설 액션 버튼 */}
