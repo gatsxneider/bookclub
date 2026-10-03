@@ -27,6 +27,32 @@ export default function BookDetailModal({
     ? book.authors
     : '저자 미상';
 
+  const formatPublishDate = (dateStr?: string) => {
+    if (!dateStr) return null;
+    const cleanStr = dateStr.trim();
+    if (!cleanStr) return null;
+
+    try {
+      const d = new Date(cleanStr);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}.${month}.${day}`;
+      }
+    } catch {
+      // ignore
+    }
+
+    const dateOnly = cleanStr.split('T')[0];
+    if (dateOnly.length === 8 && !dateOnly.includes('-')) {
+      return `${dateOnly.slice(0, 4)}.${dateOnly.slice(4, 6)}.${dateOnly.slice(6, 8)}`;
+    }
+    return dateOnly.replace(/-/g, '.');
+  };
+
+  const publishDate = formatPublishDate(book.datetime);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -56,8 +82,8 @@ export default function BookDetailModal({
       }
     >
       <div className="flex flex-col sm:flex-row gap-6">
-        {/* 도서 표지 */}
-        <div className="w-36 sm:w-44 shrink-0 mx-auto sm:mx-0">
+        {/* 도서 표지 및 출간일 */}
+        <div className="w-36 sm:w-44 shrink-0 mx-auto sm:mx-0 flex flex-col gap-2.5">
           <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-lg ring-1 ring-surface-container bg-surface-container">
             <img
               src={book.thumbnail || '/images/book-placeholder.png'}
@@ -68,6 +94,16 @@ export default function BookDetailModal({
               }}
             />
           </div>
+
+          {publishDate && (
+            <div className="w-full p-2.5 rounded-xl bg-surface-container-low border border-surface-container text-center">
+              <span className="text-[11px] text-on-surface-variant block font-medium">출간일</span>
+              <span className="text-xs font-bold text-on-surface mt-0.5 flex items-center justify-center gap-1">
+                <Icon name="calendar_today" className="text-[13px] text-primary shrink-0" />
+                <span>{publishDate}</span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 상세 정보 */}
